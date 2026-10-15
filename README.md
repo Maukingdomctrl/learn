@@ -17,6 +17,8 @@ The specification is [`methodology/CORE_TEACHING_METHODOLOGY_FINAL.md`](methodol
 
 **Also in this repo:** `cards/` is a separate, browser-only prototype. It turns a study-sheet PDF into printable picture flashcards with no AI. See [`cards/README.md`](cards/README.md).
 
+The separate Teaching Engine has a traceable source fact inventory ([Stage 1](docs/TEACHING_ENGINE_STAGE_1.md)) and an offline, child-centred lesson planner ([usage](docs/TEACHING_ENGINE.md)). It needs no API key. The API-key setup below applies only to the older printable-lesson workflow.
+
 ---
 
 ## Setup
@@ -32,7 +34,7 @@ cp .env.example .env                       # then put your key in .env
 pre-commit install                         # optional: run ruff on every commit
 ```
 
-Set `ANTHROPIC_API_KEY` in `.env` or your shell. Without a key Learn still runs, but every request stops with a limitation report saying the model is not configured.
+For the older printable-lesson workflow, set `ANTHROPIC_API_KEY` in `.env` or your shell. The separate Teaching Engine works without it.
 
 **OCR (optional).** Scanned pages with no text layer need OCR.
 - If the `tesseract` command is installed (e.g. `apt install tesseract-ocr`), Learn uses it.
@@ -57,6 +59,23 @@ python -m learn.cli path/to/curriculum.pdf --standard 7 [--topic "area of a tria
 ```
 
 The exit code is 0 when a lesson was delivered and 2 when it stopped with a limitation report.
+
+**Offline Teaching Engine** (no API key, model, or network calls):
+
+```bash
+python -m learn.teaching_engine path/to/curriculum.pdf --out teaching_lesson.json [--pages 3-5]
+```
+
+This writes a source-linked JSON teaching scaffold. It is separate from the older printable-PDF command above.
+
+**Offline Teaching Engine web app:**
+
+```bash
+uvicorn learn.teaching_web:app --reload
+# open http://127.0.0.1:8000
+```
+
+`render.yaml` deploys this separate app using only `requirements-teaching.txt`; it does not launch the old Claude-based printable workflow. See [Render setup](docs/TEACHING_ENGINE.md#web-app-and-render-deployment).
 
 **Output folder** (`output/<job>/`, set with `LEARN_OUTPUT_DIR`):
 

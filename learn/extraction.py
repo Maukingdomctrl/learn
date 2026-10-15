@@ -92,23 +92,27 @@ def _paragraphs(ocr_text: str) -> list[str]:
     return _merge_blocks(re.split(r"\n\s*\n", ocr_text))
 
 
-def pdf_page_count(pdf_path: str) -> int:
+def _open_pdf(pdf_input: str | bytes):
     try:
-        with pymupdf.open(pdf_path) as doc:
-            if not doc.is_pdf:
-                raise ExtractionError("the file is not a PDF")
-            return doc.page_count
+        return pymupdf.open(stream=pdf_input, filetype="pdf") if isinstance(pdf_input, bytes) else pymupdf.open(pdf_input)
     except ExtractionError:
         raise
     except Exception as e:
         raise ExtractionError(f"cannot open PDF: {e}") from e
 
 
+def pdf_page_count(pdf_input: str | bytes) -> int:
+    with _open_pdf(pdf_input) as doc:
+        if not doc.is_pdf:
+            raise ExtractionError("the file is not a PDF")
+        return doc.page_count
+
+
 def extract(
-    pdf_path: str, ocr: Optional[OcrFn] = None, ocr_name: str = "none", pages: Optional[set[int]] = None
+    pdf_input: str | bytes, ocr: Optional[OcrFn] = None, ocr_name: str = "none", pages: Optional[set[int]] = None
 ) -> ExtractedSource:
     try:
-        doc = pymupdf.open(pdf_path)
+        doc = _open_pdf(pdf_input)
     except Exception as e:  # PyMuPDF raises several types for bad files
         raise ExtractionError(f"cannot open PDF: {e}") from e
     if doc.needs_pass:

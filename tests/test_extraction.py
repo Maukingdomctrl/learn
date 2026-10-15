@@ -1,6 +1,8 @@
+from pathlib import Path
+
 import pytest
 
-from learn.extraction import ExtractionError, choose_ocr, extract
+from learn.extraction import ExtractionError, choose_ocr, extract, pdf_page_count
 from learn.grounding import InputError, SourceIndex, check_selection, parse_page_range
 from tests.fixtures import make_scanned_pdf
 
@@ -11,6 +13,15 @@ def test_extracts_numbered_units(sample_pdf):
     assert ids[0] == "SRC-P1-U1" and "SRC-P2-U2" in ids
     assert any("1/2 × base × height" in u.text for u in src.units)
     assert src.page_count == 2 and not src.unreadable_pages
+
+
+def test_extracts_pdf_bytes_without_a_source_file(sample_pdf):
+    pdf_bytes = Path(sample_pdf).read_bytes()
+
+    src = extract(pdf_bytes)
+
+    assert src.page_count == pdf_page_count(pdf_bytes) == 2
+    assert src.units == extract(sample_pdf).units
 
 
 def test_page_range_filters_pages(sample_pdf):

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learn · Teaching Engine</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #23302b; background: #f6f5ef; }
+    body { max-width: 700px; margin: 8vh auto; padding: 0 20px; }
+    main { background: white; border: 1px solid #e1e3da; border-radius: 18px; padding: clamp(24px, 6vw, 48px); box-shadow: 0 12px 36px #283a2c0d; }
+    h1 { margin: 0 0 10px; font-size: clamp(2rem, 7vw, 3.2rem); letter-spacing: -.04em; }
+    p { line-height: 1.6; }
+    .intro { color: #58655d; }
+    label { display: block; margin: 24px 0 8px; font-weight: 650; }
+    input { display: block; width: 100%; margin-top: 8px; font: inherit; }
+    button { margin-top: 24px; border: 0; border-radius: 9px; padding: 12px 20px; background: #27664d; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+    .note { color: #647067; font-size: .9rem; }
+  </style>
+</head>
+<body>
+<main>
+  <p>LEARN · TEACHING ENGINE</p>
+  <h1>Make ideas easier to remember.</h1>
+  <p class="intro">Upload a curriculum PDF to create a source-linked teaching plan with drawing prompts and recall activities. Your facts stay tied to the exact source text and page.</p>
+  <form action="/generate" method="post" enctype="multipart/form-data">
+    <label for="pdf">Choose a curriculum PDF</label>
+    <input id="pdf" type="file" name="pdf" accept="application/pdf" required>
+    <label for="pages">Pages to use <span class="note">(optional)</span></label>
+    <input id="pages" type="text" name="pages" maxlength="50" placeholder="e.g. 3-5 or 2, 4">
+    <button type="submit">Create teaching plan</button>
+  </form>
+  <p class="note">No account, API key, or paid AI call. Maximum upload: 30 MB. Text-based PDFs work best; scanned pages may need OCR. Review any flagged claims before teaching.</p>
+</main>
+</body>
+</html>

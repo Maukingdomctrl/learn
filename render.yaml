@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: learn-teaching-engine
+    runtime: python
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: LEARN_REQUIRE_ACCESS
+        value: "1"
+      - key: LEARN_ACCESS_PASSWORD
+        sync: false
+    buildCommand: pip install -r requirements-teaching.txt
+    startCommand: uvicorn learn.teaching_web:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz

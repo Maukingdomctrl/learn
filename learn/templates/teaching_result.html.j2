@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learn · Teaching Plan</title>
+  <style>
+    body { max-width: 700px; margin: 8vh auto; padding: 0 20px; color: #23302b; background: #f6f5ef; font: 1rem/1.6 system-ui, sans-serif; }
+    main { background: white; border: 1px solid #e1e3da; border-radius: 18px; padding: clamp(24px, 6vw, 48px); }
+    .error { color: #8b331c; }
+    a { color: #27664d; font-weight: 650; }
+  </style>
+</head>
+<body>
+<main>
+  <p><a href="/">&larr; Start another plan</a></p>
+  {% if error %}
+    <h1>We couldn’t create the plan</h1>
+    <p class="error">{{ error }}</p>
+  {% else %}
+    <h1>Your teaching plan is ready</h1>
+    <p><a href="/jobs/{{ job }}/teaching_lesson.json" download>Download the source-linked teaching plan</a></p>
+  {% endif %}
+  {% if warnings %}
+    <h2>Notes about the source</h2>
+    <ul>{% for warning in warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+  {% endif %}
+</main>
+</body>
+</html>
