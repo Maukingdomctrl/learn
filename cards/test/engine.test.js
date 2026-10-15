@@ -15,7 +15,17 @@ import { assignPhotos, unitSquare } from '../engine/photos.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
 import { backHtml, esc, flowSvg, frontHtml, lifelineSvg } from '../engine/render.js';
-import { bulletLabel, dropRunningHeaders, isIndustry, isPerson, parseSheet, splitFacts } from '../engine/structure.js';
+import {
+  bulletLabel,
+  dropRunningHeaders,
+  institutionLabel,
+  isIndustry,
+  isInstitution,
+  isPerson,
+  kindOfHeading,
+  parseSheet,
+  splitFacts,
+} from '../engine/structure.js';
 import { nameTip, thingFact } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
 
@@ -832,4 +842,72 @@ test('check fails when the chain or a group line shows words that are not in the
   const again = await industries();
   again.built.decks.find((d) => d.entity === 'Which group?').cards[0].lines[0] += ' · Paper Industry';
   assert.match(checkDecks(again.sheet, again.built).problems.join('\n'), /not word-for-word from the sheet: "Paper Industry"/);
+});
+
+// ---------- institutions (civics sample) ----------
+
+async function civics() {
+  const data = new Uint8Array(readFileSync(here('../sample/civics-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('civics sample: institutions are recognised; every fact has a card; all checks pass', async () => {
+  const { sheet, built, check } = await civics();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Lok Sabha', 'institution'],
+      ['Rajya Sabha', 'institution'],
+      ['The President', 'institution'],
+      ['Supreme Court', 'institution'],
+    ],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('heading kinds: industry, institution, person, place', () => {
+  assert.equal(kindOfHeading('SUGAR INDUSTRY', 'Agro-based industry'), 'industry');
+  assert.equal(kindOfHeading('LOK SABHA', 'Lower House of Parliament'), 'institution');
+  assert.equal(kindOfHeading('SUPREME COURT', 'Highest court of India'), 'institution');
+  assert.equal(kindOfHeading('JYOTIRAO PHULE', 'Social reformer (1827–1890)'), 'person');
+  assert.equal(kindOfHeading('BELFAST', 'Capital of Northern Ireland'), 'place');
+  assert.ok(isInstitution('ANYTHING', 'Upper House of Parliament'));
+});
+
+test('institution sentences are labelled by what they say', () => {
+  assert.equal(institutionLabel('Members are directly elected by the people.'), 'chosen');
+  assert.equal(institutionLabel('A member must be at least 25 years old.'), 'age');
+  assert.equal(institutionLabel('Judges retire at the age of 65.'), 'age');
+  assert.equal(institutionLabel('one-third of the members retire every 2 years.'), 'term');
+  assert.equal(institutionLabel('It protects the Fundamental Rights of citizens.'), 'job');
+});
+
+test('institution cards ask who chooses them, how long, how old, who is in charge, what it does', async () => {
+  const { built } = await civics();
+  const ask = (deck, answer) => built.decks[deck].cards.find((c) => c.answer === answer).ask;
+  assert.equal(built.decks[0].cards[0].ask, 'Which one am I?');
+  assert.equal(ask(0, 'directly elected'), 'Who chooses them?');
+  assert.equal(ask(0, '5 years'), 'For how long?');
+  assert.equal(ask(0, '25 years'), 'How old?');
+  assert.equal(ask(1, 'Vice-President'), 'Who is in charge?');
+  assert.equal(ask(3, 'Fundamental Rights'), 'What does it do?');
+  assert.equal(built.decks[1].cards.find((c) => c.answer === 'Vice-President').clue, `Presiding officer: the ${BLANK} of India`);
+});
+
+test('"Numbers to know" lists each bold number once, smallest first, and every fact behind them', async () => {
+  const { built } = await civics();
+  const card = built.decks.find((d) => d.entity === 'Numbers to know').cards[0];
+  assert.deepEqual(card.frontLines, ['2 years · 5 years · 6 years · 25 years · 30 years · 35 years · 65']);
+  assert.equal(card.lines.length, 8);
+  assert.ok(card.lines.includes('Supreme Court … Judges retire at the age of 65'));
+});
+
+test('check fails when a numbers line is not from the sheet', async () => {
+  const { sheet, built } = await civics();
+  built.decks.find((d) => d.entity === 'Numbers to know').cards[0].lines[0] = 'Lok Sabha … Term: 4 years';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word/);
 });

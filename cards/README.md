@@ -111,6 +111,23 @@ Across the sheet:
 
 `sample/industries-sheet.pdf` (cotton textiles, iron and steel, sugar) is a synthetic example. Not yet tried on a real school sheet.
 
+## Civics: institutions
+
+A heading is an **institution** when its name is one, such as PARLIAMENT, LOK SABHA, RAJYA SABHA, PRESIDENT, SUPREME COURT, HIGH COURT, CONSTITUTION, ELECTION COMMISSION, COUNCIL OF MINISTERS, PANCHAYAT or MUNICIPAL…, or when its description says "House of…", "court" or "Head of the State".
+
+Each sentence is labelled by what it says, and the fill-in asks the matching question:
+- **Chosen:** elected / appointed → *Who chooses them?*
+- **Term:** "Term:", or a number of years → *For how long?*
+- **Age:** "at least 25 years old", "age of 65" → *How old?*
+- **In charge:** presiding officer / Speaker / chairman → *Who is in charge?*
+- **Job:** protects / powers / functions / commander / guardian → *What does it do?*
+
+The riddle is the heading's description ("Lower House of Parliament — Which one am I?"), and the final card asks "Name it!".
+
+Across the sheet, **"Numbers to know"** lists every bold number once, smallest first ("2 years · 5 years · … · 65"). The back gives each fact behind them with its institution. That's the kind of detail exams ask for.
+
+`sample/civics-sheet.pdf` (Lok Sabha, Rajya Sabha, the President, the Supreme Court) is a synthetic example with stable facts only. Not yet tried on a real school sheet.
+
 ## Photos from the sheet
 
 If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.

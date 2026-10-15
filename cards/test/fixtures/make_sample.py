@@ -4,7 +4,8 @@
 - history-sheet.pdf: an event (the 1857 uprising) with causes, course, leaders and results;
 - people-sheet.pdf: three social reformers, each with life years, a summary line and a placeholder
   portrait beside the heading (a drawn silhouette, not a real photo);
-- industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are.
+- industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are;
+- civics-sheet.pdf: four Union institutions (two Houses, the President, the Supreme Court) with terms, ages and jobs.
 
 
 Words wrapped in **double stars** are printed bold, the way a teacher marks the key words.
@@ -141,6 +142,42 @@ INDUSTRIES = [
 ]
 
 
+CIVICS = [
+    [
+        ("title", "THE UNION PARLIAMENT, PRESIDENT AND JUDICIARY"),
+        ("sub", "Class 8 Civics | Sample notes"),
+        ("heading", "1. LOK SABHA – Lower House of Parliament"),
+        ("bullet", "Members are **directly elected** by the people."),
+        ("bullet", "Term: **5 years**, unless dissolved earlier."),
+        ("bullet", "Presiding officer: the **Speaker**."),
+        ("bullet", "A member must be at least **25 years** old."),
+        ("heading", "2. RAJYA SABHA – Upper House of Parliament"),
+        ("bullet", "Members are elected by the members of the **State Legislative Assemblies**."),
+        ("bullet", "It is a **permanent house** and cannot be dissolved."),
+        ("bullet", "A member's term is **6 years**; one-third of the members retire every **2 years**."),
+        ("bullet", "Presiding officer: the **Vice-President** of India."),
+        ("bullet", "A member must be at least **30 years** old."),
+        ("heading", "3. THE PRESIDENT – Head of the State"),
+        ("bullet", "Elected by an **electoral college** of elected members of Parliament and the State"),
+        ("wrap", "Legislative Assemblies."),
+        ("bullet", "Term: **5 years**."),
+        ("bullet", "Must be at least **35 years** old."),
+        ("bullet", "Is the Supreme Commander of the **armed forces**."),
+        ("heading", "4. SUPREME COURT – Highest court of India"),
+        ("bullet", "It is located in **New Delhi**."),
+        ("bullet", "Its judges are appointed by the **President**."),
+        ("bullet", "Judges retire at the age of **65**."),
+        ("bullet", "It protects the **Fundamental Rights** of citizens."),
+        ("bullet", "It is called the **guardian of the Constitution**."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Lok Sabha = people's house (5 years, Speaker)"),
+        ("bullet", "Rajya Sabha = permanent house (6 years, Vice-President)"),
+        ("bullet", "The President = head of the State (5 years, age 35)"),
+        ("bullet", "Supreme Court = guardian of the Constitution (retire at 65)"),
+    ],
+]
+
+
 def runs(text):
     """Splits '**bold**' markup into (text, bold) runs."""
     parts = re.split(r"(\*\*.+?\*\*)", text)
@@ -215,6 +252,7 @@ def main():
     build(HISTORY, SAMPLES / "history-sheet.pdf", "Class 8 History | Sample sheet")
     build(PEOPLE, SAMPLES / "people-sheet.pdf", "Class 8 History | Reformers sample", portraits=True)
     build(INDUSTRIES, SAMPLES / "industries-sheet.pdf", "Class 8 Geography | Industries sample")
+    build(CIVICS, SAMPLES / "civics-sheet.pdf", "Class 8 Civics | Institutions sample")
 
 
 if __name__ == "__main__":

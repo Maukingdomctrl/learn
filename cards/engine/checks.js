@@ -3,7 +3,7 @@
 import { BLANK, nameParts } from './cards.js';
 
 // Cards about a whole topic or sheet: their front is a fixed prompt, their sheet words are in lines/frontLines.
-const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list', 'lifeline', 'sort']);
+const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list', 'lifeline', 'sort', 'numbers']);
 
 const pieces = (line) =>
   line

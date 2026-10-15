@@ -12,6 +12,12 @@ export const ASK_BY_LABEL = {
   raw: 'What does it need?',
   where: 'Where?',
   product: 'What does it make?',
+  chosen: 'Who chooses them?',
+  age: 'How old?',
+  term: 'For how long?',
+  head: 'Who is in charge?',
+  job: 'What does it do?',
+  members: 'Who is in it?',
 };
 
 // A reason about a location ("grew in Mumbai because…", "Plants are near … because…") asks "Why here?".
@@ -356,5 +362,38 @@ export function whereCard(entities) {
     lines: rows.map((x) => `${x.e.display} … ${x.f.text.replace(/[.\s]+$/, '')}`),
     page: rows[0].f.page,
     symbol: 'pin',
+  };
+}
+
+// ---------- institutions ----------
+
+const NUMBER = /\b\d+(?:\s+(?:years?|members|months|days))?\b/;
+
+/**
+ * "Numbers to know": every bold number in the institutions' facts (5 years, 35, 65…). The front lists the
+ * numbers once each, smallest first; the back gives each fact that holds one, with its institution.
+ */
+export function numbersCard(entities) {
+  const rows = [];
+  for (const e of entities.filter((x) => x.type === 'institution')) {
+    for (const f of e.facts) {
+      const n = f.keys.find((k) => NUMBER.test(k) && /\d/.test(k));
+      if (n) rows.push({ e, f, n });
+    }
+  }
+  if (rows.length < 3) return null;
+  const numbers = [...new Set(rows.map((r) => r.n))].sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.localeCompare(b));
+  return {
+    id: 'numbers',
+    entity: 'Numbers to know',
+    kind: 'numbers',
+    clue: 'What does each number stand for?',
+    ask: '',
+    answer: 'Numbers',
+    exact: '',
+    frontLines: [numbers.join(' · ')],
+    lines: rows.map((r) => `${r.e.display} … ${r.f.text.replace(/[.\s]+$/, '')}`),
+    page: rows[0].f.page,
+    symbol: 'calendar',
   };
 }

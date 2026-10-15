@@ -5,6 +5,7 @@ import {
   ageCards,
   ASK_BY_LABEL,
   flowOf,
+  numbersCard,
   sortCard,
   whereCard,
   lifelineCard,
@@ -45,7 +46,8 @@ export function buildDecks(sheet) {
     const rawFact = industry ? e.facts.find((f) => f.label === 'raw') : null;
     // A riddle about a person must hide every part of their name ("Roy", "Ram Mohan Roy").
     const hidden = person ? [...names, ...nameParts(e.display)] : names;
-    const ask = person ? 'Who am I?' : who;
+    const institution = e.type === 'institution';
+    const ask = person ? 'Who am I?' : institution ? 'Which one am I?' : who;
     const hook = {
       id: `${slugOf(e.display)}-hook`,
       entity: e.display,
@@ -55,7 +57,9 @@ export function buildDecks(sheet) {
       answer: e.display,
       exact: rawFact ? rawFact.text : e.descriptor,
       page: e.page,
-      symbol: pickSymbol(rawFact ? rawFact.text : e.descriptor) || (person ? 'person' : industry ? 'factory' : null),
+      symbol:
+        pickSymbol(rawFact ? rawFact.text : e.descriptor) ||
+        (person ? 'person' : industry ? 'factory' : institution ? 'parliament' : null),
       star: false,
     };
 
@@ -98,7 +102,7 @@ export function buildDecks(sheet) {
       entity: e.display,
       kind: 'portrait',
       clue: '',
-      ask: person ? 'Who am I?' : sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
+      ask: person ? 'Who am I?' : institution ? 'Name it!' : sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
       // An industry's final picture is its chain: what goes in, a question mark, what comes out.
       flow: industry ? flowOf(e) : null,
       answer: e.display,
@@ -211,6 +215,8 @@ export function buildDecks(sheet) {
         ? `Every ${sheet.kindWord || 'one'} had their own cause.`
         : industries
           ? 'Each industry turns its own raw material into its own product.'
+          : sheet.entities.some((e) => e.type === 'institution')
+            ? 'Each one has its own job.'
           : `Every ${sheet.kindWord || 'one'} had its own job.`,
       ask: sheet.kindWord ? `Which ${sheet.kindWord} did what?` : 'Who did what?',
       answer: people ? 'Each one’s cause' : 'Each one’s job',
@@ -223,7 +229,7 @@ export function buildDecks(sheet) {
     };
     decks.push({ entity: group, cards: [compare], compare: true });
   }
-  for (const card of [sortCard(sheet.entities), whereCard(sheet.entities)].filter(Boolean)) {
+  for (const card of [sortCard(sheet.entities), whereCard(sheet.entities), numbersCard(sheet.entities)].filter(Boolean)) {
     decks.push({ entity: card.entity, cards: [card], compare: true });
   }
   const lifeline = lifelineCard(sheet.entities);
@@ -339,7 +345,11 @@ export function clozeClue(fullText, key) {
 
 function lastBoundary(s) {
   let best = -1;
-  for (const m of s.matchAll(/[;:]|\s[–—]\s|,\s/g)) best = m.index + m[0].length;
+  for (const m of s.matchAll(/[;:]|\s[–—]\s|,\s/g)) {
+    // A short label at the start ("Presiding officer:", "Term:") is context, not a separate clause.
+    if (m[0] === ':' && s.slice(0, m.index).trim().split(' ').length <= 3 && !/[;,–—]/.test(s.slice(0, m.index))) continue;
+    best = m.index + m[0].length;
+  }
   return best;
 }
 

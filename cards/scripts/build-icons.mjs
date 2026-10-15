@@ -41,6 +41,8 @@ const USE = {
   water: 'droplet',
   transport: 'truck',
   sweet: 'candy',
+  vote: 'checkbox',
+  shield: 'shield-check',
 };
 
 const root = new URL('../', import.meta.url);

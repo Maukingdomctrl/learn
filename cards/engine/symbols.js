@@ -267,6 +267,8 @@ export const ART = Object.fromEntries(
 
 // Words that point to each picture. Earlier pictures win ties; the generic ones at the end count for less.
 const KEYWORDS = [
+  ['vote', ['elected', 'election', 'elections', 'vote', 'votes', 'voters', 'voting', 'electoral']],
+  ['shield', ['protects', 'protect', 'guardian', 'rights', 'defence']],
   ['metal', ['iron', 'steel', 'metal', 'metals', 'ore', 'aluminium', 'copper']],
   ['sweet', ['sugar', 'jaggery', 'molasses']],
   ['crop', ['sugarcane', 'crops', 'crop', 'farm', 'farms', 'fields', 'agro-based', 'agriculture', 'jute', 'tea', 'plantation', 'plantations']],
@@ -276,8 +278,8 @@ const KEYWORDS = [
   ['rifle', ['rifle', 'rifles', 'cartridge', 'cartridges', 'gun', 'guns', 'musket']],
   ['scroll', ['act', 'proclamation', 'treaty', 'constitution', 'doctrine', 'policy', 'annexed', 'promised']],
   ['sword', ['revolt', 'uprising', 'rebellion', 'rebels', 'mutiny', 'war', 'battle', 'fight', 'fought', 'attacked', 'sepoys', 'soldiers', 'army']],
-  ['person', ['leader', 'leaders', 'led', 'rani', 'begum', 'saheb', 'viceroy', 'governor-general', 'reformer']],
-  ['scales', ['caste', 'equality', 'equal', 'discrimination', 'rights', 'justice', 'untouchability', 'injustice']],
+  ['person', ['leader', 'leaders', 'led', 'rani', 'begum', 'saheb', 'viceroy', 'governor-general', 'reformer', 'president', 'speaker', 'vice-president']],
+  ['scales', ['caste', 'equality', 'equal', 'discrimination', 'justice', 'untouchability', 'injustice', 'court', 'courts', 'judges', 'judiciary', 'judge']],
   ['coal', ['coal', 'mine', 'mines', 'mining', 'minerals']],
   ['ship', ['ship', 'ships', 'shipbuilding', 'shipyard', 'titanic', 'port', 'harbour', 'harbor', 'boat', 'navy', 'vessel']],
   ['steam', ['steam', 'locomotive', 'railway', 'railways', 'train']],
