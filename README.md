@@ -79,7 +79,8 @@ The exit code is 0 when a lesson was delivered and 2 when it stopped with a limi
 | 6. Timing (§6), computed in code from the lesson data | `learn/timing.py`, `learn/sequence.py` |
 | 7. Render HTML to PDF (fixed template, §7) | `learn/rendering.py`, `learn/templates/*.j2` |
 | 7a. Draw visuals: deterministic SVG from validated specs (shape, number line, bar model, flow sequence; tables stay HTML) | `learn/visuals/` |
-| 8. Validate: D1–D8 in code, A1–A4 as separate model calls | `learn/validation.py`, `learn/calc.py`, `learn/visuals/checks.py` |
+| 7b. Visual practice: items may carry a diagram with hidden labels; code writes their answer-key values from the diagram spec | `learn/visuals/practice.py` |
+| 8. Validate: D1–D9 in code, A1–A4 as separate model calls | `learn/validation.py`, `learn/calc.py`, `learn/visuals/checks.py`, `learn/visuals/practice.py` |
 | 9. Repair: at most 2 rounds, each fully re-rendered and re-checked | `learn/pipeline.py` |
 | 10. Deliver, or stop with a limitation report | `learn/pipeline.py` |
 
@@ -111,6 +112,7 @@ Design rules the code enforces:
 | D6 | Layout (§7.2): exactly 2 student pages, 1–2 key pages, landscape A4 measured from the PDFs; no overflow; font ≥10.5 pt; lines ≥7.5 mm and ≥80 mm long; ruled lines per answer; numeric blank ≥25 mm; SOLVE space ≥35 mm; Recall box at bottom right of page 2 with banner; hint pointers; no key content in the student PDF | headless Chromium measurement + PDF inspection | Implemented and tested |
 | D7 | Answer key: one entry per item, numbering matches, reason, source page, arithmetic re-verified | code | Implemented and tested |
 | D8 | Visuals: each has a teaching purpose; valid structure (shape dimensions, number-line range and step, bar parts summing to totals, 2–6 sequence steps, table size); the drawing shows exactly the labels its spec implies; black outlines and white fill only; fixed size budget; grounding is checked on the text actually printed (caption, every string in the SVG including generated shape labels, and table headers and cells): every printed number is in the cited source or the stage's text (axis ticks, jump lengths and computed bar totals exempt); every content word in the caption and labels is in the cited source or the lesson's terms (code-written labels and table column-header words exempt); a shape's unit is used in the cited source or stage text; Discover shows the teaching plan's visual type | code | Implemented and tested. The word check is a heuristic (4+ letter words, simple plural stripping). |
+| D9 | Visual progression: practice diagrams only in Reinforce/Vary/Apply and only of a kind Discover demonstrated fully labelled; FILL_IN or SOLVE; hidden labels name real slots; Reinforce leaves at least one label; the share of hidden labels never falls from Reinforce to Vary to Apply; no diagram in Recall; each key answer equals the value read from the diagram; each hidden word is taught in Discover (text or diagram) or offered in the word bank, and each hidden number is stated on the page or produced by the key calculation | code | Implemented and tested |
 | A1 | Grounding and factual correctness | model call | Implemented. Exercised only with a scripted fake in tests; **not yet run against the real API**. |
 | A2 | Blind solve from student pages only | model call + code (all items answered, zero flags) | Same as A1 |
 | A3 | Blind-solver answers agree with the key | model call | Same as A1 |
@@ -132,7 +134,7 @@ ruff check .        # lint; rules in ruff.toml
 ruff format .       # format (CI runs ruff format --check)
 ```
 
-108 tests run in about 30 s, including real Chromium rendering. GitHub Actions runs the tests, the ruff lint and a ruff format check on every pull request and on pushes to `main` (`.github/workflows/tests.yml`); CI needs no API key. What the tests cover:
+128 tests run in about 35 s, including real Chromium rendering. GitHub Actions runs the tests, the ruff lint and a ruff format check on every pull request and on pushes to `main` (`.github/workflows/tests.yml`); CI needs no API key. What the tests cover:
 - **Timing:** the methodology's §6.5 worked example is reproduced exactly (903.3 s); word-counting rules; sketch time counted once.
 - **Arithmetic evaluator:** correct results; rejects unsafe or invalid input; allows the answer's stated rounding.
 - **Extraction:** text PDFs; page ranges; scanned pages with OCR off and with a fake OCR; non-PDF files.
@@ -156,6 +158,13 @@ ruff format .       # format (CI runs ruff format --check)
   - Discover must show the plan's visual type;
   - real Chromium draws each visual at its declared size with fonts of at least 10.5 pt;
   - the printed triangle's labels appear in the student PDF text.
+- **Visual practice (D9):**
+  - label slots and derived answers for every diagram type;
+  - the key is filled from the diagram, replacing a wrong model answer;
+  - hidden labels print as blanks in drawings and tables, and D8 accepts them;
+  - a full progression from labelled to independent passes;
+  - every D9 rule is caught (wrong stage or type, undemonstrated kind, unknown or empty slots, fully hidden in Reinforce, support increasing, key mismatch, unteachable numbers and words);
+  - the pipeline delivers with the derived key.
 - **Focused source:** neighbours stay on the same page; plan and generation prompts contain no unselected units; a lesson citing an unselected unit fails D2; the report carries the model call log and error.
 
 **What the tests do not show.**

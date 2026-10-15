@@ -38,7 +38,8 @@ extract → select + sufficiency → focus → teaching plan → generate → ti
 | Answer arithmetic | `calc.py` |
 | HTML → PDF, layout measurement | `rendering.py` + `templates/` |
 | Visual specs, deterministic SVG, D8 helpers | `visuals/specs.py`, `visuals/svg.py`, `visuals/checks.py` |
-| Checks D1–D8 and A1–A4 | `validation.py` |
+| Practice diagrams: label slots, derived answers, D9 | `visuals/practice.py` |
+| Checks D1–D9 and A1–A4 | `validation.py` |
 | UI | `web.py`, `cli.py` |
 
 ## Rules that must not regress
@@ -59,6 +60,7 @@ extract → select + sufficiency → focus → teaching plan → generate → ti
   - Each type has a fixed size budget.
   - Labels come from the spec, so the picture can't contradict its numbers.
   - Keep older tables without `kind` loading.
+- **Hidden-label answers come from the diagram spec** (`fill_visual_answers`), never from the model. Support must fade (D9): labelled in Discover, partly completed in Reinforce, no more help in Vary or Apply, no diagram in Recall.
 - **Model calls go through `LLM.json(task, system, prompt)`.** This keeps every call replaceable by the scripted fake in `tests/conftest.py`.
 - **After selection, the model sees only the focused source** (`SourceIndex.focus`). Never pass the whole PDF to planning, generation or repair. D2 rejects citations outside the focus.
 - **Output limits:** thinking counts toward `max_tokens`. Retry a cut-off response at most once, clamp to the model's limit, and log every request (`AnthropicLLM.call_log` → `report.model_calls`).

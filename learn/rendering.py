@@ -92,8 +92,8 @@ def _env() -> Environment:
     return env
 
 
-def draw_svg(v) -> Markup:
-    drawing = draw(v)
+def draw_svg(v, hidden=()) -> Markup:
+    drawing = draw(v, frozenset(hidden))
     return Markup(drawing.svg) if drawing else Markup("")
 
 

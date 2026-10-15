@@ -15,7 +15,7 @@ import html
 import re
 
 from .specs import BarModelSpec, FlowSequenceSpec, NumberLineSpec, ShapeSpec, Table
-from .svg import CHAR_MM, INK_FILLS, MAX_TICKS, bar_total, draw, flow_box_width, fmt, wrap
+from .svg import BLANK, CHAR_MM, INK_FILLS, MAX_TICKS, bar_part_text, bar_total, draw, flow_box_width, fmt, wrap
 
 MAX_HEIGHT_MM = 64.0
 MAX_TABLE_ROWS, MAX_TABLE_COLS, MAX_CELL_CHARS = 6, 5, 40
@@ -129,26 +129,37 @@ def labels(v, include_headers: bool = True) -> list[str]:
     return []
 
 
-def expected_texts(v) -> list[str]:
-    """Text the drawing must contain if it faithfully shows its spec."""
+def expected_texts(v, hidden=frozenset()) -> list[str]:
+    """Text the drawing must contain if it faithfully shows its spec (blanks where labels are hidden)."""
     if isinstance(v, ShapeSpec):
         unit = f" {v.unit}".rstrip() if v.unit else ""
-        if v.shape == "circle":
-            return [f"radius = {fmt(v.radius)}{unit}"] if v.radius else []
-        b, h = ("length", "width") if v.shape == "rectangle" else ("base", "height")
-        bv, hv = (v.length, v.width) if v.shape == "rectangle" else (v.base, v.height)
-        return [f"{b} = {fmt(bv)}{unit}", f"{h} = {fmt(hv)}{unit}"] if bv and hv else []
+        names = {"rectangle": ("length", "width"), "circle": ("radius",)}.get(v.shape, ("base", "height"))
+        out = []
+        for name in names:
+            value = getattr(v, name)
+            if value:
+                out.append(f"{name} = {BLANK}{unit}" if name in hidden else f"{name} = {fmt(value)}{unit}")
+        return out
     if isinstance(v, NumberLineSpec):
-        return [fmt(v.start), fmt(v.end)] + labels(v)
+        out = [fmt(v.start), fmt(v.end)]
+        out += [BLANK if f"point{i}" in hidden else p.label for i, p in enumerate(v.points) if p.label]
+        out += [BLANK if f"jump{i}" in hidden else j.label for i, j in enumerate(v.jumps) if j.label]
+        return out
     if isinstance(v, BarModelSpec):
         out = [b.label for b in v.bars]
-        for b in v.bars:
-            out += [f"{p.label} {fmt(p.value)}".strip() if p.label else fmt(p.value) for p in b.parts]
-            out.append(f"= {fmt(b.total if b.total is not None else bar_total(b))}")
+        for i, b in enumerate(v.bars):
+            out += [bar_part_text(part, f"bar{i}.part{k}" in hidden) for k, part in enumerate(b.parts)]
+            total = BLANK if f"bar{i}.total" in hidden else fmt(b.total if b.total is not None else bar_total(b))
+            out.append(f"= {total}")
         return out
     if isinstance(v, FlowSequenceSpec):
         max_lines = 2 if v.layout == "cycle" else 3
-        return [line for step in v.steps for line in wrap(step, _flow_chars(v))[:max_lines]]
+        return [
+            line
+            for i, step in enumerate(v.steps)
+            if f"step{i}" not in hidden
+            for line in wrap(step, _flow_chars(v))[:max_lines]
+        ]
     return []
 
 
@@ -207,13 +218,17 @@ def structure_problems(v) -> list[str]:
     return p
 
 
-def printed_texts(v, drawing) -> list[str]:
-    """Everything the visual prints: caption, then the SVG's text (or a table's headers and cells)."""
+def table_cells(v: Table, hidden=frozenset()) -> list[str]:
+    return [c for r, row in enumerate(v.rows) for k, c in enumerate(row) if f"cell{r}.{k}" not in hidden]
+
+
+def printed_texts(v, drawing, hidden=frozenset()) -> list[str]:
+    """Everything the visual prints: caption, then the SVG's text (or a table's headers and visible cells)."""
     out = [v.caption] if v.caption.strip() else []
     if drawing is not None:
         out += svg_texts(drawing.svg)
     elif isinstance(v, Table):
-        out += v.headers + [c for row in v.rows for c in row]
+        out += v.headers + table_cells(v, hidden)
     return out
 
 
@@ -232,37 +247,43 @@ def _close(n: float, pool: set[float]) -> bool:
     return any(abs(n - a) < 1e-9 for a in pool)
 
 
-def check_visual(v, source_text: str, stage_text: str, vocab_text: str) -> list[str]:
-    """All D8 problems for one visual. `source_text` = cited units, `stage_text` = the stage's printed text."""
+def check_visual(v, source_text: str, stage_text: str, vocab_text: str, hidden=frozenset()) -> list[str]:
+    """All D8 problems for one visual. `source_text` = cited units, `stage_text` = the stage's printed text.
+
+    `hidden` lists label slots printed as blanks on a practice diagram; their values are checked by D9.
+    """
+    hidden = frozenset(hidden)
     name = f"{v.kind} '{(v.caption or '')[:30]}'"
     problems = [f"{name}: {p}" for p in structure_problems(v)]
     if not v.purpose.strip():
         problems.append(f"{name}: needs a teaching purpose")
     drawing = None
     if not problems:
-        drawing = draw(v)
+        drawing = draw(v, hidden)
         if drawing is not None:
             problems += [f"{name}: {p}" for p in drawing.problems]
             fills, strokes = svg_inks(drawing.svg)
             if fills - INK_FILLS or strokes - {"#000"}:
                 problems.append(f"{name}: uses ink other than black outlines and white fill")
             shown = " | ".join(svg_texts(drawing.svg))
-            missing = [t for t in expected_texts(v) if t not in shown]
+            missing = [t for t in expected_texts(v, hidden) if t not in shown]
             if missing:
                 problems.append(f"{name}: drawing does not show {missing[:3]}")
             if drawing.height_mm > MAX_HEIGHT_MM + 1e-9:
                 problems.append(f"{name}: {drawing.height_mm:.0f} mm tall; budget {MAX_HEIGHT_MM:.0f} mm")
-    printed = printed_texts(v, drawing)
+    printed = printed_texts(v, drawing, hidden)
     allowed = numbers_in(source_text) | numbers_in(stage_text)
     exempt = exempt_numbers(v)
-    shown = set(drawn_numbers(v)) | numbers_in(" | ".join(printed))
+    from .practice import hidden_numbers  # local import: practice builds on this module
+
+    shown = (set(drawn_numbers(v)) - hidden_numbers(v, hidden)) | numbers_in(" | ".join(printed))
     ungrounded = sorted({fmt(n) for n in shown if not _close(n, allowed) and not _close(n, exempt)})
     if ungrounded:
         problems.append(f"{name}: numbers {ungrounded} are not in the cited source or the stage text")
     vocab = vocabulary(vocab_text)
     word_texts = printed
     if isinstance(v, Table):  # column headers' words are structure, not claims; their numbers are still checked
-        word_texts = ([v.caption] if v.caption.strip() else []) + [c for row in v.rows for c in row]
+        word_texts = ([v.caption] if v.caption.strip() else []) + table_cells(v, hidden)
     for text in word_texts:
         extra = sorted(content_words(text) - vocab - CODE_WORDS - STRUCTURE_WORDS)
         if extra:

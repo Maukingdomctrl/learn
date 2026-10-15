@@ -28,6 +28,7 @@ FLOW_ONE_ROW_MAX = 4  # 5-6 linear steps go on two rows of up to 3, so each box 
 BAR_ROW_MM, BAR_GAP_MM, BAR_TOP_MM = 10.0, 4.0, 3.0
 MAX_TICKS = 20
 EDGE_MM = 0.5  # keep outlines fully inside the canvas
+BLANK = "_____"  # printed in place of a hidden label; the child writes the answer on it
 INK_FILLS = {"none", "#fff", "#000"}  # white or no fill for shapes; black only for small arrowheads and dots
 
 
@@ -130,7 +131,13 @@ def _dim(value: Optional[float], unit: str) -> str:
     return f"{fmt(value)} {unit}".strip() if value is not None else "?"
 
 
-def draw_shape(v: ShapeSpec) -> Drawing:
+def _slot_text(name: str, value: Optional[float], unit: str, hidden) -> str:
+    if name in hidden:
+        return f"{name} = {BLANK} {unit}".strip()
+    return f"{name} = {_dim(value, unit)}"
+
+
+def draw_shape(v: ShapeSpec, hidden=frozenset()) -> Drawing:
     w, h = SHAPE_WIDTH_MM, HEIGHT_MM["shape"]
     c = _Canvas(w, h, v.caption or f"{v.shape} diagram")
     problems: list[str] = []
@@ -139,7 +146,7 @@ def draw_shape(v: ShapeSpec) -> Drawing:
     yb = top + ah
 
     if v.shape == "circle":
-        label = f"radius = {_dim(v.radius, v.unit)}"
+        label = _slot_text("radius", v.radius, v.unit, hidden)
         aw = w - left - (4 + text_width_mm(label))
         r = min(aw, ah) / 2
         cx, cy = left + aw / 2, top + ah / 2 + 1
@@ -158,9 +165,9 @@ def draw_shape(v: ShapeSpec) -> Drawing:
     if not b or not ht or b <= 0 or ht <= 0:
         return Drawing(c.svg(), w, h, [f"{v.shape} needs positive {b_name} and {h_name}"])
 
-    h_label = f"{h_name} = {_dim(ht, v.unit)}"
+    h_label = _slot_text(h_name, ht, v.unit, hidden)
     aw = w - left - (4 + text_width_mm(h_label))  # leave exactly enough room for the side label
-    if aw < 20:
+    if aw < 18:
         return Drawing(c.svg(), w, h, [f"{h_name} label is too long to fit beside the shape"])
     ratio = ht / b
     drawn = min(max(ratio, 0.25), 1.4)  # keep extreme shapes readable; say so when not to scale
@@ -180,7 +187,9 @@ def draw_shape(v: ShapeSpec) -> Drawing:
         c.rect(x0, yb - dh, db, dh, fill="#fff")
         foot_x, top_y, right_edge = None, yb - dh, x0 + db
 
-    c.text(x0 + db / 2, yb + 6.5, f"{b_name} = {_dim(b, v.unit)}")
+    b_label = _slot_text(b_name, b, v.unit, hidden)
+    half = text_width_mm(b_label) / 2 + EDGE_MM
+    c.text(min(max(x0 + db / 2, half), w - half), yb + 6.5, b_label)  # centred under the base, kept on the canvas
     label_x = right_edge + 3
     if foot_x is not None:
         c.line(foot_x, top_y, foot_x, yb, dashed=True)  # perpendicular height
@@ -195,7 +204,7 @@ def draw_shape(v: ShapeSpec) -> Drawing:
 
 
 # ---------------------------------------------------------------- number line
-def draw_number_line(v: NumberLineSpec) -> Drawing:
+def draw_number_line(v: NumberLineSpec, hidden=frozenset()) -> Drawing:
     w, h = WIDTH_MM, HEIGHT_MM["number_line"]
     c = _Canvas(w, h, v.caption or "number line")
     problems: list[str] = []
@@ -223,18 +232,18 @@ def draw_number_line(v: NumberLineSpec) -> Drawing:
         c.line(xi, y - 1.6, xi, y + 1.6)
         if i % every == 0 or i == n:
             c.text(xi, y + 6.5, t)
-    for j in v.jumps:
+    for k, j in enumerate(v.jumps):
         x1, x2 = x(j.start), x(j.end)
         mid = (x1 + x2) / 2
         c.path(["M", x1, y - 1, "Q", mid, y - 13, x2, y - 1.2])
         c.arrowhead(x2, y - 1.2, math.atan2(11.8, x2 - mid))  # tangent of the curve at its end
         if j.label:
-            c.text(mid, y - 8.5, j.label)
-    for pt in v.points:
+            c.text(mid, y - 8.5, BLANK if f"jump{k}" in hidden else j.label)
+    for k, pt in enumerate(v.points):
         xp = x(pt.value)
         c.circle(xp, y, 1.1, fill="#000")
         if pt.label:
-            c.text(xp, y - 3, pt.label)
+            c.text(xp, y - 3, BLANK if f"point{k}" in hidden else pt.label)
     return Drawing(c.svg(), w, h, problems)
 
 
@@ -243,7 +252,12 @@ def bar_total(bar) -> float:
     return sum(p.value for p in bar.parts)
 
 
-def draw_bar_model(v: BarModelSpec) -> Drawing:
+def bar_part_text(part, hide: bool) -> str:
+    value = BLANK if hide else fmt(part.value)
+    return f"{part.label} {value}".strip() if part.label else value
+
+
+def draw_bar_model(v: BarModelSpec, hidden=frozenset()) -> Drawing:
     n = len(v.bars)
     w = WIDTH_MM
     h = BAR_TOP_MM + n * (BAR_ROW_MM + BAR_GAP_MM)
@@ -261,16 +275,17 @@ def draw_bar_model(v: BarModelSpec) -> Drawing:
         if text_width_mm(bar.label) > label_w - 2:
             problems.append(f"bar label '{bar.label}' is too long")
         x = label_w
-        for part in bar.parts:
+        for p_i, part in enumerate(bar.parts):
             pw = part.value * scale
             c.rect(x, y, pw, BAR_ROW_MM, fill="#fff")  # parts are told apart by dividing lines and labels
-            t = f"{part.label} {fmt(part.value)}".strip() if part.label else fmt(part.value)
+            t = bar_part_text(part, f"bar{i}.part{p_i}" in hidden)
             c.text(x + pw / 2, y + BAR_ROW_MM / 2 + 1.5, t)
             if text_width_mm(t) + 1 > pw:
                 problems.append(f"text '{t}' does not fit inside its part of the bar")
             x += pw
         total = bar.total if bar.total is not None else bar_total(bar)
-        c.text(x + 2, y + BAR_ROW_MM / 2 + 1.5, f"= {fmt(total)}", anchor="start")
+        total_text = BLANK if f"bar{i}.total" in hidden else fmt(total)
+        c.text(x + 2, y + BAR_ROW_MM / 2 + 1.5, f"= {total_text}", anchor="start")
     return Drawing(c.svg(), w, h, problems)
 
 
@@ -296,7 +311,12 @@ def flow_box_width(v: FlowSequenceSpec) -> float:
     return (WIDTH_MM - 2 * EDGE_MM - (per_row - 1) * 7.0) / per_row
 
 
-def draw_flow(v: FlowSequenceSpec) -> Drawing:
+def _blank_box(c: _Canvas, x: float, y: float, box_w: float, box_h: float):
+    """A hidden step: an empty box with a writing line."""
+    c.line(x + 3, y + box_h - 5, x + box_w - 3, y + box_h - 5, width=0.25)
+
+
+def draw_flow(v: FlowSequenceSpec, hidden=frozenset()) -> Drawing:
     n = len(v.steps)
     w = WIDTH_MM
     problems: list[str] = []
@@ -311,7 +331,10 @@ def draw_flow(v: FlowSequenceSpec) -> Drawing:
             row, col = divmod(i, per_row)
             x, y = EDGE_MM + col * (box_w + gap), 2.0 + row * (box_h + row_gap)
             c.rect(x, y, box_w, box_h, fill="#fff")
-            problems += _box_text(c, x + box_w / 2, y + box_h / 2, box_w, step, 3, i + 1)
+            if f"step{i}" in hidden:
+                _blank_box(c, x, y, box_w, box_h)
+            else:
+                problems += _box_text(c, x + box_w / 2, y + box_h / 2, box_w, step, 3, i + 1)
             if i == n - 1:
                 continue
             if col < per_row - 1:
@@ -338,23 +361,30 @@ def draw_flow(v: FlowSequenceSpec) -> Drawing:
     ]
     for i, (bx, by) in enumerate(centres):
         c.rect(bx - box_w / 2, by - box_h / 2, box_w, box_h, fill="#fff")
-        problems += _box_text(c, bx, by, box_w, v.steps[i], 2, i + 1)
+        if f"step{i}" in hidden:
+            _blank_box(c, bx - box_w / 2, by - box_h / 2, box_w, box_h)
+        else:
+            problems += _box_text(c, bx, by, box_w, v.steps[i], 2, i + 1)
     for i in range(n):
         (x1, y1), (x2, y2) = centres[i], centres[(i + 1) % n]
         c.arrow(x1 + (x2 - x1) * 0.32, y1 + (y2 - y1) * 0.32, x1 + (x2 - x1) * 0.68, y1 + (y2 - y1) * 0.68)
     return Drawing(c.svg(), w, h, problems)
 
 
-def draw(v) -> Optional[Drawing]:
-    """SVG drawing for a visual spec, or None for tables (printed as HTML tables)."""
+def draw(v, hidden=frozenset()) -> Optional[Drawing]:
+    """SVG drawing for a visual spec, or None for tables (printed as HTML tables).
+
+    `hidden` names label slots (see visuals/practice.py) printed as blanks for the child to complete.
+    """
+    hidden = frozenset(hidden)
     if isinstance(v, Table):
         return None
     if isinstance(v, ShapeSpec):
-        return draw_shape(v)
+        return draw_shape(v, hidden)
     if isinstance(v, NumberLineSpec):
-        return draw_number_line(v)
+        return draw_number_line(v, hidden)
     if isinstance(v, BarModelSpec):
-        return draw_bar_model(v)
+        return draw_bar_model(v, hidden)
     if isinstance(v, FlowSequenceSpec):
-        return draw_flow(v)
+        return draw_flow(v, hidden)
     raise TypeError(f"unknown visual type {type(v).__name__}")

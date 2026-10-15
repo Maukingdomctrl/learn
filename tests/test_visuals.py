@@ -259,3 +259,13 @@ def test_generated_labels_and_axis_ticks_are_not_claims():
     assert check_visual(shape, "rectangle length 12 cm width 4 cm", "", "rectangle") == []
     line = NumberLineSpec(start=0, end=10, step=1, points=[NumberPoint(value=3)], purpose="p")
     assert check_visual(line, "3", "", "") == []
+
+
+def test_labels_stay_inside_the_canvas_for_narrow_shapes():
+    tall = ShapeSpec(shape="triangle", base=6, height=8, unit="cm", purpose="p")
+    for hidden in (frozenset(), frozenset({"height"})):
+        d = draw(tall, hidden)
+        xs = [float(x) for x in re.findall(r'<text x="([\d.]+)"[^>]*text-anchor="middle"', d.svg)]
+        texts = [t for t in svg_texts(d.svg) if t.startswith("base")]
+        half_px = len(texts[0]) * 0.6 * 14.7 / 2
+        assert all(x - half_px >= 0 for x in xs)

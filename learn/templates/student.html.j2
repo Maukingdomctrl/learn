@@ -69,10 +69,11 @@
   {%- elif t == "SORT" -%}
   <div><span class="num">{{ item.number }}.</span> <span class="blank sort-blank" style="width:12mm"></span> {{ item.prompt }}</div>
   {%- elif t == "FILL_IN" or t == "COMPLETE_STEPS" -%}
-  <div><span class="num">{{ item.number }}.</span> {{ item.prompt | e | replace_blanks(blank_mm[item.number]) }}{% if not item.prompt is has_blank %} <span class="blank" style="width:{{ blank_mm[item.number] }}mm"></span>{% endif %}{% if item.unit %} {{ item.unit }}{% endif %}</div>
+  <div><span class="num">{{ item.number }}.</span> {{ item.prompt | e | replace_blanks(blank_mm[item.number]) }}{% if not item.prompt is has_blank and not item.visual %} <span class="blank" style="width:{{ blank_mm[item.number] }}mm"></span>{% endif %}{% if item.unit %} {{ item.unit }}{% endif %}</div>
   {%- else -%}
   <div><span class="num">{{ item.number }}.</span> {{ item.prompt }}</div>
   {%- endif -%}
+  {%- if item.visual -%}{{ visual(item.visual, item.hidden) }}{%- endif -%}
 
   {%- if t == "ANNOTATE" -%}
   <div class="targets">{% for o in item.options %}<span>{{ o }}</span>{% endfor %}</div>
@@ -137,16 +138,16 @@
 </section>
 {%- endmacro -%}
 
-{%- macro visual(v) -%}
-{%- if v.kind == "table" -%}{{ table(v) }}{%- else -%}
-<figure class="visual" data-kind="{{ v.kind }}">{% if v.caption %}<figcaption class="caption">{{ v.caption }}</figcaption>{% endif %}{{ draw_svg(v) }}</figure>
+{%- macro visual(v, hidden=[]) -%}
+{%- if v.kind == "table" -%}{{ table(v, hidden) }}{%- else -%}
+<figure class="visual" data-kind="{{ v.kind }}">{% if v.caption %}<figcaption class="caption">{{ v.caption }}</figcaption>{% endif %}{{ draw_svg(v, hidden) }}</figure>
 {%- endif -%}
 {%- endmacro -%}
 
-{%- macro table(v) -%}
+{%- macro table(v, hidden=[]) -%}
 <table class="visual">{% if v.caption %}<caption class="caption">{{ v.caption }}</caption>{% endif %}
   {% if v.headers %}<tr>{% for h in v.headers %}<th>{{ h }}</th>{% endfor %}</tr>{% endif %}
-  {% for r in v.rows %}<tr>{% for c in r %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}
+  {% for r in v.rows %}{% set ri = loop.index0 %}<tr>{% for c in r %}{% if ("cell%d.%d" % (ri, loop.index0)) in hidden %}<td><span class="blank" style="width:25mm"></span></td>{% else %}<td>{{ c }}</td>{% endif %}{% endfor %}</tr>{% endfor %}
 </table>
 {%- endmacro -%}
 
