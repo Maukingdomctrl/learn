@@ -76,6 +76,18 @@ Mixed rounds shuffle only single-fact cards. Whole-topic cards (lists, timelines
 
 `sample/history-sheet.pdf` is a synthetic example built by `test/fixtures/make_sample.py`. These rules have not yet been tried on a real school history sheet.
 
+## People
+
+A heading is treated as a **person** when its description says what they were (reformer, leader, scientist, king…), gives life years ("(1772–1833)"), or the name starts with a title (Raja, Rani, Swami, Mahatma…). A person's deck gets:
+
+- **"Who am I?" riddles.** The heading's description ("Social reformer (1772–1833)") and facts with nothing bold, with **every part of the name hidden**: "Roy" as well as "Ram Mohan Roy". A check blocks any riddle that shows part of the name.
+- **"What problem were they solving?"** For sentences with *against / to stop / to end / to improve / to abolish…*, the card hides what they worked against or for ("Fought against _____ discrimination").
+- The usual fill-ins, why cards and a final "Who am I?" picture card.
+
+Across the sheet, people with life years get a **"Who came first?"** card: names scrambled on the front, birth order with years on the back. The "who did what?" card speaks of causes ("Every reformer had their own cause").
+
+`sample/people-sheet.pdf` (three 19th-century reformers) is a synthetic example. Not yet tried on a real school sheet.
+
 ## Name fun facts
 
 Some card backs carry a small footer such as **Fun fact:** "-ham" is an old English word for home (Birmingham). Names are among the hardest things to remember, and knowing what a name means makes it stick.
@@ -115,7 +127,7 @@ npm ci
 npm test        # node --test; uses the sample PDF and hand-made lines, no network
 ```
 
-Both sample PDFs in `sample/` are synthetic. Rebuild them with `python cards/test/fixtures/make_sample.py` from the repo root.
+The sample PDFs in `sample/` are synthetic. Rebuild them with `python cards/test/fixtures/make_sample.py` from the repo root.
 
 Passing tests show the rules work as designed. They say nothing about whether children learn from the cards.
 

@@ -145,3 +145,71 @@ function slug(s) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
+
+// ---------- people ----------
+
+export const PURPOSE_ASK = 'What problem were they solving?';
+
+const PURPOSE =
+  /\b(against|to (?:stop|end|abolish|fight|remove|ban|oppose|improve|spread|promote|educate|reform|free|help|protect))\s/i;
+
+/**
+ * What a person was working for or against, in the sheet's own words:
+ * "Fought against caste discrimination" -> connector "against", answer "caste discrimination".
+ * The answer runs to the end of its clause.
+ */
+export function purposeOf(text) {
+  const m = text.match(PURPOSE);
+  if (!m) return null;
+  const rest = text.slice(m.index + m[0].length);
+  const end = rest.search(/[,;:.(]|\s[–—]\s/);
+  const answer = (end === -1 ? rest : rest.slice(0, end)).trim();
+  if (!answer) return null;
+  return { before: text.slice(0, m.index).trim(), connector: m[1], answer };
+}
+
+/** "Campaigned against _____": a card about the problem a person took on. */
+export function purposeCard(fact, entity) {
+  const p = purposeOf(fact.text);
+  if (!p) return null;
+  const lead = p.before.split(' ').filter(Boolean);
+  const shown = lead.length > 7 ? `… ${lead.slice(-7).join(' ')}` : p.before;
+  return {
+    id: fact.id,
+    entity,
+    kind: 'why',
+    clue: `${shown ? shown + ' ' : ''}${p.connector} ${BLANK}`,
+    ask: PURPOSE_ASK,
+    answer: p.answer,
+    exact: fact.text,
+    page: fact.page,
+  };
+}
+
+const LIFE = /\(\s*(?:c\.\s*)?(\d{3,4})\s*[–—-]\s*(\d{3,4})\s*\)/;
+
+/**
+ * "Who came first?": two or more people with life years in their headings. The front lists the names
+ * in a fixed scrambled order (alphabetical); the back lists name and years in birth order.
+ */
+export function peopleTimelineCard(entities) {
+  const people = entities
+    .filter((e) => e.type === 'person')
+    .map((e) => ({ e, m: e.descriptor.match(LIFE) }))
+    .filter((x) => x.m);
+  if (people.length < 2) return null;
+  const sorted = [...people].sort((a, b) => Number(a.m[1]) - Number(b.m[1]));
+  return {
+    id: 'people-timeline',
+    entity: 'Who came first?',
+    kind: 'timeline',
+    clue: 'Who was born first?',
+    ask: 'Put them in order.',
+    answer: 'In order',
+    exact: '',
+    frontLines: people.map((x) => x.e.display).sort((a, b) => a.localeCompare(b)),
+    lines: sorted.map((x) => `${x.e.display} … ${x.m[0]}`),
+    page: people[0].e.page,
+    symbol: 'calendar',
+  };
+}

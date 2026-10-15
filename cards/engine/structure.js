@@ -3,7 +3,8 @@
 
 const BULLET = /^[•●▪◦‣*–-]\s+/;
 const ENTITY_HEADING = /^(?:\d+[.)]\s+)?([A-Z][A-Z .'’&]*[A-Z])\s*[–—-]\s*(.*[a-z].*)$/;
-const SECTION_HEADING = /^\d+[.)]\s+[A-Z][A-Z0-9 &,'’:–—-]+$/;
+// "2. COMPARATIVE TABLE" or an unnumbered all-capitals line of two or more words ("QUICK COMPARISON").
+const SECTION_HEADING = /^(?:\d+[.)]\s+[A-Z][A-Z0-9 &,'’:–—-]+|[A-Z][A-Z&,'’-]+(?:\s+[A-Z0-9&,'’–—-]+)+)$/;
 const LABEL = /^[A-Z][A-Z ]{2,}:/;
 const SUBHEADING = /^[A-Z][A-Za-z ]{2,30}:$/; // "Causes:" inside a topic: labels the bullets under it
 const FACT_LABEL = /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact)\s*:/i;
@@ -39,7 +40,7 @@ export function parseSheet(lines) {
         descriptor: heading[2].trim(),
         page: line.page,
         bullets: [],
-        type: 'place',
+        type: isPerson(heading[1], heading[2]) ? 'person' : 'place',
       };
       entities.push(current);
       continue;
@@ -137,7 +138,20 @@ function pickTitle(lines) {
   return first.find((l) => l.size === maxSize).text;
 }
 
+// A heading is about a person when its description says what they were ("Social reformer"),
+// gives life years ("(1772–1833)"), or the name starts with a title ("RAJA", "SWAMI").
+const PERSON_WORDS =
+  /\b(reformer|leader|scientist|king|queen|emperor|empress|ruler|poet|writer|author|founder|freedom fighter|saint|philosopher|inventor|president|prime minister|general|educationist|thinker|explorer|governor|viceroy|sultan|nawab)s?\b/i;
+const LIFE_YEARS = /\(\s*(?:c\.\s*)?\d{3,4}\s*[–—-]\s*\d{3,4}\s*\)/;
+const TITLES = /^(RAJA|RANI|SWAMI|MAHATMA|SIR|LORD|DR|BEGUM|MAHARAJA|MAHARANI|SANT|GURU|EMPEROR|QUEEN|KING)\b/;
+
+export function isPerson(name, descriptor) {
+  return PERSON_WORDS.test(descriptor) || LIFE_YEARS.test(descriptor) || TITLES.test(name);
+}
+
 const KIND_WORDS = {
+  reformers: 'reformer',
+  personalities: 'person',
   cities: 'city',
   countries: 'country',
   rivers: 'river',

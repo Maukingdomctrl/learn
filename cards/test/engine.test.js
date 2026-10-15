@@ -8,12 +8,13 @@ import { fileURLToPath } from 'node:url';
 
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
-import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint } from '../engine/cards.js';
+import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
+import { purposeOf } from '../engine/events.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
 import { backHtml, esc, frontHtml } from '../engine/render.js';
-import { dropRunningHeaders, parseSheet, splitFacts } from '../engine/structure.js';
+import { dropRunningHeaders, isPerson, parseSheet, splitFacts } from '../engine/structure.js';
 import { nameTip, thingFact } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
 
@@ -523,4 +524,96 @@ test('history sketches: revolt, acts, rifles and leaders get their own pictures'
   assert.equal(pickSymbol('Nana Saheb led the revolt at Kanpur', 'Nana Saheb'), 'person');
   assert.equal(pickSymbol('sepoys at Meerut rose in revolt', 'Meerut'), 'sword');
   assert.equal(pickSymbol('At the heart of the Industrial Revolution', 'Industrial Revolution'), 'factory');
+});
+
+// ---------- people (reformers sample) ----------
+
+async function people() {
+  const data = new Uint8Array(readFileSync(here('../sample/people-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('people sample: person headings are recognised; every fact has a card; all checks pass', async () => {
+  const { sheet, built, check } = await people();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Raja Ram Mohan Roy', 'person'],
+      ['Ishwar Chandra Vidyasagar', 'person'],
+      ['Jyotirao Phule', 'person'],
+    ],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('a heading is a person by description, life years or title; cities are not', () => {
+  assert.ok(isPerson('JYOTIRAO PHULE', 'Social reformer (1827–1890)'));
+  assert.ok(isPerson('SOMEONE', 'born here (1900–1950)'));
+  assert.ok(isPerson('RANI LAKSHMIBAI', 'of Jhansi'));
+  assert.ok(!isPerson('BELFAST', 'Capital of Northern Ireland'));
+  assert.ok(!isPerson('BIRMINGHAM', 'West Midlands, England'));
+});
+
+test('people get "Who am I?" riddles and cards about the problem they took on', async () => {
+  const { built } = await people();
+  const roy = built.decks[0].cards;
+  assert.equal(roy[0].kind, 'hook');
+  assert.equal(roy[0].ask, 'Who am I?');
+  assert.equal(roy[0].clue, 'Social reformer (1772–1833)');
+  const sati = roy.find((c) => c.answer === 'Sati');
+  assert.equal(sati.ask, 'What problem were they solving?');
+  const phule = built.decks[2].cards.find((c) => c.answer === 'caste');
+  assert.equal(phule.clue, `Fought against ${BLANK} discrimination`);
+  assert.equal(roy.at(-1).ask, 'Who am I?');
+});
+
+test('purposeOf reads what someone worked for or against, up to the end of the clause', () => {
+  assert.deepEqual(purposeOf('Campaigned against Sati, which was banned in 1829.'), {
+    before: 'Campaigned',
+    connector: 'against',
+    answer: 'Sati',
+  });
+  assert.equal(purposeOf('Worked to improve the lives of widows.').answer, 'the lives of widows');
+  assert.equal(purposeOf('Founded the Brahmo Samaj in 1828.'), null);
+});
+
+test('riddles hide every part of a person\'s name', () => {
+  assert.deepEqual(nameParts('Raja Ram Mohan Roy').slice(0, 2), ['Ram Mohan Roy', 'Ram Mohan']);
+  assert.ok(nameParts('Raja Ram Mohan Roy').includes('Roy'));
+  assert.ok(!nameParts('Raja Ram Mohan Roy').includes('Raja'), 'titles alone are not the name');
+  assert.equal(hideNames('Roy founded it', nameParts('Raja Ram Mohan Roy')), `${BLANK} founded it`);
+});
+
+test('check fails when a person riddle shows part of the name', async () => {
+  const { sheet, built } = await people();
+  built.decks[0].cards[0].clue = 'Roy was a social reformer';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /shows part of the name/);
+});
+
+test('"Who came first?" orders the people by birth year with their years on the back', async () => {
+  const { built } = await people();
+  const t = built.decks.find((d) => d.entity === 'Who came first?').cards[0];
+  assert.deepEqual(t.frontLines, ['Ishwar Chandra Vidyasagar', 'Jyotirao Phule', 'Raja Ram Mohan Roy']);
+  assert.deepEqual(t.lines, [
+    'Raja Ram Mohan Roy … (1772–1833)',
+    'Ishwar Chandra Vidyasagar … (1820–1891)',
+    'Jyotirao Phule … (1827–1890)',
+  ]);
+});
+
+test('the "who did what?" card speaks of causes for people and avoids a row of identical pictures', async () => {
+  const { built } = await people();
+  const c = built.decks.find((d) => d.entity === 'All reformers').cards[0];
+  assert.equal(c.clue, 'Every reformer had their own cause.');
+  assert.ok(new Set(c.symbols).size > 1, c.symbols.join('+'));
+});
+
+test('an unnumbered all-capitals heading ends the bullet above it', async () => {
+  const { sheet } = await people();
+  const phule = sheet.entities.find((e) => e.display === 'Jyotirao Phule');
+  assert.equal(phule.facts.at(-1).text, 'Founded the Satyashodhak Samaj in 1873.');
 });

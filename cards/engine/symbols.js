@@ -44,6 +44,11 @@ export const ART = {
       <path d="M26 56 H122 V64 H66 L50 78 H28 L36 64 H26 Z" fill="${P}"/><path d="M74 64 Q76 72 84 72" stroke-width="1.8"/>
       ${rounds}`;
   },
+  scales() {
+    return `<path d="M85 20 V92 M62 96 H108" /><circle cx="85" cy="18" r="3.5" fill="currentColor"/>
+      <path d="M44 32 H126" /><path d="M44 32 L30 62 M44 32 L58 62 M126 32 L112 62 M126 32 L140 62" stroke-width="1.5"/>
+      <path d="M26 62 H62 Q44 80 26 62 Z" fill="${P}"/><path d="M108 62 H144 Q126 80 108 62 Z" fill="${P}"/>`;
+  },
   person() {
     return `<circle cx="85" cy="36" r="16" fill="${P}"/>
       <path d="M50 98 Q50 60 85 60 Q120 60 120 98 Z" fill="${P}"/><path d="M85 60 L78 74 L85 98 L92 74 Z" stroke-width="1.4"/>`;
@@ -250,7 +255,8 @@ const KEYWORDS = [
   ['rifle', ['rifle', 'rifles', 'cartridge', 'cartridges', 'gun', 'guns', 'musket']],
   ['scroll', ['act', 'proclamation', 'treaty', 'constitution', 'doctrine', 'policy', 'annexed', 'promised']],
   ['sword', ['revolt', 'uprising', 'rebellion', 'rebels', 'mutiny', 'war', 'battle', 'fight', 'fought', 'attacked', 'sepoys', 'soldiers', 'army']],
-  ['person', ['leader', 'leaders', 'led', 'rani', 'begum', 'saheb', 'viceroy', 'governor-general']],
+  ['person', ['leader', 'leaders', 'led', 'rani', 'begum', 'saheb', 'viceroy', 'governor-general', 'reformer']],
+  ['scales', ['caste', 'equality', 'equal', 'discrimination', 'rights', 'justice', 'untouchability', 'injustice']],
   ['coal', ['coal', 'mine', 'mines', 'mining', 'minerals']],
   ['ship', ['ship', 'ships', 'shipbuilding', 'shipyard', 'titanic', 'port', 'harbour', 'harbor', 'boat', 'navy', 'vessel']],
   ['steam', ['steam', 'locomotive', 'railway', 'railways', 'train']],
@@ -266,7 +272,7 @@ const KEYWORDS = [
   ['castle', ['castle', 'fort', 'medieval', 'architecture', 'georgian', 'tenements', 'palace', 'old town']],
   ['bulb', ['innovation', 'invention', 'inventions', 'invented', 'science', 'scientific', 'ideas', 'discovery', 'advances']],
   ['camera', ['tourism', 'tourist', 'tourists', 'visitors', 'travel']],
-  ['book', ['education', 'university', 'school', 'schools', 'college', 'learning']],
+  ['book', ['education', 'university', 'school', 'schools', 'college', 'learning', 'educationist', 'newspaper', 'newspapers', 'journal', 'wrote', 'writings']],
   ['sport', ['sport', 'sports', 'sporting', 'football', 'cricket']],
   ['market', ['market', 'markets', 'shop', 'shops', 'trade', 'trading']],
   ['gear', ['engine', 'economic', 'economy', 'machine', 'machines', 'technology']],

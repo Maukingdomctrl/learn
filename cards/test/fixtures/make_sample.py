@@ -1,7 +1,8 @@
 """Builds the sample sheets in cards/sample/, in the same layout as the UK cities notes:
 
 - sample-sheet.pdf: places (two cities);
-- history-sheet.pdf: an event (the 1857 uprising) with causes, course, leaders and results.
+- history-sheet.pdf: an event (the 1857 uprising) with causes, course, leaders and results;
+- people-sheet.pdf: three social reformers, each with life years and a summary line.
 
 
 Words wrapped in **double stars** are printed bold, the way a teacher marks the key words.
@@ -81,6 +82,32 @@ HISTORY = [
 ]
 
 
+PEOPLE = [
+    [
+        ("title", "SOCIAL REFORMERS OF THE 19TH CENTURY"),
+        ("sub", "Class 8 History | Sample notes"),
+        ("heading", "1. RAJA RAM MOHAN ROY – Social reformer (1772–1833)"),
+        ("bullet", "Founded the **Brahmo Samaj** in 1828."),
+        ("bullet", "Campaigned against **Sati**, which was banned in 1829."),
+        ("bullet", "Supported **Western education** and English schools."),
+        ("bullet", "Roy is called the **Father of the Indian Renaissance**."),
+        ("heading", "2. ISHWAR CHANDRA VIDYASAGAR – Educationist and reformer (1820–1891)"),
+        ("bullet", "Worked to improve the lives of **widows**."),
+        ("bullet", "His efforts led to the **Widow Remarriage Act** of 1856."),
+        ("bullet", "Opened many **schools for girls** in Bengal."),
+        ("bullet", "Vidyasagar was a title meaning **ocean of learning**."),
+        ("heading", "3. JYOTIRAO PHULE – Social reformer (1827–1890)"),
+        ("bullet", "Fought against **caste** discrimination."),
+        ("bullet", "Started a school for girls in **Pune** in 1848 with his wife **Savitribai Phule**."),
+        ("bullet", "Founded the **Satyashodhak Samaj** in 1873."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Raja Ram Mohan Roy = Brahmo Samaj + end of Sati"),
+        ("bullet", "Ishwar Chandra Vidyasagar = Widows + girls' schools"),
+        ("bullet", "Jyotirao Phule = Against caste + Satyashodhak Samaj"),
+    ],
+]
+
+
 def runs(text):
     """Splits '**bold**' markup into (text, bold) runs."""
     parts = re.split(r"(\*\*.+?\*\*)", text)
@@ -132,6 +159,7 @@ def build(pages, out, header):
 def main():
     build(PAGES, SAMPLES / "sample-sheet.pdf", "Grade 8 Social Studies | Sample sheet")
     build(HISTORY, SAMPLES / "history-sheet.pdf", "Class 8 History | Sample sheet")
+    build(PEOPLE, SAMPLES / "people-sheet.pdf", "Class 8 History | Reformers sample")
 
 
 if __name__ == "__main__":

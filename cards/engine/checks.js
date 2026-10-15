@@ -1,6 +1,6 @@
 // Checks run on every deck before it can be shown or printed. A failed check blocks printing.
 
-import { BLANK } from './cards.js';
+import { BLANK, nameParts } from './cards.js';
 
 // Cards about a whole topic or sheet: their front is a fixed prompt, their sheet words are in lines/frontLines.
 const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list']);
@@ -73,6 +73,13 @@ export function checkDecks(sheet, built) {
     }
     // A hint is the answer's own shape: same length, and every letter it shows is the answer's letter there.
     if (c.hint && !hintFits(c.hint, c.answer)) problems.push(`${c.entity}: the hint "${c.hint}" does not match "${c.answer}".`);
+    // A riddle about a person must not show any part of their name ("Roy" in "Ram Mohan Roy").
+    const subject = sheet.entities.find((e) => e.display === c.entity);
+    if (subject?.type === 'person' && (c.kind === 'who' || c.kind === 'hook')) {
+      for (const part of nameParts(subject.display)) {
+        if (new RegExp(`\\b${part}\\b`, 'i').test(c.clue)) problems.push(`${c.entity}: the riddle shows part of the name: "${c.clue}".`);
+      }
+    }
     // A 'which place?' clue must not contain the answer.
     if ((c.kind === 'who' || c.kind === 'hook') && norm(c.clue).includes(norm(c.answer))) {
       problems.push(`${c.entity}: the clue gives the answer away: "${c.clue}".`);
