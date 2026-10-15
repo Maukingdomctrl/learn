@@ -200,3 +200,62 @@ def test_column_headers_and_jump_lengths_are_not_grounding_failures():
     assert check_visual(table, SOURCE, "", SOURCE) == []
     jump = NumberLineSpec(start=0, end=10, step=1, jumps=[NumberJump(start=3, end=7, label="+4")], purpose="p")
     assert check_visual(jump, "3 7", "", "") == []
+
+
+# ---------------------------------------------------------------- printed-text grounding (captions, units, headers)
+CARDIFF = "Cardiff was a small town; it became a major coal port; made a city in 1905; capital of Wales in 1955."
+
+
+def test_unsupported_unit_fails():
+    spec = ShapeSpec(shape="triangle", base=8, height=5, unit="km", purpose="see the height")
+    problems = check_visual(spec, "base 8 cm, height 5 cm", "", "base height")
+    assert any("unit 'km'" in p for p in problems)
+    ok = ShapeSpec(shape="triangle", base=8, height=5, unit="cm", purpose="see the height")
+    assert check_visual(ok, "base 8 cm, height 5 cm", "", "base height") == []
+
+
+def test_caption_claims_are_grounded():
+    steps = ["Small town", "Major coal port", "City (1905)", "Capital of Wales (1955)"]
+    wrong_year = FlowSequenceSpec(caption="Cardiff became capital in 1956", steps=steps, purpose="p")
+    assert any("numbers ['1956']" in p for p in check_visual(wrong_year, CARDIFF, "", CARDIFF))
+    invented = FlowSequenceSpec(caption="Cardiff's railway boom", steps=steps, purpose="p")
+    assert any("railway" in p for p in check_visual(invented, CARDIFF, "", CARDIFF))
+    fair = FlowSequenceSpec(caption="Timeline of Cardiff, capital of Wales", steps=steps, purpose="p")
+    assert check_visual(fair, CARDIFF, "", CARDIFF) == []
+
+
+def test_numbers_in_table_headers_are_checked():
+    src = "Belfast population about 286,000 (2011 census)."
+    wrong = Table(headers=["City", "Population in 2021"], rows=[["Belfast", "about 286,000"]], purpose="p")
+    assert any("numbers ['2021']" in p for p in check_visual(wrong, src, "", src))
+    right = Table(headers=["City", "Population (2011)"], rows=[["Belfast", "about 286,000"]], purpose="p")
+    assert check_visual(right, src, "", src) == []
+
+
+def test_existing_tables_without_kind_and_with_wordy_headers_still_pass():
+    stage = Stage.model_validate(
+        {
+            "stage": "Discover",
+            "activity_type": "CHOOSE",
+            "instruction": "x",
+            "items": [],
+            "visuals": [
+                {
+                    "caption": "Capitals",
+                    "purpose": "compare",
+                    "headers": ["City", "Status"],
+                    "rows": [["Cardiff", "Capital of Wales"]],
+                }
+            ],
+        }
+    )
+    assert isinstance(stage.visuals[0], Table)
+    assert check_visual(stage.visuals[0], CARDIFF + " capitals", "", CARDIFF + " capitals") == []
+
+
+def test_generated_labels_and_axis_ticks_are_not_claims():
+    # "base"/"height" are written by code; tick labels 0..10 are the axis, not source claims.
+    shape = ShapeSpec(shape="rectangle", length=12, width=4, unit="cm", caption="Rectangle", purpose="p")
+    assert check_visual(shape, "rectangle length 12 cm width 4 cm", "", "rectangle") == []
+    line = NumberLineSpec(start=0, end=10, step=1, points=[NumberPoint(value=3)], purpose="p")
+    assert check_visual(line, "3", "", "") == []
