@@ -19,7 +19,7 @@ python -m learn.cli some.pdf --standard 7    # one run (needs ANTHROPIC_API_KEY)
 uvicorn learn.web:app          # local web UI
 ```
 
-In Claude Code cloud sessions, `.claude/hooks/session-start.sh` does the setup: it creates `.venv`, installs `requirements-dev.txt`, and points `CHROMIUM_EXECUTABLE` at the preinstalled browser. Don't run `playwright install` there.
+In Claude Code cloud sessions, `.claude/hooks/session-start.sh` does the setup: it creates `.venv`, installs `requirements-dev.txt`, and points `CHROMIUM_EXECUTABLE` at the preinstalled browser. Don't run `playwright install` there. The hook runs asynchronously: right at the start of a session, `.venv` may not be ready yet. If `pytest` or `ruff` is missing, run `.claude/hooks/session-start.sh` yourself and wait for it.
 
 ## Layout
 Pipeline in `learn/pipeline.py`:

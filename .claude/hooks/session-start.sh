@@ -7,6 +7,10 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
+# Run in the background so the session starts immediately (up to 5 minutes for the install).
+# Until it finishes, `.venv` may be missing or incomplete; re-run this script to wait for it.
+echo '{"async": true, "asyncTimeout": 300000}'
+
 cd "${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 # Project virtualenv (reused when the container is cached).
@@ -30,4 +34,4 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   } >> "$CLAUDE_ENV_FILE"
 fi
 
-echo "Learn session setup complete (python: $(.venv/bin/python --version 2>&1), chromium: ${chrome:-not found})"
+echo "Learn session setup complete (python: $(.venv/bin/python --version 2>&1), chromium: ${chrome:-not found})" >&2
