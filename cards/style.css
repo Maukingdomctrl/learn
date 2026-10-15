@@ -323,6 +323,12 @@ h3 {
   font-size: 7cqh;
   letter-spacing: 0.05em;
 }
+.cardface .hint {
+  font-family: var(--type);
+  font-size: 5.6cqh;
+  letter-spacing: 0.14em;
+  color: #6b6b6b;
+}
 .cardface .blank {
   display: inline-block;
   width: 16cqw;

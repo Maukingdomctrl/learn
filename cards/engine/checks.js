@@ -45,6 +45,8 @@ export function checkDecks(sheet, built) {
     for (const piece of c.clue.split(new RegExp(`${BLANK}|…`)).map((p) => p.trim())) {
       if (piece && !source.includes(norm(piece))) problems.push(`${c.entity}: clue text not found in the sheet: "${piece}".`);
     }
+    // A hint is the answer's own shape: same length, and every letter it shows is the answer's letter there.
+    if (c.hint && !hintFits(c.hint, c.answer)) problems.push(`${c.entity}: the hint "${c.hint}" does not match "${c.answer}".`);
     // A 'which place?' clue must not contain the answer.
     if ((c.kind === 'who' || c.kind === 'hook') && norm(c.clue).includes(norm(c.answer))) {
       problems.push(`${c.entity}: the clue gives the answer away: "${c.clue}".`);
@@ -92,4 +94,9 @@ function namedThings(text) {
     if (start > 0) out.push(m[1]);
   }
   return out;
+}
+
+function hintFits(hint, answer) {
+  if (hint.length !== answer.length || hint === answer) return false;
+  return [...hint].every((ch, i) => ch === '_' || ch === answer[i]);
 }

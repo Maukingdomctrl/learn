@@ -18,7 +18,9 @@ export function frontHtml(card) {
   const tag = card.kind === 'cloze' ? card.entity : '';
   return `${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${card.star ? '<span class="star" title="The sheet repeats this">★</span>' : ''}
     <div class="pic">${picture}</div>
-    <div class="clue">${card.clue ? `<span>${clueHtml(card.clue)}</span>` : ''}${card.ask ? `<b>${esc(card.ask)}</b>` : ''}</div>`;
+    <div class="clue">${card.clue ? `<span>${clueHtml(card.clue)}</span>` : ''}${card.ask ? `<b>${esc(card.ask)}</b>` : ''}${
+      card.hint ? `<small class="hint">Hint: ${esc(card.hint)}</small>` : ''
+    }</div>`;
 }
 
 export function backHtml(card) {

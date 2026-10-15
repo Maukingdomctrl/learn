@@ -25,6 +25,8 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
    | Portrait | Up to four of the deck's pictures together, preferring ones the other topics don't share (never the generic crowd, pin, calendar, globe or star) + "Name the city!" | The topic name + the author's summary line |
 
    Cards whose answer the sheet repeats most come first and get a ★.
+
+   Every card except the final picture has a small **hint** under the clue: the answer's shape with only first letters showing ("R____ L____", "2__,___"). Short joining words (of, and, the) stay, and answers too short to hint at get no hint. A check confirms each hint matches its answer letter by letter.
 4. **Picks a sketch** for each card from about 25 drawings, by words in the fact (river, ship, crown, factory, bank…). If nothing fits, the card shows a "draw it!" box instead of a wrong picture.
 5. **Checks every card before showing or printing it.** If any check fails, nothing is shown and the page lists the problems:
    - every fact has a card;

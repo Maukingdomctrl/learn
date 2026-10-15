@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
-import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames } from '../engine/cards.js';
+import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
@@ -349,4 +349,33 @@ test('the final picture card prefers pictures the other places do not share', ()
   assert.equal(alpha.symbols[0], 'crown', 'shared pictures may still appear, in deck order');
   assert.ok(alpha.symbols.includes('ship'));
   assert.ok(!alpha.symbols.includes('coal'));
+});
+
+// ---------- hints ----------
+
+test('hints show only first letters and the answer shape', () => {
+  assert.equal(letterHint('River Lagan'), 'R____ L____');
+  assert.equal(letterHint('Harland and Wolff'), 'H______ and W____');
+  assert.equal(letterHint('286,000'), '2__,___');
+  assert.equal(letterHint('eleventh-largest'), 'e_______-l______');
+  assert.equal(letterHint('UK'), null, 'too short: a hint would give it away');
+});
+
+test('every card but the final picture carries a hint on its front', async () => {
+  const { built } = await sample();
+  for (const d of built.decks) {
+    for (const c of d.cards) {
+      if (c.kind === 'portrait') assert.equal(c.hint, undefined);
+      else {
+        assert.ok(c.hint, c.id);
+        assert.match(frontHtml(c), /Hint:/);
+      }
+    }
+  }
+});
+
+test('check fails when a hint does not match its answer', () => {
+  const { sheet, built } = cityDecks();
+  built.decks[0].cards.find((c) => c.answer === 'River Lagan').hint = 'R____ T_____';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /does not match/);
 });

@@ -73,6 +73,9 @@ export function buildDecks(sheet) {
     return { entity: e.display, cards };
   });
 
+  // Every card except the final picture gets a small hint: the answer's shape, first letters only.
+  for (const d of decks) for (const c of d.cards) if (c.kind !== 'portrait') c.hint = letterHint(c.answer);
+
   // Prefer pictures the other places on the sheet don't have: four capitals all have a crown,
   // but only Belfast has the ship. Shared pictures fill in only when nothing distinctive is left.
   const decksWith = new Map();
@@ -210,4 +213,44 @@ function slugOf(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+const SMALL_WORDS = new Set(['of', 'and', 'the', 'in', 'on', 'for', 'a', 'an', '&']);
+
+/**
+ * The answer's shape with only first letters showing: "River Lagan" -> "R____ L____", "286,000" -> "2__,___".
+ * Small joining words stay ("H______ and W____"); punctuation and spaces stay. Null when a hint would give it away.
+ */
+export function letterHint(answer) {
+  const text = String(answer).trim();
+  if (text.replace(/[^A-Za-z0-9]/g, '').length < 3) return null;
+  let firstOfNumber = true;
+  const hint = text
+    .split(' ')
+    .map((word) => {
+      if (SMALL_WORDS.has(word.toLowerCase())) return word;
+      let shown = false;
+      return [...word]
+        .map((ch) => {
+          if (!/[A-Za-z0-9]/.test(ch)) {
+            if (ch === '-') shown = false; // "eleventh-largest" -> "e_______-l______"
+            return ch;
+          }
+          if (/[0-9]/.test(ch)) {
+            if (firstOfNumber) {
+              firstOfNumber = false;
+              return ch;
+            }
+            return '_';
+          }
+          if (!shown) {
+            shown = true;
+            return ch;
+          }
+          return '_';
+        })
+        .join('');
+    })
+    .join(' ');
+  return hint === text ? null : hint;
 }
