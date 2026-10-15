@@ -35,6 +35,22 @@ const USE = {
   scroll: 'license',
   scales: 'scale',
   person: 'user',
+  metal: 'hammer',
+  crop: 'plant',
+  cloth: 'shirt',
+  water: 'droplet',
+  transport: 'truck',
+  sweet: 'candy',
+  vote: 'checkbox',
+  shield: 'shield-check',
+  quake: 'activity',
+  car: 'car',
+  building: 'building',
+  sun: 'sun',
+  wind: 'wind',
+  recycle: 'recycle',
+  tree: 'trees',
+  power: 'bolt',
 };
 
 const root = new URL('../', import.meta.url);

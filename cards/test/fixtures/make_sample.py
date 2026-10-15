@@ -3,7 +3,12 @@
 - sample-sheet.pdf: places (two cities);
 - history-sheet.pdf: an event (the 1857 uprising) with causes, course, leaders and results;
 - people-sheet.pdf: three social reformers, each with life years, a summary line and a placeholder
-  portrait beside the heading (a drawn silhouette, not a real photo).
+  portrait beside the heading (a drawn silhouette, not a real photo);
+- industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are,
+  plus a comparison table (one cell and one row label wrap onto a second line);
+- civics-sheet.pdf: four Union institutions (two Houses, the President, the Supreme Court) with terms, ages and jobs;
+- processes-sheet.pdf: migration, urbanisation and earthquakes with definitions, causes, effects and what to do;
+- resources-sheet.pdf: kinds of resources as groups with lists, and ways to conserve them.
 
 
 Words wrapped in **double stars** are printed bold, the way a teacher marks the key words.
@@ -109,6 +114,132 @@ PEOPLE = [
 ]
 
 
+INDUSTRIES = [
+    [
+        ("title", "MAJOR INDUSTRIES OF INDIA"),
+        ("sub", "Class 8 Geography | Sample notes"),
+        ("heading", "1. COTTON TEXTILE INDUSTRY – Agro-based industry"),
+        ("bullet", "Raw material: **raw cotton**."),
+        ("bullet", "Main centres: **Mumbai**, **Ahmedabad** and **Coimbatore**."),
+        ("bullet", "It grew in Mumbai because of the **humid climate**, a port for importing machinery and"),
+        ("wrap", "a large supply of workers."),
+        ("bullet", "Products: **cloth**, yarn and garments."),
+        ("bullet", "Ahmedabad is called the **Manchester of India**."),
+        ("heading", "2. IRON AND STEEL INDUSTRY – Mineral-based industry"),
+        ("bullet", "Raw materials: **iron ore**, coking coal and limestone."),
+        ("bullet", "The Tata Iron and Steel Company was set up at **Jamshedpur** in 1907."),
+        ("bullet", "Plants are near the **Chota Nagpur Plateau** because iron ore and coal are found there."),
+        ("bullet", "Other centres: **Bhilai**, **Rourkela** and **Bokaro**."),
+        ("bullet", "Products: **steel** for machines, rails and bridges."),
+        ("heading", "3. SUGAR INDUSTRY – Agro-based industry"),
+        ("bullet", "Raw material: **sugarcane**."),
+        ("bullet", "Mills are near the fields because sugarcane dries quickly and must be crushed soon after"),
+        ("wrap", "cutting."),
+        ("bullet", "Main states: **Uttar Pradesh** and **Maharashtra**."),
+        ("bullet", "Products: **sugar**, with molasses as a by-product."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Cotton Textile Industry = cotton to cloth (Mumbai, Ahmedabad)"),
+        ("bullet", "Iron and Steel Industry = ore and coal to steel (Jamshedpur)"),
+        ("bullet", "Sugar Industry = cane to sugar (near the fields)"),
+    ],
+    [
+        ("section", "COMPARATIVE TABLE"),
+        (
+            "table",
+            [
+                (["Feature"], [["Cotton Textile Industry"], ["Iron and Steel Industry"], ["Sugar Industry"]]),
+                (["Type"], [["Agro-based"], ["Mineral-based"], ["Agro-based"]]),
+                (["Main raw", "material"], [["Raw cotton"], ["Iron ore, coking", "coal, limestone"], ["Sugarcane"]]),
+                (["Product"], [["Cloth"], ["Steel"], ["Sugar"]]),
+            ],
+        ),
+    ],
+]
+
+
+CIVICS = [
+    [
+        ("title", "THE UNION PARLIAMENT, PRESIDENT AND JUDICIARY"),
+        ("sub", "Class 8 Civics | Sample notes"),
+        ("heading", "1. LOK SABHA – Lower House of Parliament"),
+        ("bullet", "Members are **directly elected** by the people."),
+        ("bullet", "Term: **5 years**, unless dissolved earlier."),
+        ("bullet", "Presiding officer: the **Speaker**."),
+        ("bullet", "A member must be at least **25 years** old."),
+        ("heading", "2. RAJYA SABHA – Upper House of Parliament"),
+        ("bullet", "Members are elected by the members of the **State Legislative Assemblies**."),
+        ("bullet", "It is a **permanent house** and cannot be dissolved."),
+        ("bullet", "A member's term is **6 years**; one-third of the members retire every **2 years**."),
+        ("bullet", "Presiding officer: the **Vice-President** of India."),
+        ("bullet", "A member must be at least **30 years** old."),
+        ("heading", "3. THE PRESIDENT – Head of the State"),
+        ("bullet", "Elected by an **electoral college** of elected members of Parliament and the State"),
+        ("wrap", "Legislative Assemblies."),
+        ("bullet", "Term: **5 years**."),
+        ("bullet", "Must be at least **35 years** old."),
+        ("bullet", "Is the Supreme Commander of the **armed forces**."),
+        ("heading", "4. SUPREME COURT – Highest court of India"),
+        ("bullet", "It is located in **New Delhi**."),
+        ("bullet", "Its judges are appointed by the **President**."),
+        ("bullet", "Judges retire at the age of **65**."),
+        ("bullet", "It protects the **Fundamental Rights** of citizens."),
+        ("bullet", "It is called the **guardian of the Constitution**."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Lok Sabha = people's house (5 years, Speaker)"),
+        ("bullet", "Rajya Sabha = permanent house (6 years, Vice-President)"),
+        ("bullet", "The President = head of the State (5 years, age 35)"),
+        ("bullet", "Supreme Court = guardian of the Constitution (retire at 65)"),
+    ],
+]
+
+
+PROCESSES = [
+    [
+        ("title", "POPULATION, MIGRATION AND DISASTERS"),
+        ("sub", "Class 8 Geography | Sample notes"),
+        ("heading", "1. MIGRATION – Movement of people"),
+        ("bullet", "Migration is the movement of people from one place to another."),
+        ("bullet", "Push factors: **lack of jobs**, poverty and droughts in villages."),
+        ("bullet", "Pull factors: **better jobs**, schools and hospitals in cities."),
+        ("bullet", "Effects: **crowded cities** and the growth of slums."),
+        ("bullet", "Movement from villages to cities is called **rural-urban migration**."),
+        ("heading", "2. URBANISATION – Growth of towns and cities"),
+        ("bullet", "Urbanisation is the growth in the share of people living in towns and cities."),
+        ("bullet", "Causes: **industries** and better jobs in cities."),
+        ("bullet", "Effects: **traffic jams**, pollution and a shortage of housing."),
+        ("bullet", "Measures: **planned cities** and better public transport."),
+        ("heading", "3. EARTHQUAKES – Sudden shaking of the ground"),
+        ("bullet", "An earthquake is a sudden shaking of the ground."),
+        ("bullet", "Causes: movement of the **tectonic plates** under the Earth's surface."),
+        ("bullet", "The point on the surface right above where it starts is the **epicentre**."),
+        ("bullet", "It is measured on the **Richter scale**."),
+        ("bullet", "Effects: **collapse of buildings** and loss of life."),
+        ("bullet", "Precautions: take cover under a **strong table** and stay away from windows."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Migration = people move (pushed out, pulled in)"),
+        ("bullet", "Urbanisation = cities grow (jobs in, traffic out)"),
+        ("bullet", "Earthquakes = the ground shakes (plates move)"),
+    ],
+]
+
+
+RESOURCES = [
+    [
+        ("title", "RESOURCES AND THEIR CONSERVATION"),
+        ("sub", "Class 8 Geography | Sample notes"),
+        ("section", "1. TYPES OF RESOURCES"),
+        ("bullet", "Renewable resources: **solar energy**, **wind energy** and **water**."),
+        ("bullet", "Non-renewable resources: **coal**, **petroleum** and **natural gas**."),
+        ("bullet", "Renewable resources can be **used again and again**."),
+        ("bullet", "Non-renewable resources will **run out** one day."),
+        ("section", "2. CONSERVATION OF RESOURCES"),
+        ("bullet", "We should **reduce**, **reuse** and **recycle**."),
+        ("bullet", "Switching off lights when not needed saves **electricity**."),
+        ("bullet", "Planting trees helps to stop **soil erosion**."),
+    ],
+]
+
+
 def runs(text):
     """Splits '**bold**' markup into (text, bold) runs."""
     parts = re.split(r"(\*\*.+?\*\*)", text)
@@ -168,6 +299,16 @@ def build(pages, out, header, portraits=False):
             elif kind == "wrap":
                 write_line(page, 70, y - 1, text, BODY)
                 y += 15
+            elif kind == "table":
+                y += 6
+                for label, cells in text:
+                    height = max(len(label), *(len(c) for c in cells))
+                    for i, part in enumerate(label):
+                        write_line(page, 50, y + i * 11, part, BODY, bold_all=True)
+                    for col, cell in enumerate(cells):
+                        for i, part in enumerate(cell):
+                            write_line(page, 170 + col * 130, y + i * 11, part, BODY, bold_all=(label == ["Feature"]))
+                    y += 11 * height + 8
             elif kind == "note":
                 y += 10
                 write_line(page, 50, y, text, BODY)
@@ -182,6 +323,10 @@ def main():
     build(PAGES, SAMPLES / "sample-sheet.pdf", "Grade 8 Social Studies | Sample sheet")
     build(HISTORY, SAMPLES / "history-sheet.pdf", "Class 8 History | Sample sheet")
     build(PEOPLE, SAMPLES / "people-sheet.pdf", "Class 8 History | Reformers sample", portraits=True)
+    build(INDUSTRIES, SAMPLES / "industries-sheet.pdf", "Class 8 Geography | Industries sample")
+    build(CIVICS, SAMPLES / "civics-sheet.pdf", "Class 8 Civics | Institutions sample")
+    build(PROCESSES, SAMPLES / "processes-sheet.pdf", "Class 8 Geography | Processes sample")
+    build(RESOURCES, SAMPLES / "resources-sheet.pdf", "Class 8 Geography | Resources sample")
 
 
 if __name__ == "__main__":

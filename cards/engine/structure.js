@@ -7,7 +7,8 @@ const ENTITY_HEADING = /^(?:\d+[.)]\s+)?([A-Z][A-Z .'’&]*[A-Z])\s*[–—-]\s*
 const SECTION_HEADING = /^(?:\d+[.)]\s+[A-Z][A-Z0-9 &,'’:–—-]+|[A-Z][A-Z&,'’-]+(?:\s+[A-Z0-9&,'’–—-]+)+)$/;
 const LABEL = /^[A-Z][A-Z ]{2,}:/;
 const SUBHEADING = /^[A-Z][A-Za-z ]{2,30}:$/; // "Causes:" inside a topic: labels the bullets under it
-const FACT_LABEL = /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact)\s*:/i;
+const FACT_LABEL =
+  /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact|push factors?|pull factors?|measures|precautions|prevention|solutions|raw materials?|(?:main |other )?(?:centres|centers|states|places)|products?|(?:location )?factors|term|tenure|presiding officer|chairman|head|powers?|functions?|members|composition|strength)\s*:/i;
 const PAGE_NUMBER = /^page\s+\d+$/i;
 
 /**
@@ -36,12 +37,12 @@ export function parseSheet(lines) {
       closeBullet();
       current = {
         name: heading[1].trim(),
-        display: titleCase(heading[1].trim()),
+        display: sentenceCase(heading[1].trim()),
         descriptor: heading[2].trim(),
         page: line.page,
         y: line.y,
         bullets: [],
-        type: isPerson(heading[1], heading[2]) ? 'person' : 'place',
+        type: kindOfHeading(heading[1], heading[2]),
       };
       entities.push(current);
       continue;
@@ -111,7 +112,11 @@ export function parseSheet(lines) {
       facts: e.bullets.flatMap((b, i) =>
         splitFacts(b, e.display, `${slug(e.display)}-${i + 1}`).map((f) => ({
           ...f,
-          label: labelFor(f.text.match(FACT_LABEL)?.[1] || '') || b.label || e.label || null,
+          label:
+            bulletLabel(f.text.match(FACT_LABEL)?.[1] || '') ||
+            b.label ||
+            e.label ||
+            (e.type === 'institution' ? institutionLabel(f.text) : null),
         })),
       ),
     }));
@@ -156,11 +161,71 @@ const PERSON_WORDS =
 const LIFE_YEARS = /\(\s*(?:c\.\s*)?\d{3,4}\s*[–—-]\s*\d{3,4}\s*\)/;
 const TITLES = /^(RAJA|RANI|SWAMI|MAHATMA|SIR|LORD|DR|BEGUM|MAHARAJA|MAHARANI|SANT|GURU|EMPEROR|QUEEN|KING)\b/;
 
+/** Place, person, industry or institution, from a heading's name and description. */
+export function kindOfHeading(name, descriptor) {
+  if (isIndustry(name, descriptor)) return 'industry';
+  if (isProcess(name)) return 'process';
+  if (isInstitution(name, descriptor)) return 'institution';
+  if (isPerson(name, descriptor)) return 'person';
+  return 'place';
+}
+
+const PROCESSES =
+  /\b(MIGRATION|URBANI[SZ]ATION|POPULATION|EARTHQUAKES?|FLOODS?|CYCLONES?|DROUGHTS?|LANDSLIDES?|TSUNAMIS?|SOIL EROSION|EROSION|DEFORESTATION|POLLUTION|GLOBAL WARMING|CLIMATE CHANGE|VOLCANO(?:ES)?|VOLCANIC ERUPTIONS?|DISASTERS?|WEATHERING|DESERTIFICATION)\b/;
+
+/** "MIGRATION – Movement of people…", "EARTHQUAKES – Sudden shaking of the ground". */
+export function isProcess(name) {
+  return PROCESSES.test(name);
+}
+
+const INSTITUTIONS =
+  /\b(PARLIAMENT|LOK SABHA|RAJYA SABHA|PRESIDENT|VICE-PRESIDENT|PRIME MINISTER|SUPREME COURT|HIGH COURTS?|JUDICIARY|EXECUTIVE|LEGISLATURE|CONSTITUTION|ELECTION COMMISSION|COUNCIL OF MINISTERS|CABINET|PANCHAYATS?|MUNICIPAL|ASSEMBLY|UNITED NATIONS|SECURITY COUNCIL)\b/;
+
+/** "LOK SABHA – Lower House of Parliament", "SUPREME COURT – Highest court of India". */
+export function isInstitution(name, descriptor) {
+  return INSTITUTIONS.test(name) || /\b(house of|court|head of the state|legislature)\b/i.test(descriptor);
+}
+
+/** "COTTON TEXTILE INDUSTRY – Agro-based industry" */
+export function isIndustry(name, descriptor) {
+  return /\bINDUSTR(Y|IES)\b/.test(name) || /^\s*(agro|mineral|forest|marine)-based\b/i.test(descriptor);
+}
+
+/** What a bullet's own label says it is: "Raw material:", "Main centres:", "Products:", "Cause:"… */
+export function bulletLabel(prefix) {
+  const t = prefix.toLowerCase();
+  if (!t) return null;
+  if (/\bpush\b/.test(t)) return 'push';
+  if (/\bpull\b/.test(t)) return 'pull';
+  if (/raw material/.test(t)) return 'raw';
+  if (/centres|centers|states|places/.test(t)) return 'where';
+  if (/product/.test(t)) return 'product';
+  if (/factor/.test(t)) return 'factor';
+  if (/term|tenure/.test(t)) return 'term';
+  if (/presiding officer|chairman|head/.test(t)) return 'head';
+  if (/powers?|functions?/.test(t)) return 'job';
+  if (/members|composition|strength/.test(t)) return 'members';
+  return labelFor(t);
+}
+
+/** For institutions, what an unlabelled sentence is about: how they are chosen, age, term, who leads, the job. */
+export function institutionLabel(text) {
+  if (/\b(elected|appointed|chosen|nominated)\b/i.test(text)) return 'chosen';
+  if (/\bat least \d+ years old\b|\bage of \d+\b/i.test(text)) return 'age';
+  if (/\bterm\b|\b\d+ years\b/i.test(text)) return 'term';
+  if (/\b(presiding officer|speaker|chairman)\b/i.test(text)) return 'head';
+  if (/\b(protects?|can |powers?|functions?|commander|guardian|makes laws)\b/i.test(text)) return 'job';
+  return null;
+}
+
 export function isPerson(name, descriptor) {
   return PERSON_WORDS.test(descriptor) || LIFE_YEARS.test(descriptor) || TITLES.test(name);
 }
 
 const KIND_WORDS = {
+  industries: 'industry',
+  disasters: 'disaster',
+  institutions: 'institution',
   reformers: 'reformer',
   personalities: 'person',
   cities: 'city',
@@ -272,6 +337,9 @@ export function slug(s) {
 /** What a heading or label says its bullets are: causes, results, a course of events, or people. */
 export function labelFor(text) {
   const t = text.toLowerCase();
+  if (/\bpush\b/.test(t)) return 'push';
+  if (/\bpull\b/.test(t)) return 'pull';
+  if (/\b(measures?|precautions?|prevention|solutions?|remedies|safety|do's|conservation|conserve|saving)\b/.test(t)) return 'action';
   if (/\b(causes?|reasons?|why)\b/.test(t)) return 'cause';
   if (/\b(results?|consequences?|effects?|impact|significance|outcome)\b/.test(t)) return 'result';
   if (/\b(course|events?|timeline|chronology)\b/.test(t)) return 'course';

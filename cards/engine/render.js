@@ -34,6 +34,15 @@ export function lifelineSvg(rows) {
   return `<svg viewBox="0 0 170 110" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true">${out}</svg>`;
 }
 
+/** An industry's chain: raw material → ? → product, each in a box, from the sheet's own words. */
+export function flowSvg(flow) {
+  const box = (x, text, w) =>
+    `<rect x="${x}" y="38" width="${w}" height="30" rx="5" fill="#fbfaf7" stroke-width="1.4"/>` +
+    `<text x="${x + w / 2}" y="57" text-anchor="middle" font-size="${text.length > 12 ? 7.5 : 9}" ${FONT}>${esc(text)}</text>`;
+  const arrow = (x) => `<path d="M${x} 53 h12 m-4 -4 l4 4 l-4 4" stroke-width="1.4"/>`;
+  return `<svg viewBox="0 0 170 110" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${box(4, flow.raw, 50)}${arrow(56)}${box(72, '?', 26)}${arrow(100)}${box(116, flow.product, 50)}</svg>`;
+}
+
 const FROM_MEMORY = `<svg viewBox="0 0 170 110" aria-hidden="true"><text x="85" y="72" text-anchor="middle" font-size="64" ${FONT}>?</text><text x="85" y="98" text-anchor="middle" font-size="10" ${FONT}>from memory</text></svg>`;
 
 export function frontHtml(card) {
@@ -42,6 +51,8 @@ export function frontHtml(card) {
     ? `<img class="photo" src="${esc(photo)}" alt="">`
     : card.kind === 'lifeline'
       ? lifelineSvg(card.lifeline)
+      : card.flow
+        ? flowSvg(card.flow)
       : card.kind === 'again'
         ? FROM_MEMORY
         : ['portrait', 'compare', 'list'].includes(card.kind)

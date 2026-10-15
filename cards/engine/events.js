@@ -9,7 +9,25 @@ const MAX_WORDS = 14;
 export const ASK_BY_LABEL = {
   cause: 'Why did it happen?',
   result: 'What changed after?',
+  raw: 'What does it need?',
+  where: 'Where?',
+  product: 'What does it make?',
+  chosen: 'Who chooses them?',
+  age: 'How old?',
+  term: 'For how long?',
+  head: 'Who is in charge?',
+  job: 'What does it do?',
+  members: 'Who is in it?',
+  push: 'What pushes people out?',
+  pull: 'What pulls people in?',
+  action: 'What should be done?',
 };
+
+// For a process, causes and results read in the present tense.
+export const PROCESS_ASK = { cause: 'Why does it happen?', result: 'What does it lead to?' };
+
+// A reason about a location ("grew in Mumbai because…", "Plants are near … because…") asks "Why here?".
+const ABOUT_PLACE = /\b(near|located|set up|grew in|grew at|situated|centred|centered|found in)\b/i;
 
 const BECAUSE = /\s(because|due to|as a result of)\s/;
 const LED_TO = /\s(led to|resulted in|so that)\s/;
@@ -29,12 +47,13 @@ export function whyCard(fact, entity) {
   const lead = before.split(' ');
   const shown = lead.length > 8 ? `… ${lead.slice(-8).join(' ')}` : before;
   const isWhy = BECAUSE.test(fact.text);
+  const whyAsk = ABOUT_PLACE.test(before) ? 'Why here?' : 'Why?';
   return {
     id: fact.id,
     entity,
     kind: 'why',
     clue: `${shown} ${m[1]} ${BLANK}`,
-    ask: isWhy ? 'Why?' : 'What happened next?',
+    ask: isWhy ? whyAsk : 'What happened next?',
     answer,
     exact: fact.text,
     page: fact.page,
@@ -286,4 +305,195 @@ export function ageCards(entity) {
       page: x.fact.page,
       symbol: 'calendar',
     }));
+}
+
+// ---------- industries ----------
+
+/** The first bold name in an industry's raw-material and product bullets: what goes in, what comes out. */
+export function flowOf(entity) {
+  const raw = entity.facts.find((f) => f.label === 'raw' && f.keys[0]);
+  const product = entity.facts.find((f) => f.label === 'product' && f.keys[0]);
+  return raw && product ? { raw: raw.keys[0], product: product.keys[0] } : null;
+}
+
+/** "Which group?": industries sorted by the kind their heading gives ("Agro-based industry"). */
+export function sortCard(entities) {
+  const groups = new Map();
+  for (const e of entities.filter((x) => x.type === 'industry' && x.descriptor)) {
+    if (!groups.has(e.descriptor)) groups.set(e.descriptor, []);
+    groups.get(e.descriptor).push(e.display);
+  }
+  if (groups.size < 2) return null;
+  const names = [...groups.values()].flat();
+  return {
+    id: 'sort',
+    entity: 'Which group?',
+    kind: 'sort',
+    clue: 'Sort them into groups.',
+    ask: [...groups.keys()].join(' or ') + '?',
+    answer: 'Groups',
+    exact: '',
+    frontLines: [...names].sort((a, b) => a.localeCompare(b)),
+    lines: [...groups].map(([g, list]) => `${g} … ${list.join(' · ')}`),
+    page: 1,
+    symbol: 'factory',
+  };
+}
+
+/** "Where are they?": each industry's first named centre, to match with the industry. */
+export function whereCard(entities) {
+  const rows = entities
+    .filter((e) => e.type === 'industry')
+    .map((e) => ({ e, f: e.facts.find((f) => f.label === 'where' && f.keys[0]) }))
+    .filter((x) => x.f);
+  if (rows.length < 2) return null;
+  return {
+    id: 'where',
+    entity: 'Where are they?',
+    kind: 'match',
+    clue: 'Match each place to its industry.',
+    ask: '',
+    answer: 'Pairs',
+    exact: '',
+    frontLines: [
+      rows
+        .map((x) => x.f.keys[0])
+        .sort((a, b) => a.localeCompare(b))
+        .join(' · '),
+      rows
+        .map((x) => x.e.display)
+        .sort((a, b) => a.localeCompare(b))
+        .join(' · '),
+    ],
+    lines: rows.map((x) => `${x.e.display} … ${x.f.text.replace(/[.\s]+$/, '')}`),
+    page: rows[0].f.page,
+    symbol: 'pin',
+  };
+}
+
+// ---------- institutions ----------
+
+const NUMBER = /\b\d+(?:\s+(?:years?|members|months|days))?\b/;
+
+/**
+ * "Numbers to know": every bold number in the institutions' facts (5 years, 35, 65…). The front lists the
+ * numbers once each, smallest first; the back gives each fact that holds one, with its institution.
+ */
+export function numbersCard(entities) {
+  const rows = [];
+  for (const e of entities.filter((x) => x.type === 'institution')) {
+    for (const f of e.facts) {
+      const n = f.keys.find((k) => NUMBER.test(k) && /\d/.test(k));
+      if (n) rows.push({ e, f, n });
+    }
+  }
+  if (rows.length < 3) return null;
+  const numbers = [...new Set(rows.map((r) => r.n))].sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.localeCompare(b));
+  return {
+    id: 'numbers',
+    entity: 'Numbers to know',
+    kind: 'numbers',
+    clue: 'What does each number stand for?',
+    ask: '',
+    answer: 'Numbers',
+    exact: '',
+    frontLines: [numbers.join(' · ')],
+    lines: rows.map((r) => `${r.e.display} … ${r.f.text.replace(/[.\s]+$/, '')}`),
+    page: rows[0].f.page,
+    symbol: 'calendar',
+  };
+}
+
+// ---------- processes ----------
+
+/**
+ * A definition of the topic itself: "Migration is the movement of people…", "An earthquake is a sudden…".
+ * Returns the term as written in the sentence, or null.
+ */
+export function definedTerm(text, display) {
+  const stem = display.toLowerCase().replace(/s$/, '');
+  const m = text.match(/^(?:(?:an?|the)\s+)?([A-Za-z-]+(?:\s+[A-Za-z-]+)?)\s+(?:is|are|means|refers to)\s/i);
+  if (!m) return null;
+  const word = m[1].toLowerCase().replace(/s$/, '');
+  return word === stem ? m[1] : null;
+}
+
+/** "An _____ is a sudden shaking of the ground — What is it called?" */
+export function definitionCard(fact, entity, term) {
+  return {
+    id: fact.id,
+    entity,
+    kind: 'cloze',
+    clue: fact.text.replace(/[.\s]+$/, '').replace(term, BLANK),
+    ask: 'What is it called?',
+    answer: term,
+    exact: fact.text,
+    page: fact.page,
+  };
+}
+
+/** A process's chain: its first cause, a question mark, its first effect (bold words only). */
+export function causeEffectOf(entity) {
+  const cause = entity.facts.find((f) => ['cause', 'push'].includes(f.label) && f.keys[0]);
+  const effect = entity.facts.find((f) => f.label === 'result' && f.keys[0]);
+  return cause && effect ? { raw: cause.keys[0], product: effect.keys[0] } : null;
+}
+
+/** "Cause or effect?": a process's bold causes and effects mixed together, sorted on the back. */
+export function causeOrEffectCard(entity) {
+  const causes = entity.facts.filter((f) => ['cause', 'push', 'pull'].includes(f.label) && f.keys[0]).map((f) => f.keys[0]);
+  const effects = entity.facts.filter((f) => f.label === 'result' && f.keys[0]).map((f) => f.keys[0]);
+  if (!causes.length || !effects.length || causes.length + effects.length < 3) return null;
+  return {
+    id: `${slug(entity.display)}-cause-effect`,
+    entity: entity.display,
+    kind: 'sort',
+    clue: 'Sort them.',
+    ask: 'Cause or effect?',
+    answer: 'Causes and effects',
+    exact: '',
+    frontLines: [...causes, ...effects].sort((a, b) => a.localeCompare(b)),
+    lines: [`Causes … ${causes.join(' · ')}`, `Effects … ${effects.join(' · ')}`],
+    labelWords: ['Causes', 'Effects'],
+    page: entity.page,
+    symbol: null,
+  };
+}
+
+// ---------- groups (resources, soils, rocks, …) ----------
+
+const GROUP_BULLET = /^([A-Z][A-Za-z' -]{2,40}):\s+(.+)$/;
+
+/** "Renewable resources: solar energy, wind energy and water." -> {group, items} (items as written). */
+export function groupOf(text) {
+  const m = text.replace(/[.\s]+$/, '').match(GROUP_BULLET);
+  if (!m) return null;
+  const items = m[2]
+    .split(/,\s+|\s+and\s+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (items.length < 2 || items.some((x) => x.split(' ').length > 4)) return null;
+  return { group: m[1].trim(), items };
+}
+
+/**
+ * "Which group?" for a topic whose bullets are groups with lists ("Renewable resources: …",
+ * "Non-renewable resources: …"). The front mixes every item; the back puts each under its group.
+ */
+export function groupSortCard(facts, entity) {
+  const groups = facts.map((f) => groupOf(f.text)).filter(Boolean);
+  if (groups.length < 2 || new Set(groups.map((g) => g.group)).size < 2) return null;
+  return {
+    id: `${slug(entity)}-groups`,
+    entity,
+    kind: 'sort',
+    clue: 'Sort them into groups.',
+    ask: `${groups.map((g) => g.group).join(' or ')}?`,
+    answer: 'Groups',
+    exact: '',
+    frontLines: groups.flatMap((g) => g.items).sort((a, b) => a.localeCompare(b)),
+    lines: groups.map((g) => `${g.group} … ${g.items.join(' · ')}`),
+    page: facts[0].page,
+    symbol: null,
+  };
 }

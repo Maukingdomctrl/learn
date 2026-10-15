@@ -4,9 +4,19 @@
 import {
   ageCards,
   ASK_BY_LABEL,
+  causeEffectOf,
+  causeOrEffectCard,
+  definedTerm,
+  definitionCard,
+  flowOf,
+  groupSortCard,
+  numbersCard,
+  sortCard,
+  whereCard,
   lifelineCard,
   listCard,
   matchCard,
+  PROCESS_ASK,
   PURPOSE_ASK,
   peopleTimelineCard,
   purposeCard,
@@ -37,19 +47,28 @@ export function buildDecks(sheet) {
   const decks = sheet.entities.map((e) => {
     if (e.type === 'aspect') return topicDeck(e, lowerText);
     const person = e.type === 'person';
+    const industry = e.type === 'industry';
+    // An industry is best recognised by what it needs: the riddle is its raw-material line.
+    const rawFact = industry ? e.facts.find((f) => f.label === 'raw') : null;
     // A riddle about a person must hide every part of their name ("Roy", "Ram Mohan Roy").
     const hidden = person ? [...names, ...nameParts(e.display)] : names;
-    const ask = person ? 'Who am I?' : who;
+    const institution = e.type === 'institution';
+    const process = e.type === 'process';
+    const ask = person ? 'Who am I?' : institution || process ? 'Which one am I?' : who;
+    // A process is first learnt by its definition: "Migration is the movement of people…".
+    const definitionFact = process ? e.facts.find((f) => definedTerm(f.text, e.display)) : null;
     const hook = {
       id: `${slugOf(e.display)}-hook`,
       entity: e.display,
       kind: 'hook',
-      clue: hideNames(e.descriptor, hidden),
+      clue: hideNames(rawFact ? rawFact.text.replace(/[.\s]+$/, '') : e.descriptor, hidden),
       ask,
       answer: e.display,
-      exact: e.descriptor,
+      exact: rawFact ? rawFact.text : e.descriptor,
       page: e.page,
-      symbol: pickSymbol(e.descriptor) || (person ? 'person' : null),
+      symbol:
+        pickSymbol(rawFact ? rawFact.text : e.descriptor) ||
+        (person ? 'person' : industry ? 'factory' : institution ? 'parliament' : null),
       star: false,
     };
 
@@ -58,10 +77,18 @@ export function buildDecks(sheet) {
       const score = key ? count(lowerText, key.toLowerCase()) : 0;
       // For people, the question that matters is what problem they took on.
       const purpose = person ? purposeOf(f.text) : null;
+      const why = whyCard(f, e.display);
       let front;
-      if (key) {
+      if (f === definitionFact) {
+        front = definitionCard(f, e.display, definedTerm(f.text, e.display));
+      } else if (key) {
         const aboutProblem = purpose && purpose.answer.includes(key);
-        front = { kind: 'cloze', clue: clozeClue(f.text, key), ask: aboutProblem ? PURPOSE_ASK : '', answer: key };
+        // A bold word inside the sentence's own reason: the card asks the reason's question ("Why here?").
+        const byLabel = (process && PROCESS_ASK[f.label]) || ASK_BY_LABEL[f.label] || '';
+        const ask = aboutProblem ? PURPOSE_ASK : why?.answer.includes(key) ? why.ask : byLabel;
+        front = { kind: 'cloze', clue: clozeClue(f.text, key), ask, answer: key };
+      } else if (why) {
+        front = { ...why };
       } else if (purpose) {
         front = { ...purposeCard(f, e.display) };
       } else {
@@ -73,21 +100,25 @@ export function buildDecks(sheet) {
         ...front,
         exact: f.text,
         page: f.page,
-        symbol: pickSymbol(f.text, key || ''),
+        symbol: pickSymbol(f.text, key || '') || (f.label === 'where' ? 'pin' : null),
         star: score >= 3,
         order: i,
         score,
       };
     });
     // The author's emphasis comes first: most-repeated answers lead, otherwise keep the sheet's order.
-    body.sort((a, b) => b.score - a.score || a.order - b.order);
+    // A definition always opens the deck: you learn what it is before why it happens.
+    const first = (c) => (definitionFact && c.id === definitionFact.id ? 1 : 0);
+    body.sort((a, b) => first(b) - first(a) || b.score - a.score || a.order - b.order);
 
     const portrait = {
       id: `${slugOf(e.display)}-portrait`,
       entity: e.display,
       kind: 'portrait',
       clue: '',
-      ask: person ? 'Who am I?' : sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
+      ask: person ? 'Who am I?' : institution || process ? 'Name it!' : sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
+      // An industry's final picture is its chain (what goes in, ?, what comes out); a process's is cause, ?, effect.
+      flow: industry ? flowOf(e) : process ? causeEffectOf(e) : null,
       answer: e.display,
       exact: sheet.summaries.get(e.display) || e.descriptor,
       page: e.page,
@@ -140,7 +171,13 @@ export function buildDecks(sheet) {
         extra.push({ ...c, id: `${c.id}-again`, kind: 'again', symbol: null, star: false });
       }
     }
-    const cards = [hook, ...facts, ...whys, ...extra, portrait];
+    if (process) {
+      const sort = causeOrEffectCard(e);
+      if (sort) extra.push(sort);
+    }
+    // With a definition card, the descriptor riddle would ask the same thing twice.
+    const opening = definitionFact ? [] : [hook];
+    const cards = [...opening, ...facts, ...whys, ...extra, portrait];
     // The place's or person's one-line summary from the sheet, on the back of every card about them.
     const identity = sheet.summaries.get(e.display);
     if (identity) for (const c of cards) if (c.kind !== 'portrait') c.identity = identity;
@@ -187,15 +224,25 @@ export function buildDecks(sheet) {
     .filter((d) => sheet.summaries.has(d.entity))
     .map((d) => sheet.summaries.get(d.entity).replace(/\s*\([^)]*\)\s*$/, ''));
   const people = sheet.entities.some((e) => e.type === 'person');
+  const industries = sheet.entities.some((e) => e.type === 'industry');
   if (jobs.length >= 2) {
-    const group = sheet.kindPlural ? `All ${sheet.kindPlural}` : 'All together';
+    const processes = sheet.entities.some((e) => e.type === 'process');
+    const group = sheet.kindPlural && !processes ? `All ${sheet.kindPlural}` : 'All together';
     const compare = {
       id: 'compare',
       entity: group,
       kind: 'compare',
-      clue: people ? `Every ${sheet.kindWord || 'one'} had their own cause.` : `Every ${sheet.kindWord || 'one'} had its own job.`,
-      ask: sheet.kindWord ? `Which ${sheet.kindWord} did what?` : 'Who did what?',
-      answer: people ? 'Each one’s cause' : 'Each one’s job',
+      clue: people
+        ? `Every ${sheet.kindWord || 'one'} had their own cause.`
+        : industries
+          ? 'Each industry turns its own raw material into its own product.'
+          : sheet.entities.some((e) => e.type === 'institution')
+            ? 'Each one has its own job.'
+            : sheet.entities.some((e) => e.type === 'process')
+              ? 'Each one has its own causes and effects.'
+          : `Every ${sheet.kindWord || 'one'} had its own job.`,
+      ask: processes ? 'Which one is which?' : sheet.kindWord ? `Which ${sheet.kindWord} did what?` : 'Who did what?',
+      answer: people ? 'Each one’s cause' : processes ? 'Causes and effects' : 'Each one’s job',
       exact: '',
       lines: jobs,
       page: decks[0].cards[0].page,
@@ -204,6 +251,9 @@ export function buildDecks(sheet) {
       star: false,
     };
     decks.push({ entity: group, cards: [compare], compare: true });
+  }
+  for (const card of [sortCard(sheet.entities), whereCard(sheet.entities), numbersCard(sheet.entities)].filter(Boolean)) {
+    decks.push({ entity: card.entity, cards: [card], compare: true });
   }
   const lifeline = lifelineCard(sheet.entities);
   if (lifeline) decks.push({ entity: lifeline.entity, cards: [lifeline], compare: true });
@@ -249,9 +299,11 @@ function topicDeck(e, lowerText) {
     .map((c) => ({ ...c, id: `${c.id}-why`, symbol: pickSymbol(c.exact), star: false }));
   const timeline = timelineCard(e.facts, e.display);
   const match = matchCard(e.facts, e.display);
-  // Course of events ends with its timeline, people with their pairs; other topics with "name them all".
-  const last = match || (timeline ? null : listCard(e.facts, e.display));
-  return { entity: e.display, cards: [...body, ...whys, ...[timeline, last].filter(Boolean)] };
+  const groups = groupSortCard(e.facts, e.display);
+  // Course of events ends with its timeline, people with their pairs, groups with their sort, and causes or
+  // results with "name them all" (as exams ask: "state four causes").
+  const last = match || (timeline || groups || !['cause', 'result'].includes(e.label) ? null : listCard(e.facts, e.display));
+  return { entity: e.display, cards: [...body, ...whys, ...[groups, timeline, last].filter(Boolean)] };
 }
 
 /**
@@ -318,7 +370,11 @@ export function clozeClue(fullText, key) {
 
 function lastBoundary(s) {
   let best = -1;
-  for (const m of s.matchAll(/[;:]|\s[–—]\s|,\s/g)) best = m.index + m[0].length;
+  for (const m of s.matchAll(/[;:]|\s[–—]\s|,\s/g)) {
+    // A short label at the start ("Presiding officer:", "Term:") is context, not a separate clause.
+    if (m[0] === ':' && s.slice(0, m.index).trim().split(' ').length <= 3 && !/[;,–—]/.test(s.slice(0, m.index))) continue;
+    best = m.index + m[0].length;
+  }
   return best;
 }
 

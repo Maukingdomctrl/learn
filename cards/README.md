@@ -6,6 +6,8 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
 - No AI and no accounts. Fixed rules make every decision.
 - Separate from the Python lesson engine in `learn/`. It shares no code with it and doesn't follow its methodology spec.
 
+> **The uploaded PDF is the fact sheet.** Every fact on every card comes from the PDF the parent or child uploads, and the checks block anything else. The engine only learns *how to ask*: what a question looks like for a place, a person, a cause or an institution. It never learns *what the facts are*. The sample PDFs in `sample/` exist only to test those rules. The one exception is the small checked list of "Fun facts" (see below), which is printed as a footer and never tested.
+
 > **Status — read this first.**
 > - This is a first prototype. It has **not** been tested with children.
 > - It has been tried on one machine-made sheet (UK cities) and on the synthetic sample in `sample/`. Other sheet layouts will often produce no cards. The page then says so.
@@ -95,6 +97,67 @@ Across the sheet, people with life years also get a **lifeline card**: a drawn t
 
 `sample/people-sheet.pdf` (three 19th-century reformers) is a synthetic example. Not yet tried on a real school sheet.
 
+## Industries
+
+A heading is an **industry** when its name says INDUSTRY ("SUGAR INDUSTRY") or its description starts with agro-, mineral-, forest- or marine-based. Bullets keep their own labels: "Raw material(s):", "Main/Other centres:" or "Main states:", "Products:". An industry's deck gets:
+
+- **The riddle is the raw material:** "Raw material: sugarcane — Which industry?"
+- **Fill-ins that ask by label:** "What does it need?" (raw material), "Where?" (centres), "What does it make?" (products).
+- **"Why here?":** a *because* sentence about a location ("Mills are near the fields because _____") asks "Why here?". So does a bold word inside such a reason.
+- **The final card is the chain:** *raw material → ? → product*, drawn from the sheet's bold words, with "Name the industry!" on the front and the summary line on the back.
+
+Across the sheet:
+- **"Which group?":** sorts the industries by the kind their headings give (agro-based or mineral-based).
+- **"Where are they?":** matches each industry's first centre (places scrambled) to the industry.
+- The comparison card reads "Each industry turns its own raw material into its own product."
+
+`sample/industries-sheet.pdf` (cotton textiles, iron and steel, sugar) is a synthetic example. Not yet tried on a real school sheet.
+
+## Civics: institutions
+
+A heading is an **institution** when its name is one, such as PARLIAMENT, LOK SABHA, RAJYA SABHA, PRESIDENT, SUPREME COURT, HIGH COURT, CONSTITUTION, ELECTION COMMISSION, COUNCIL OF MINISTERS, PANCHAYAT or MUNICIPAL…, or when its description says "House of…", "court" or "Head of the State".
+
+Each sentence is labelled by what it says, and the fill-in asks the matching question:
+- **Chosen:** elected / appointed → *Who chooses them?*
+- **Term:** "Term:", or a number of years → *For how long?*
+- **Age:** "at least 25 years old", "age of 65" → *How old?*
+- **In charge:** presiding officer / Speaker / chairman → *Who is in charge?*
+- **Job:** protects / powers / functions / commander / guardian → *What does it do?*
+
+The riddle is the heading's description ("Lower House of Parliament — Which one am I?"), and the final card asks "Name it!".
+
+Across the sheet, **"Numbers to know"** lists every bold number once, smallest first ("2 years · 5 years · … · 65"). The back gives each fact behind them with its institution. That's the kind of detail exams ask for.
+
+`sample/civics-sheet.pdf` (Lok Sabha, Rajya Sabha, the President, the Supreme Court) is a synthetic example with stable facts only. Not yet tried on a real school sheet.
+
+## Geography: processes
+
+A heading is a **process** when its name is one: MIGRATION, URBANISATION, POPULATION, EARTHQUAKES, FLOODS, CYCLONES, DROUGHTS, LANDSLIDES, TSUNAMIS, SOIL EROSION, DEFORESTATION, POLLUTION, GLOBAL WARMING, CLIMATE CHANGE, VOLCANOES, DISASTERS…
+
+- **Definition first:** a bullet that defines the topic ("Migration is…", "An earthquake is…") opens the deck as "_____ is the movement of people… — What is it called?". The descriptor riddle is then left out, so the same thing isn't asked twice.
+- **Fill-ins by label:** "Push factors:" → *What pushes people out?*; "Pull factors:" → *What pulls people in?*; "Causes:" → *Why does it happen?*; "Effects:" → *What does it lead to?*; "Measures:" / "Precautions:" / "Prevention:" → *What should be done?*
+- **"Cause or effect?":** mixes the bold causes and effects to sort. "Causes" and "Effects" are the card's only own words; every item is checked against the sheet.
+- **The final card is the chain** *cause → ? → effect*, from the first bold cause and effect.
+
+`sample/processes-sheet.pdf` (migration, urbanisation, earthquakes) is a synthetic example. Not yet tried on a real school sheet.
+
+## Groups: resources, soils, rocks…
+
+In a topic section, bullets shaped like **"Group: a, b and c"** ("Renewable resources: solar energy, wind energy and water") are read as groups with their items, exactly as written. Two or more of them give a **"Which group?"** sort card: every item mixed on the front, each under its group on the back. The topic then ends with that sort instead of "name them all". "Name them all" now appears only for causes and results.
+
+Sections about conservation or saving ask *What should be done?*
+
+`sample/resources-sheet.pdf` is a synthetic example. Not yet tried on a real school sheet.
+
+## Comparison tables
+
+A table whose header row names three or more of the sheet's topics ("Feature | London | Birmingham | Belfast …") is read cell by cell from the PDF positions:
+- Each cell goes to the nearest column.
+- A cell or row label that wraps onto a second line is joined.
+- The table ends at a big gap, a numbered heading, or a line wider than a column.
+
+Each row with two or more filled cells becomes a **match card** in a "From the table" deck: "River: match each to its city." The front has the row's values scrambled, and the back gives each topic with its value. Empty cells ("—") are left out. A wrapped cell is several pieces of text in the PDF, so each piece is checked against the sheet on its own.
+
 ## Photos from the sheet
 
 If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.
@@ -117,7 +180,7 @@ Some card backs carry a small footer such as **Fun fact:** "-ham" is an old Engl
 
 ## What it does not do yet
 
-- Tables, practice questions and memory tips are not turned into cards.
+- Practice questions and memory tips are not turned into cards. Tables are, but only comparison tables whose header row names the topics.
 - Scanned pages or phone photos are not read (no OCR).
 - It has no memory tricks, no "my trick" box, no supporting clues for hard names, no games beyond flip-and-mix, and no progress tracking.
 - It can't catch a mistake in the sheet itself. Cards are only as correct as the PDF.
@@ -160,6 +223,7 @@ Passing tests show the rules work as designed. They say nothing about whether ch
 | `engine/icons.js` | Generated: the Tabler icons the cards use, with their licence. Rebuild with `node scripts/build-icons.mjs` |
 | `engine/checks.js` | The checks above |
 | `engine/render.js` | Card → HTML, shared by the screen and the print sheets; escapes all sheet text |
+| `engine/tables.js` | Comparison tables: finds them, reads them cell by cell, makes one match card per row |
 | `engine/photos.js` | Finds images printed in the PDF and gives each to the heading it sits beside |
 | `engine/index.js` | `makeDecks(pdfjs, bytes)` → `{sheet, built, check}` |
 | `app.js`, `index.html`, `style.css` | The page |

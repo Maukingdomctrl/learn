@@ -70,6 +70,7 @@ Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requi
 
 ## Cards (`cards/`)
 A separate browser-only tool: study-sheet PDF → picture flashcards, no AI. It shares no code with `learn/`, and the methodology spec doesn't govern it. See `cards/README.md`.
+- The uploaded PDF is the fact sheet. Teach the engine how to ask, never what the facts are. Samples in `cards/sample/` only test rules and must never feed content into cards.
 - Test with `cd cards && npm ci && npm test` (CI runs this too).
 - Card backs must stay word-for-word from the sheet. Clue fronts may add only fixed prompts. `engine/checks.js` enforces both, and a failed check blocks showing and printing.
 - When you change a check, add a passing case and a targeted failing mutation in `cards/test/engine.test.js`.

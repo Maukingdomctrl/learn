@@ -10,12 +10,32 @@ import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
-import { ageCards, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
+import {
+  ageCards,
+  causeEffectOf,
+  definedTerm,
+  flowOf,
+  groupOf,
+  lifelineCard,
+  lifeOf,
+  purposeOf,
+} from '../engine/events.js';
 import { assignPhotos, unitSquare } from '../engine/photos.js';
+import { findTables } from '../engine/tables.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
-import { backHtml, esc, frontHtml, lifelineSvg } from '../engine/render.js';
-import { dropRunningHeaders, isPerson, parseSheet, splitFacts } from '../engine/structure.js';
+import { backHtml, esc, flowSvg, frontHtml, lifelineSvg } from '../engine/render.js';
+import {
+  bulletLabel,
+  dropRunningHeaders,
+  institutionLabel,
+  isIndustry,
+  isInstitution,
+  isPerson,
+  kindOfHeading,
+  parseSheet,
+  splitFacts,
+} from '../engine/structure.js';
 import { nameTip, thingFact } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
 
@@ -743,4 +763,317 @@ test('every card about a person carries their summary line as a reminder', async
   assert.match(backHtml(built.decks[0].cards[1]), /Remember: Raja Ram Mohan Roy = Brahmo Samaj/);
   built.decks[0].cards[1].identity = 'Raja Ram Mohan Roy = inventor of the telephone';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /reminder line is not from the sheet/);
+});
+
+// ---------- industries ----------
+
+async function industries() {
+  const data = new Uint8Array(readFileSync(here('../sample/industries-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('industries sample: headings are industries, bullets keep their labels; all checks pass', async () => {
+  const { sheet, built, check } = await industries();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Cotton Textile Industry', 'industry'],
+      ['Iron and Steel Industry', 'industry'],
+      ['Sugar Industry', 'industry'],
+    ],
+  );
+  assert.deepEqual(
+    sheet.entities[0].facts.map((f) => f.label),
+    ['raw', 'where', null, 'product', null],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('industry headings and bullet labels are recognised', () => {
+  assert.ok(isIndustry('SUGAR INDUSTRY', 'anything'));
+  assert.ok(isIndustry('JUTE', 'Agro-based industry'));
+  assert.ok(!isIndustry('BELFAST', 'Capital of Northern Ireland'));
+  assert.equal(bulletLabel('Raw materials'), 'raw');
+  assert.equal(bulletLabel('Main centres'), 'where');
+  assert.equal(bulletLabel('Products'), 'product');
+});
+
+test('the riddle is the raw material; cards ask what it needs, where, what it makes and why here', async () => {
+  const { built } = await industries();
+  const sugar = built.decks[2].cards;
+  assert.equal(sugar[0].clue, 'Raw material: sugarcane');
+  assert.equal(sugar[0].ask, 'Which industry?');
+  const ask = (answer) => sugar.find((c) => c.answer === answer).ask;
+  assert.equal(ask('sugarcane'), 'What does it need?');
+  assert.equal(ask('Uttar Pradesh'), 'Where?');
+  assert.equal(ask('sugar'), 'What does it make?');
+  const why = sugar.find((c) => c.kind === 'why');
+  assert.equal(why.ask, 'Why here?');
+  assert.equal(why.answer, 'sugarcane dries quickly and must be crushed soon after cutting');
+  const cotton = built.decks[0].cards.find((c) => c.answer === 'humid climate');
+  assert.equal(cotton.ask, 'Why here?', 'a bold word inside the reason asks the reason\'s question');
+});
+
+test('the final card is the chain: raw material, a question mark, the product', async () => {
+  const { sheet, built } = await industries();
+  assert.deepEqual(flowOf(sheet.entities[0]), { raw: 'raw cotton', product: 'cloth' });
+  const final = built.decks[0].cards.at(-1);
+  assert.equal(final.ask, 'Name the industry!');
+  const pic = frontHtml(final);
+  assert.ok(pic.includes('>raw cotton<') && pic.includes('>?<') && pic.includes('>cloth<'));
+  assert.ok(!flowSvg({ raw: '<b>', product: 'x' }).includes('<b>'), 'chain words are escaped');
+});
+
+test('"Which group?" sorts industries by the kind their headings give', async () => {
+  const { built } = await industries();
+  const sort = built.decks.find((d) => d.entity === 'Which group?').cards[0];
+  assert.deepEqual(sort.lines, [
+    'Agro-based industry … Cotton Textile Industry · Sugar Industry',
+    'Mineral-based industry … Iron and Steel Industry',
+  ]);
+  assert.equal(sort.ask, 'Agro-based industry or Mineral-based industry?');
+});
+
+test('"Where are they?" matches each industry\'s first centre, with the places scrambled', async () => {
+  const { built } = await industries();
+  const where = built.decks.find((d) => d.entity === 'Where are they?').cards[0];
+  assert.equal(where.frontLines[0], 'Bhilai · Mumbai · Uttar Pradesh');
+  assert.equal(where.lines[1], 'Iron and Steel Industry … Other centres: Bhilai, Rourkela and Bokaro');
+});
+
+test('check fails when the chain or a group line shows words that are not in the sheet', async () => {
+  const { sheet, built } = await industries();
+  built.decks[0].cards.at(-1).flow = { raw: 'raw cotton', product: 'paper' };
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /chain shows "paper"/);
+  const again = await industries();
+  again.built.decks.find((d) => d.entity === 'Which group?').cards[0].lines[0] += ' · Paper Industry';
+  assert.match(checkDecks(again.sheet, again.built).problems.join('\n'), /not word-for-word from the sheet: "Paper Industry"/);
+});
+
+// ---------- institutions (civics sample) ----------
+
+async function civics() {
+  const data = new Uint8Array(readFileSync(here('../sample/civics-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('civics sample: institutions are recognised; every fact has a card; all checks pass', async () => {
+  const { sheet, built, check } = await civics();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Lok Sabha', 'institution'],
+      ['Rajya Sabha', 'institution'],
+      ['The President', 'institution'],
+      ['Supreme Court', 'institution'],
+    ],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('heading kinds: industry, institution, person, place', () => {
+  assert.equal(kindOfHeading('SUGAR INDUSTRY', 'Agro-based industry'), 'industry');
+  assert.equal(kindOfHeading('LOK SABHA', 'Lower House of Parliament'), 'institution');
+  assert.equal(kindOfHeading('SUPREME COURT', 'Highest court of India'), 'institution');
+  assert.equal(kindOfHeading('JYOTIRAO PHULE', 'Social reformer (1827–1890)'), 'person');
+  assert.equal(kindOfHeading('BELFAST', 'Capital of Northern Ireland'), 'place');
+  assert.ok(isInstitution('ANYTHING', 'Upper House of Parliament'));
+});
+
+test('institution sentences are labelled by what they say', () => {
+  assert.equal(institutionLabel('Members are directly elected by the people.'), 'chosen');
+  assert.equal(institutionLabel('A member must be at least 25 years old.'), 'age');
+  assert.equal(institutionLabel('Judges retire at the age of 65.'), 'age');
+  assert.equal(institutionLabel('one-third of the members retire every 2 years.'), 'term');
+  assert.equal(institutionLabel('It protects the Fundamental Rights of citizens.'), 'job');
+});
+
+test('institution cards ask who chooses them, how long, how old, who is in charge, what it does', async () => {
+  const { built } = await civics();
+  const ask = (deck, answer) => built.decks[deck].cards.find((c) => c.answer === answer).ask;
+  assert.equal(built.decks[0].cards[0].ask, 'Which one am I?');
+  assert.equal(ask(0, 'directly elected'), 'Who chooses them?');
+  assert.equal(ask(0, '5 years'), 'For how long?');
+  assert.equal(ask(0, '25 years'), 'How old?');
+  assert.equal(ask(1, 'Vice-President'), 'Who is in charge?');
+  assert.equal(ask(3, 'Fundamental Rights'), 'What does it do?');
+  assert.equal(built.decks[1].cards.find((c) => c.answer === 'Vice-President').clue, `Presiding officer: the ${BLANK} of India`);
+});
+
+test('"Numbers to know" lists each bold number once, smallest first, and every fact behind them', async () => {
+  const { built } = await civics();
+  const card = built.decks.find((d) => d.entity === 'Numbers to know').cards[0];
+  assert.deepEqual(card.frontLines, ['2 years · 5 years · 6 years · 25 years · 30 years · 35 years · 65']);
+  assert.equal(card.lines.length, 8);
+  assert.ok(card.lines.includes('Supreme Court … Judges retire at the age of 65'));
+});
+
+test('check fails when a numbers line is not from the sheet', async () => {
+  const { sheet, built } = await civics();
+  built.decks.find((d) => d.entity === 'Numbers to know').cards[0].lines[0] = 'Lok Sabha … Term: 4 years';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word/);
+});
+
+// ---------- processes (geography sample) ----------
+
+async function processes() {
+  const data = new Uint8Array(readFileSync(here('../sample/processes-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('processes sample: headings are processes; every fact has a card; all checks pass', async () => {
+  const { sheet, built, check } = await processes();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Migration', 'process'],
+      ['Urbanisation', 'process'],
+      ['Earthquakes', 'process'],
+    ],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('a definition of the topic opens its deck: "_____ is the movement of people…"', async () => {
+  assert.equal(definedTerm('Migration is the movement of people.', 'Migration'), 'Migration');
+  assert.equal(definedTerm('An earthquake is a sudden shaking of the ground.', 'Earthquakes'), 'earthquake');
+  assert.equal(definedTerm('It is measured on the Richter scale.', 'Earthquakes'), null);
+  const { built } = await processes();
+  const quake = built.decks[2].cards[0];
+  assert.equal(quake.clue, `An ${BLANK} is a sudden shaking of the ground`);
+  assert.equal(quake.ask, 'What is it called?');
+  assert.ok(!built.decks[2].cards.some((c) => c.kind === 'hook'), 'no second riddle asking the same thing');
+});
+
+test('process cards ask what pushes, what pulls, why, what it leads to and what to do', async () => {
+  const { built } = await processes();
+  const ask = (deck, answer) => built.decks[deck].cards.find((c) => c.answer === answer).ask;
+  assert.equal(ask(0, 'lack of jobs'), 'What pushes people out?');
+  assert.equal(ask(0, 'better jobs'), 'What pulls people in?');
+  assert.equal(ask(1, 'industries'), 'Why does it happen?');
+  assert.equal(ask(1, 'traffic jams'), 'What does it lead to?');
+  assert.equal(ask(2, 'strong table'), 'What should be done?');
+});
+
+test('a process ends with its cause → ? → effect chain, and mixes causes with effects to sort', async () => {
+  const { sheet, built } = await processes();
+  assert.deepEqual(causeEffectOf(sheet.entities[2]), { raw: 'tectonic plates', product: 'collapse of buildings' });
+  assert.deepEqual(built.decks[0].cards.at(-1).flow, { raw: 'lack of jobs', product: 'crowded cities' });
+  const sort = built.decks[0].cards.find((c) => c.kind === 'sort');
+  assert.deepEqual(sort.frontLines, ['better jobs', 'crowded cities', 'lack of jobs']);
+  assert.deepEqual(sort.lines, ['Causes … lack of jobs · better jobs', 'Effects … crowded cities']);
+});
+
+test('the sort card\'s own headings pass the checks, but an invented item does not', async () => {
+  const { sheet, built, check } = await processes();
+  assert.ok(check.ok);
+  built.decks[0].cards.find((c) => c.kind === 'sort').lines[1] += ' · more trees';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word from the sheet: "more trees"/);
+});
+
+// ---------- groups (resources sample) ----------
+
+async function resources() {
+  const data = new Uint8Array(readFileSync(here('../sample/resources-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('a bullet "Group: a, b and c" is read as a group with its items, as written', () => {
+  assert.deepEqual(groupOf('Renewable resources: solar energy, wind energy and water.'), {
+    group: 'Renewable resources',
+    items: ['solar energy', 'wind energy', 'water'],
+  });
+  assert.equal(groupOf('Today: centre for industry, arts, higher education, business and law – the economic engine'), null);
+  assert.equal(groupOf('No colon here, just words'), null);
+});
+
+test('resources sample: groups become a "Which group?" sort; all checks pass', async () => {
+  const { built, check } = await resources();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  const types = built.decks[0].cards;
+  const sort = types.find((c) => c.kind === 'sort');
+  assert.equal(sort.ask, 'Renewable resources or Non-renewable resources?');
+  assert.deepEqual(sort.lines, [
+    'Renewable resources … solar energy · wind energy · water',
+    'Non-renewable resources … coal · petroleum · natural gas',
+  ]);
+  assert.ok(!types.some((c) => c.kind === 'list'), 'no "name them all" next to a sort');
+  const save = built.decks[1].cards;
+  assert.equal(save.find((c) => c.answer === 'electricity').ask, 'What should be done?');
+  assert.ok(!save.some((c) => c.kind === 'list'), '"name them all" is only for causes and results');
+});
+
+test('check fails when an item is added to a group that the sheet does not list', async () => {
+  const { sheet, built } = await resources();
+  built.decks[0].cards.find((c) => c.kind === 'sort').lines[0] += ' · nuclear energy';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word from the sheet: "nuclear energy"/);
+});
+
+// ---------- comparison tables ----------
+
+test('a comparison table becomes one match card per row; wrapped cells and labels stay whole', async () => {
+  const { built, check } = await industries();
+  assert.ok(check.ok, check.problems.join('\n'));
+  const table = built.decks.find((d) => d.entity === 'From the table').cards;
+  assert.deepEqual(
+    table.map((c) => c.clue),
+    [
+      'Type: match each to its industry.',
+      'Main raw material: match each to its industry.',
+      'Product: match each to its industry.',
+    ],
+  );
+  const raw = table[1];
+  assert.ok(raw.lines.includes('Iron and Steel Industry … Iron ore, coking coal, limestone'));
+  assert.equal(raw.frontLines[0], 'Iron ore, coking coal, limestone · Raw cotton · Sugarcane');
+  assert.ok(raw.sheetPieces.includes('Iron ore, coking') && raw.sheetPieces.includes('coal, limestone'));
+});
+
+test('findTables: header row names the topics; cells go to the nearest column; a wide line ends the table', () => {
+  const it = (text, x, y, width = 40) => ({ page: 1, x, y, width, text, font: 'R', size: 9 });
+  const entities = ['Alpha', 'Beta', 'Gamma'].map((display) => ({ display }));
+  const items = [
+    it('Feature', 40, 700),
+    it('Alpha', 150, 700),
+    it('Beta', 250, 700),
+    it('Gamma', 350, 700),
+    it('River', 40, 680),
+    it('One', 150, 680),
+    it('Two', 250, 680),
+    it('—', 360, 680, 8),
+    it('Long', 40, 660),
+    it('label', 40, 650),
+    it('first part', 150, 660),
+    it('second part', 150, 650),
+    it('x', 250, 660),
+    it('y', 350, 660),
+    it('A sentence right across the page after the table', 40, 630, 400),
+    it('Not', 150, 620),
+  ];
+  const [t] = findTables(items, entities);
+  assert.deepEqual(t.columns, ['Alpha', 'Beta', 'Gamma']);
+  assert.deepEqual(
+    t.rows.map((r) => r.label),
+    ['River', 'Long label'],
+  );
+  assert.deepEqual(t.rows[1].cells.get('Alpha'), ['first part', 'second part']);
+  assert.ok(!t.rows.some((r) => [...r.cells.values()].flat().includes('Not')), 'the table ended');
+});
+
+test('check fails when a table card shows text that is not in the sheet', async () => {
+  const { sheet, built } = await industries();
+  built.decks.find((d) => d.entity === 'From the table').cards[2].sheetPieces.push('Paper');
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /table text not found in the sheet: "Paper"/);
 });
