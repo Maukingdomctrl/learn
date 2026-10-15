@@ -9,7 +9,7 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
 > **Status — read this first.**
 > - This is a first prototype. It has **not** been tested with children.
 > - It has been tried on one machine-made sheet (UK cities) and on the synthetic sample in `sample/`. Other sheet layouts will often produce no cards. The page then says so.
-> - The pictures are simple code-drawn sketches, not illustrations.
+> - The pictures are simple icons, not illustrations, and there are no photos yet.
 
 ## What it does
 
@@ -31,7 +31,7 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
    A fill-in answer that shares a name with another fact about the same place gets a **"Think:" link** made of that fact's own words. For example, the museum card shows "Think: … shipyard built the RMS Titanic". The linking word can't come from the place's heading, and it must end a name in the other fact, so "Bank" in "Bank of Scotland" doesn't count.
 
    Every card except the final picture has a small **hint** under the clue: the answer's shape with only first letters showing ("R____ L____", "2__,___"). Short joining words (of, and, the) stay, and answers too short to hint at get no hint. A check confirms each hint matches its answer letter by letter.
-4. **Picks a sketch** for each card from about 25 drawings, by words in the fact (river, ship, crown, factory, bank…). If nothing fits, the card shows a "draw it!" box instead of a wrong picture.
+4. **Picks a picture** for each card, by words in the fact (river, ship, crown, factory, bank…). The pictures are outline icons from [Tabler Icons](https://tabler.io/icons) (MIT licence), copied into `engine/icons.js` by `scripts/build-icons.mjs` so nothing is downloaded at run time. One or two with no Tabler match (the rifle) are drawn by code. If nothing fits, the card shows a "draw it!" box instead of a wrong picture.
 5. **Checks every card before showing or printing it.** If any check fails, nothing is shown and the page lists the problems:
    - every fact has a card;
    - every card back is word-for-word from the sheet;
@@ -140,7 +140,8 @@ Passing tests show the rules work as designed. They say nothing about whether ch
 | `engine/cards.js` | Facts → cards (answer choice, clue shortening, order, portrait, hints, links) |
 | `engine/events.js` | Why, timeline, match and "name them all" cards for history-style topics |
 | `engine/nametips.js` | The checked name and thing fun facts |
-| `engine/symbols.js` | The sketch library and the word → picture rules |
+| `engine/symbols.js` | Word → picture rules, the few hand-drawn pictures, the final-card layout |
+| `engine/icons.js` | Generated: the Tabler icons the cards use, with their licence. Rebuild with `node scripts/build-icons.mjs` |
 | `engine/checks.js` | The checks above |
 | `engine/render.js` | Card → HTML, shared by the screen and the print sheets; escapes all sheet text |
 | `engine/index.js` | `makeDecks(pdfjs, bytes)` → `{sheet, built, check}` |

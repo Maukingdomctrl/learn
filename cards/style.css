@@ -529,6 +529,9 @@ h3 {
   outline-color: transparent;
 }
 
+.foot a {
+  color: inherit;
+}
 .foot {
   font-size: 14px;
   color: var(--desk-muted);

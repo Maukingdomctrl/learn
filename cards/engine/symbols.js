@@ -1,4 +1,6 @@
-// Pen-and-pencil sketch library. Every picture is drawn by code: black lines, white fill, same output every time.
+// Picture library. Most pictures are Tabler outline icons (MIT licence, copied into icons.js by
+// scripts/build-icons.mjs), drawn as black lines; a few with no Tabler match are drawn here by hand.
+// Same output every time.
 // A picture is chosen by words in the fact. If nothing fits, the card gets a "draw it yourself" box instead:
 // no picture is better than a wrong one.
 
@@ -27,7 +29,10 @@ const polar = (cx, cy, r, deg) => {
 const sword = `<path d="M85 8 L90 18 V68 H80 V18 Z" fill="${P}"/><path d="M68 68 H102" stroke-width="3.4"/>
   <path d="M85 68 V86" stroke-width="3.4"/><circle cx="85" cy="90" r="4" fill="${P}"/>`;
 
-export const ART = {
+import { ICONS } from './icons.js';
+
+// Hand-drawn pictures: only used where Tabler has no icon (e.g. the rifle).
+const DRAWN = {
   sword() {
     return `<g transform="rotate(38 85 55)">${sword}</g><g transform="rotate(-38 85 55)">${sword}</g>`;
   },
@@ -249,6 +254,16 @@ export const ART = {
     return `<path d="${d}Z" fill="${P}"/><path d="M134 22 v14 M127 29 h14 M36 76 v10 M31 81 h10" stroke-width="1.6"/>`;
   },
 };
+
+// An icon is 24 units square; this places it in the middle of the 170 × 110 card picture.
+const ICON_TRANSFORM = 'translate(49 19) scale(3)';
+
+export const ART = Object.fromEntries(
+  [...new Set([...Object.keys(ICONS), ...Object.keys(DRAWN)])].map((name) => [
+    name,
+    ICONS[name] ? () => `<g transform="${ICON_TRANSFORM}" stroke-width="0.8">${ICONS[name]}</g>` : DRAWN[name],
+  ]),
+);
 
 // Words that point to each picture. Earlier pictures win ties; the generic ones at the end count for less.
 const KEYWORDS = [
