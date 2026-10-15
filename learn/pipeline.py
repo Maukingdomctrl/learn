@@ -215,7 +215,7 @@ def _run(
             rendered = render(lesson, focus, timing, round_dir, report.warnings)
         except RenderError as e:
             return _stop(report, "render", f"Learn could not print the lesson: {e}", ["Contact support."], e)
-        checks = deterministic_checks(lesson, focus, timing, rendered, round_no)
+        checks = deterministic_checks(lesson, focus, timing, rendered, round_no, plan)
         if all(c.passed for c in checks):
             checks += ai_checks(llm, lesson, focus, rendered, plan)
         else:

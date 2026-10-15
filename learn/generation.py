@@ -64,8 +64,8 @@ LESSON_RULES = f"""LESSON RULES (follow exactly; code checks every rule):
 Structure - exactly 5 stages in this order, scored items numbered 1,2,3... continuously across stages:
 1 Discover (Page 1 left): hook (a question/puzzle from a situation a 12-14 year old recognises, answered by the
   lesson), instruction, item 1 (a simple first mark such as circling a prediction), then body_text (clear
-  explanation), worked_example (one complete worked example or annotated model, one line per step), optional
-  table visual, optional item 2. Items: 1-2. Types: ANNOTATE, CHOOSE, COMPLETE_STEPS.
+  explanation), worked_example (one complete worked example or annotated model, one line per step), the visual
+  (see VISUALS), optional item 2. Items: 1-2. Types: ANNOTATE, CHOOSE, COMPLETE_STEPS.
 2 Reinforce (Page 1 right): guided practice with high support. Items: 2-4. First item easy.
   Types: ANNOTATE, CHOOSE, MATCH, FILL_IN, SORT, COMPLETE_STEPS.
 3 Vary (Page 2 top left): same idea in a different format (new values, reversed direction, new case, or a
@@ -111,7 +111,26 @@ Text limits (counted by code; a number or expression like "1/2 x 8 x 5 = 20" cou
 - No negative-stem trick questions ("Which is NOT...", "EXCEPT"). No timers, scores, points, rewards, "Easy!".
 - No word searches, crosswords, anagrams, mazes, colouring. No instruction may refer to colour.
 - No item may be answerable by copying a Discover sentence word for word. Items in a stage must differ.
-- Only pencil needed. Only tables as visuals (no pictures). A table counts as {C.VISUAL_S} s of viewing time.
+- Only pencil needed. Each visual counts as {C.VISUAL_S} s of viewing time.
+
+VISUALS (code draws them from your numbers and words; you never draw):
+- Use one visual in Discover, of the teaching plan's visual_type (none if the plan says "none"). Every visual has
+  "kind", "caption" (short title), "purpose" (what the learner should notice), and "source_unit_ids".
+- {{"kind": "shape", "shape": "triangle"|"rectangle"|"parallelogram"|"circle", "base", "height" (triangle and
+  parallelogram), "length", "width" (rectangle), "radius" (circle), "unit"}}. Code writes the labels
+  ("base = 8 cm"), draws the height as a dashed perpendicular, and places the shape beside the worked example.
+  Use the worked example's numbers. ~40 mm tall.
+- {{"kind": "number_line", "start", "end", "step" (at most 20 intervals; step must divide the range),
+  "points": [{{"value", "label"}}], "jumps": [{{"start", "end", "label"}}]}}. ~26 mm tall.
+- {{"kind": "bar_model", "bars": [{{"label", "parts": [{{"value", "label"}}], "total"}}]}}: 1 bar for part-whole,
+  2-3 bars on one scale for comparison; 1-6 positive parts; total (optional) must equal the sum. ~14 mm per bar.
+- {{"kind": "flow_sequence", "steps": ["..."], "layout": "linear"|"cycle"}}: 2-6 steps in order (cycle: 3-6) for
+  stages, a procedure or a timeline. Keep each step short (linear: about 4 words per box when there are 4 boxes;
+  cycle: up to 2 short lines). linear ~24 mm, cycle ~64 mm tall.
+- {{"kind": "table", "headers": [...], "rows": [[...]]}}: up to 6 rows and 5 columns, cells up to 40 characters.
+- Every number drawn must appear in the cited source units or in that stage's own text. Every content word in
+  a label (steps, bar/part labels, point labels, table cells) must come from the cited source units or the
+  lesson's terms. The picture must show exactly what the explanation says; never decorate.
 
 Timing (computed by code, seconds): {C.ORIENTATION_S} orientation + per stage: printed words/{C.READING_WPM} wpm x 60
 + tables x {C.VISUAL_S} + items x weight (Discover 15, Reinforce 25, Vary 35, Apply 55, Recall 45; SKETCH +20)
@@ -154,7 +173,18 @@ SCHEMA_EXAMPLE = {
             "instruction": "...",
             "body_text": "...",
             "worked_example": ["Step 1: ...", "Step 2: ..."],
-            "visuals": [{"caption": "...", "headers": ["..."], "rows": [["..."]], "source_unit_ids": ["SRC-P1-U4"]}],
+            "visuals": [
+                {
+                    "kind": "shape",
+                    "caption": "...",
+                    "purpose": "...",
+                    "shape": "triangle",
+                    "base": 8,
+                    "height": 5,
+                    "unit": "cm",
+                    "source_unit_ids": ["SRC-P1-U4"],
+                }
+            ],
             "example": None,
             "hint_pointer": None,
             "options": [],
@@ -273,9 +303,8 @@ PLAN_GUIDE = """FOLLOW THE TEACHING PLAN (it was checked against the source):
 - Reinforce practises learning steps 1-2 with high support. Vary includes at least one item built on the plan's
   misconception (for example a SPOT_MISTAKE whose peer makes that mistake, or a CHOOSE with it as a distractor).
   Apply uses the last learning step in a new context. Recall retrieves the main rule or idea.
-- Visual: this version can print tables only. If visual_type is "table", include one table in Discover that
-  serves the visual_purpose. For any other visual_type, include a table only if it genuinely helps; otherwise
-  include no visual. Never invent a picture."""
+- Visual: Discover includes one visual of the plan's visual_type that serves its visual_purpose (none if the
+  plan says "none"). Use the worked example's numbers and the source's own words. Never invent a picture."""
 
 GENERATE_PROMPT = """Write the lesson.
 

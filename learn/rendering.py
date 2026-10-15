@@ -21,6 +21,7 @@ from .grounding import SourceIndex
 from .models import Lesson, Stage
 from .textutil import has_blank, written_words
 from .timing import LessonTiming
+from .visuals.svg import draw
 
 TEMPLATES = Path(__file__).parent / "templates"
 STAGE_TITLES = {
@@ -91,6 +92,11 @@ def _env() -> Environment:
     return env
 
 
+def draw_svg(v) -> Markup:
+    drawing = draw(v)
+    return Markup(drawing.svg) if drawing else Markup("")
+
+
 def student_html(lesson: Lesson) -> str:
     stages = {s.stage: s for s in lesson.stages}
     missing = [n for n in C.STAGES if n not in stages]
@@ -111,6 +117,7 @@ def student_html(lesson: Lesson) -> str:
             margin=C.MARGIN_MM,
             group_letter=group_letter,
             letters=string.ascii_uppercase * 2,
+            draw_svg=draw_svg,
         )
     )
 

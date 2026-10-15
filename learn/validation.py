@@ -17,6 +17,7 @@ from .rendering import RenderResult
 from .sequence import stage_sequence
 from .textutil import count_words, has_blank, sentences
 from .timing import LessonTiming
+from .visuals.checks import check_visual
 
 
 @dataclass
@@ -90,7 +91,7 @@ def d2_citations(lesson: Lesson, index: SourceIndex) -> CheckResult:
         check(f"answer-key entry {e.item_number}", e.source_unit_ids)
     for s in lesson.stages:
         for v in s.visuals:
-            check(f"{s.stage} table '{v.caption[:40]}'", v.source_unit_ids)
+            check(f"{s.stage} {v.kind} visual '{v.caption[:40]}'", v.source_unit_ids)
     return _result("D2", "Citations", "deterministic", p)
 
 
@@ -403,8 +404,28 @@ def d7_key(lesson: Lesson, index: SourceIndex) -> CheckResult:
     return _result("D7", "Answer key and arithmetic", "deterministic", p)
 
 
+# ---------------------------------------------------------------- D8 visuals
+def d8_visuals(lesson: Lesson, index: SourceIndex, plan=None) -> CheckResult:
+    """Every visual: valid structure, faithful black-and-white drawing within its size budget, grounded numbers and
+    labels, a teaching purpose; and Discover shows the visual type the teaching plan chose."""
+    p = []
+    vocab_extra = " ".join([c.name for c in lesson.concepts] + [f"{t.term} {t.definition}" for t in lesson.terms])
+    for s in lesson.stages:
+        stage_text = " ".join(c.text for c in stage_sequence(s) if c.kind != "mark")
+        for v in s.visuals:
+            source_text = index.texts(v.source_unit_ids)
+            p += [
+                f"{s.stage}: {msg}" for msg in check_visual(v, source_text, stage_text, f"{source_text} {vocab_extra}")
+            ]
+    if plan is not None and plan.visual_type != "none":
+        disc = lesson.stage("Discover")
+        if disc is not None and not any(v.kind == plan.visual_type for v in disc.visuals):
+            p.append(f"the teaching plan chose a {plan.visual_type} visual, but Discover has none")
+    return _result("D8", "Visuals", "deterministic", p)
+
+
 def deterministic_checks(
-    lesson: Lesson, index: SourceIndex, timing: LessonTiming, render: RenderResult, round_no: int
+    lesson: Lesson, index: SourceIndex, timing: LessonTiming, render: RenderResult, round_no: int, plan=None
 ) -> list[CheckResult]:
     return [
         d1_structure(lesson),
@@ -414,6 +435,7 @@ def deterministic_checks(
         d5_timing(lesson, timing, round_no),
         d6_layout(lesson, render),
         d7_key(lesson, index),
+        d8_visuals(lesson, index, plan),
     ]
 
 
@@ -423,7 +445,9 @@ AI_SYSTEM = "You are a strict reviewer of printed lessons for Standard 7-8 stude
 A1_PROMPT = """Check grounding and factual correctness (check A1).
 Pass only if: every taught claim and every answer is supported by its cited source units; practice items use
 the source's own method; no facts, terms or methods come from outside the source; no analogy (is_analogy=true)
-is tested; nothing contradicts the source. Report each problem with its location.
+is tested; nothing contradicts the source. Visuals ("visuals" fields) are drawn by code from their numbers
+and words: each must be faithful to its cited source units, show what its purpose says, and agree with the
+explanation and worked example beside it. Report each problem with its location.
 
 Lesson:
 {lesson}
@@ -470,7 +494,8 @@ support fades across the stages (Discover > Reinforce > Vary > Apply > Recall); 
 copying from Page 2; tone is neutral and respectful.
 If a teaching plan is given: the lesson builds understanding through the plan's learning steps in order (it
 teaches, rather than summarising the source), uses the plan's worked example, and at least one Vary or Apply
-item addresses the plan's misconception.
+item addresses the plan's misconception. Each visual serves its stated purpose and the explanation uses it
+(a decorative or unused picture fails).
 
 Teaching plan:
 {plan}

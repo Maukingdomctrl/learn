@@ -4,6 +4,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .visuals.specs import Table, Visual  # noqa: F401  (Table re-exported for existing imports)
+
 StageName = Literal["Discover", "Reinforce", "Vary", "Apply", "Recall"]
 ActivityType = Literal[
     "ANNOTATE",
@@ -21,13 +23,6 @@ ActivityType = Literal[
 
 class _Base(BaseModel):
     model_config = ConfigDict(extra="ignore")
-
-
-class Table(_Base):
-    caption: str = ""
-    headers: list[str] = Field(default_factory=list)
-    rows: list[list[str]] = Field(default_factory=list)
-    source_unit_ids: list[str] = Field(default_factory=list)
 
 
 class Example(_Base):
@@ -61,7 +56,7 @@ class Stage(_Base):
     hook: str = ""  # Discover only
     body_text: str = ""  # Discover: the explanation
     worked_example: list[str] = Field(default_factory=list)  # Discover only, one line per step
-    visuals: list[Table] = Field(default_factory=list)
+    visuals: list[Visual] = Field(default_factory=list)
     example: Optional[Example] = None
     hint_pointer: Optional[str] = None
     options: list[str] = Field(default_factory=list)  # MATCH column B (excluding the Ex answer)
