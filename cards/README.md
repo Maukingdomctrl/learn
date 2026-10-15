@@ -53,9 +53,9 @@ These came from trying the cards out with the family. Every new card type, trick
 5. **Tricks are never answers.** Mark them as tricks. The card back keeps the sheet's exact words, because exams mark the book's wording.
 6. **A generic picture only says *what kind* of answer it is** (a river, a ship, a date). It doesn't say *which one*. When several cards share a picture (Thames, Rea, Lagan), the clues must tell them apart.
 
-## Name tips
+## Name fun facts
 
-Some card backs carry a small footer such as **Name tip:** "-ham" is an old English word for home (Birmingham).
+Some card backs carry a small footer such as **Fun fact:** "-ham" is an old English word for home (Birmingham). Names are among the hardest things to remember, and knowing what a name means makes it stick.
 
 - **Where:** only on backs whose answer is the place name itself (the riddle cards and the final card).
 - **Never:** on a card front, as an answer, or in any test of the child. A tip is extra, not from the sheet.

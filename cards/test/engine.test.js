@@ -307,7 +307,7 @@ test('name tips go only on backs whose answer is the place name, never on fronts
   for (const c of withTip) assert.equal(c.answer, 'Birmingham');
   for (const c of birmingham.filter((c) => c.kind === 'cloze')) assert.equal(c.tip, undefined);
   const card = withTip[0];
-  assert.match(backHtml(card), /Name tip/);
+  assert.match(backHtml(card), /Fun fact/);
   assert.doesNotMatch(frontHtml(card), /home/);
 });
 
