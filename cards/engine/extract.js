@@ -8,7 +8,11 @@ const Y_TOLERANCE = 2; // points; text items closer than this vertically are on 
  * Line = { page, y, size, segments: [{text, emph}], text }
  */
 export async function extractLines(pdfjs, data, options = {}) {
-  const doc = await pdfjs.getDocument({ data, ...options }).promise;
+  return linesFromDocument(await pdfjs.getDocument({ data, ...options }).promise);
+}
+
+/** Same as extractLines, for a document that is already open. */
+export async function linesFromDocument(doc) {
   const raw = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);

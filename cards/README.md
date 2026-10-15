@@ -9,7 +9,7 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
 > **Status — read this first.**
 > - This is a first prototype. It has **not** been tested with children.
 > - It has been tried on one machine-made sheet (UK cities) and on the synthetic sample in `sample/`. Other sheet layouts will often produce no cards. The page then says so.
-> - The pictures are simple code-drawn sketches, not illustrations.
+> - The pictures are simple icons, not illustrations. Photos appear only when the PDF itself contains them.
 
 ## What it does
 
@@ -31,7 +31,7 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
    A fill-in answer that shares a name with another fact about the same place gets a **"Think:" link** made of that fact's own words. For example, the museum card shows "Think: … shipyard built the RMS Titanic". The linking word can't come from the place's heading, and it must end a name in the other fact, so "Bank" in "Bank of Scotland" doesn't count.
 
    Every card except the final picture has a small **hint** under the clue: the answer's shape with only first letters showing ("R____ L____", "2__,___"). Short joining words (of, and, the) stay, and answers too short to hint at get no hint. A check confirms each hint matches its answer letter by letter.
-4. **Picks a sketch** for each card from about 25 drawings, by words in the fact (river, ship, crown, factory, bank…). If nothing fits, the card shows a "draw it!" box instead of a wrong picture.
+4. **Picks a picture** for each card, by words in the fact (river, ship, crown, factory, bank…). The pictures are outline icons from [Tabler Icons](https://tabler.io/icons) (MIT licence), copied into `engine/icons.js` by `scripts/build-icons.mjs` so nothing is downloaded at run time. One or two with no Tabler match (the rifle) are drawn by code. If nothing fits, the card shows a "draw it!" box instead of a wrong picture.
 5. **Checks every card before showing or printing it.** If any check fails, nothing is shown and the page lists the problems:
    - every fact has a card;
    - every card back is word-for-word from the sheet;
@@ -76,6 +76,27 @@ Mixed rounds shuffle only single-fact cards. Whole-topic cards (lists, timelines
 
 `sample/history-sheet.pdf` is a synthetic example built by `test/fixtures/make_sample.py`. These rules have not yet been tried on a real school history sheet.
 
+## People
+
+A heading is treated as a **person** when its description says what they were (reformer, leader, scientist, king…), gives life years ("(1772–1833)"), or the name starts with a title (Raja, Rani, Swami, Mahatma…). A person's deck gets:
+
+- **"Who am I?" riddles.** The heading's description ("Social reformer (1772–1833)") and facts with nothing bold, with **every part of the name hidden**: "Roy" as well as "Ram Mohan Roy". A check blocks any riddle that shows part of the name.
+- **"What problem were they solving?"** For sentences with *against / to stop / to end / to improve / to abolish…*, the card hides what they worked against or for ("Fought against _____ discrimination").
+- The usual fill-ins, why cards and a final "Who am I?" picture card.
+
+Across the sheet, people with life years get a **"Who came first?"** card: names scrambled on the front, birth order with years on the back. The "who did what?" card speaks of causes ("Every reformer had their own cause").
+
+`sample/people-sheet.pdf` (three 19th-century reformers) is a synthetic example. Not yet tried on a real school sheet.
+
+## Photos from the sheet
+
+If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.
+
+- **Which photo:** the largest image between the heading (with a little room above it) and the next heading on the same page. Images smaller than half an inch (bullets, logos) are ignored. Each photo is used once. Topic sections such as "Causes" get none.
+- **Source:** photos come only from the uploaded PDF, so they can't show the wrong person, and nothing is downloaded. Photos from the internet (e.g. Wikimedia) are not used. They would need a checked list of exact files, and this sandbox can't reach Wikimedia to check any.
+- **On the page:** the photo is drawn in the browser at most 600 pixels wide. A photo that can't be decoded is left out and the icon is used instead.
+- **Sample:** the portraits in `sample/people-sheet.pdf` are drawn grey silhouettes, not real photos.
+
 ## Name fun facts
 
 Some card backs carry a small footer such as **Fun fact:** "-ham" is an old English word for home (Birmingham). Names are among the hardest things to remember, and knowing what a name means makes it stick.
@@ -115,7 +136,7 @@ npm ci
 npm test        # node --test; uses the sample PDF and hand-made lines, no network
 ```
 
-Both sample PDFs in `sample/` are synthetic. Rebuild them with `python cards/test/fixtures/make_sample.py` from the repo root.
+The sample PDFs in `sample/` are synthetic. Rebuild them with `python cards/test/fixtures/make_sample.py` from the repo root.
 
 Passing tests show the rules work as designed. They say nothing about whether children learn from the cards.
 
@@ -128,8 +149,10 @@ Passing tests show the rules work as designed. They say nothing about whether ch
 | `engine/cards.js` | Facts → cards (answer choice, clue shortening, order, portrait, hints, links) |
 | `engine/events.js` | Why, timeline, match and "name them all" cards for history-style topics |
 | `engine/nametips.js` | The checked name and thing fun facts |
-| `engine/symbols.js` | The sketch library and the word → picture rules |
+| `engine/symbols.js` | Word → picture rules, the few hand-drawn pictures, the final-card layout |
+| `engine/icons.js` | Generated: the Tabler icons the cards use, with their licence. Rebuild with `node scripts/build-icons.mjs` |
 | `engine/checks.js` | The checks above |
 | `engine/render.js` | Card → HTML, shared by the screen and the print sheets; escapes all sheet text |
+| `engine/photos.js` | Finds images printed in the PDF and gives each to the heading it sits beside |
 | `engine/index.js` | `makeDecks(pdfjs, bytes)` → `{sheet, built, check}` |
 | `app.js`, `index.html`, `style.css` | The page |

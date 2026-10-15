@@ -13,7 +13,12 @@ function clueHtml(clue) {
 }
 
 export function frontHtml(card) {
-  const picture = ['portrait', 'compare', 'list'].includes(card.kind) ? portraitSvg(card.symbols) : svg(card.symbol);
+  const photo = typeof card.photoUrl === 'string' && card.photoUrl.startsWith('data:image/') ? card.photoUrl : null;
+  const picture = photo
+    ? `<img class="photo" src="${esc(photo)}" alt="">`
+    : ['portrait', 'compare', 'list'].includes(card.kind)
+      ? portraitSvg(card.symbols)
+      : svg(card.symbol);
   // A fill-in clue names its place, so it still makes sense when decks are mixed.
   const tag = card.kind === 'cloze' ? card.entity : '';
   return `${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${card.star ? '<span class="star" title="The sheet repeats this">★</span>' : ''}

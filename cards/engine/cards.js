@@ -1,7 +1,18 @@
 // Facts -> cards. Fixed rules only. Every word on a card back is copied from the sheet;
 // a card front is a piece of the same sentence with one part hidden, plus a fixed prompt.
 
-import { ASK_BY_LABEL, listCard, matchCard, recallClue, timelineCard, whyCard } from './events.js';
+import {
+  ASK_BY_LABEL,
+  listCard,
+  matchCard,
+  PURPOSE_ASK,
+  peopleTimelineCard,
+  purposeCard,
+  purposeOf,
+  recallClue,
+  timelineCard,
+  whyCard,
+} from './events.js';
 import { nameTip, thingFact } from './nametips.js';
 import { pickSymbol } from './symbols.js';
 
@@ -23,25 +34,37 @@ export function buildDecks(sheet) {
 
   const decks = sheet.entities.map((e) => {
     if (e.type === 'aspect') return topicDeck(e, lowerText);
+    const person = e.type === 'person';
+    // A riddle about a person must hide every part of their name ("Roy", "Ram Mohan Roy").
+    const hidden = person ? [...names, ...nameParts(e.display)] : names;
+    const ask = person ? 'Who am I?' : who;
     const hook = {
       id: `${slugOf(e.display)}-hook`,
       entity: e.display,
       kind: 'hook',
-      clue: hideNames(e.descriptor, names),
-      ask: who,
+      clue: hideNames(e.descriptor, hidden),
+      ask,
       answer: e.display,
       exact: e.descriptor,
       page: e.page,
-      symbol: pickSymbol(e.descriptor),
+      symbol: pickSymbol(e.descriptor) || (person ? 'person' : null),
       star: false,
     };
 
     const body = e.facts.map((f, i) => {
       const key = chooseKey(f, e.display, lowerText);
       const score = key ? count(lowerText, key.toLowerCase()) : 0;
-      const front = key
-        ? { kind: 'cloze', clue: clozeClue(f.text, key), ask: '', answer: key }
-        : { kind: 'who', clue: shortClue(hideNames(f.text, names)), ask: who, answer: e.display };
+      // For people, the question that matters is what problem they took on.
+      const purpose = person ? purposeOf(f.text) : null;
+      let front;
+      if (key) {
+        const aboutProblem = purpose && purpose.answer.includes(key);
+        front = { kind: 'cloze', clue: clozeClue(f.text, key), ask: aboutProblem ? PURPOSE_ASK : '', answer: key };
+      } else if (purpose) {
+        front = { ...purposeCard(f, e.display) };
+      } else {
+        front = { kind: 'who', clue: shortClue(hideNames(f.text, hidden)), ask, answer: e.display };
+      }
       return {
         id: f.id,
         entity: e.display,
@@ -62,7 +85,7 @@ export function buildDecks(sheet) {
       entity: e.display,
       kind: 'portrait',
       clue: '',
-      ask: sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
+      ask: person ? 'Who am I?' : sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
       answer: e.display,
       exact: sheet.summaries.get(e.display) || e.descriptor,
       page: e.page,
@@ -79,8 +102,13 @@ export function buildDecks(sheet) {
       const fact = thingFact(c.answer);
       if (fact) c.tip = fact;
     }
+    // because/led to cards, unless the fact's own card already hides the same thing.
     const whys = e.facts
-      .map((f) => whyCard(f, e.display))
+      .map((f) => {
+        const c = whyCard(f, e.display);
+        const main = body.find((b) => b.id === f.id);
+        return c && !(main.answer && c.answer.includes(main.answer)) && main.kind !== 'why' ? c : null;
+      })
       .filter(Boolean)
       .map((c) => ({ ...c, id: `${c.id}-why`, symbol: pickSymbol(c.exact), star: false }));
     const cards = [hook, ...body.map(({ order, score, ...c }) => c), ...whys, portrait];
@@ -126,24 +154,27 @@ export function buildDecks(sheet) {
   const jobs = decks
     .filter((d) => sheet.summaries.has(d.entity))
     .map((d) => sheet.summaries.get(d.entity).replace(/\s*\([^)]*\)\s*$/, ''));
+  const people = sheet.entities.some((e) => e.type === 'person');
   if (jobs.length >= 2) {
     const group = sheet.kindPlural ? `All ${sheet.kindPlural}` : 'All together';
     const compare = {
       id: 'compare',
       entity: group,
       kind: 'compare',
-      clue: `Every ${sheet.kindWord || 'one'} had its own job.`,
+      clue: people ? `Every ${sheet.kindWord || 'one'} had their own cause.` : `Every ${sheet.kindWord || 'one'} had its own job.`,
       ask: sheet.kindWord ? `Which ${sheet.kindWord} did what?` : 'Who did what?',
-      answer: 'Each one’s job',
+      answer: people ? 'Each one’s cause' : 'Each one’s job',
       exact: '',
       lines: jobs,
       page: decks[0].cards[0].page,
       symbol: null,
-      symbols: decks.map((d) => d.cards[d.cards.length - 1].symbols[0]).filter(Boolean).slice(0, 4),
+      symbols: compareSymbols(decks),
       star: false,
     };
     decks.push({ entity: group, cards: [compare], compare: true });
   }
+  const born = peopleTimelineCard(sheet.entities);
+  if (born) decks.push({ entity: born.entity, cards: [born], compare: true });
 
   return { title: sheet.title, kindWord: sheet.kindWord, decks };
 }
@@ -367,4 +398,24 @@ export function linkFor(card, entity) {
     }
   }
   return null;
+}
+
+const TITLE_WORDS = new Set(['raja', 'rani', 'swami', 'mahatma', 'sir', 'lord', 'dr', 'begum', 'maharaja', 'maharani', 'sant', 'guru']);
+
+/** The parts of a person's name worth hiding: "Raja Ram Mohan Roy" -> Ram Mohan Roy, Mohan, Roy, Ram… */
+export function nameParts(name) {
+  const words = name.split(' ').filter((w) => !TITLE_WORDS.has(w.toLowerCase()));
+  const out = [];
+  for (let i = 0; i < words.length; i++) for (let j = words.length; j > i; j--) out.push(words.slice(i, j).join(' '));
+  return out.filter((p) => p.replace(/[^A-Za-z]/g, '').length >= 3).sort((a, b) => b.length - a.length);
+}
+
+/** One picture per place or person for the comparison card: the first of theirs that not everyone shares. */
+function compareSymbols(decks) {
+  const finals = decks.map((d) => d.cards.at(-1).symbols || []);
+  const everywhere = (sym) => finals.every((list) => list.includes(sym));
+  return finals
+    .map((list) => list.find((sym) => !everywhere(sym)) || list[0])
+    .filter(Boolean)
+    .slice(0, 4);
 }
