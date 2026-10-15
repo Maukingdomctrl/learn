@@ -425,3 +425,102 @@ test('check fails when a job line is not from the sheet', async () => {
   built.decks.at(-1).cards[0].lines[0] = 'Belfast = Biggest city in the world';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word/);
 });
+
+// ---------- events (history sample) ----------
+
+async function history() {
+  const data = new Uint8Array(readFileSync(here('../sample/history-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('history sample: numbered sections become topics with their labels; all checks pass', async () => {
+  const { sheet, built, check } = await history();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type, e.label]),
+    [
+      ['Causes of the Uprising', 'aspect', 'cause'],
+      ['Course of the Uprising', 'aspect', 'course'],
+      ['Leaders and Centres', 'aspect', 'people'],
+      ['Results of the Uprising', 'aspect', 'result'],
+    ],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('cause and result cards ask why and what changed', async () => {
+  const { built } = await history();
+  const lapse = built.decks[0].cards.find((c) => c.answer === 'Doctrine of Lapse');
+  assert.equal(lapse.ask, 'Why did it happen?');
+  const crown = built.decks[3].cards.find((c) => c.answer === 'British Crown');
+  assert.equal(crown.ask, 'What changed after?');
+});
+
+test('a sentence with "because" or "led to" becomes a why card hiding its own reason or outcome', async () => {
+  const { built } = await history();
+  const results = built.decks[3].cards;
+  const army = results.find((c) => c.kind === 'why' && c.ask === 'Why?');
+  assert.equal(army.clue, `The army was reorganised because ${BLANK}`);
+  assert.equal(army.answer, 'the British wanted to prevent another revolt');
+  const mughal = results.find((c) => c.kind === 'why' && c.ask === 'What happened next?');
+  assert.equal(mughal.answer, 'the end of the Mughal dynasty');
+  assert.equal(results.filter((c) => c.exact.startsWith('The army was reorganised')).length, 1, 'no duplicate card');
+});
+
+test('dated facts give a timeline: scrambled without dates on the front, in date order on the back', async () => {
+  const { built } = await history();
+  const t = built.decks[1].cards.find((c) => c.kind === 'timeline');
+  assert.ok(t.frontLines.every((l) => l.includes(BLANK)));
+  assert.deepEqual(
+    t.lines.map((l) => l.match(/\d{1,2} \w+ 1857|September 1857/)[0]),
+    ['29 March 1857', '10 May 1857', 'September 1857'],
+  );
+  assert.match(frontHtml(t), /class="lines"/);
+});
+
+test('pairs of bold names give a match card; leader cards hide the leader', async () => {
+  const { built } = await history();
+  const leaders = built.decks[2].cards;
+  const m = leaders.find((c) => c.kind === 'match');
+  assert.equal(m.frontLines[0], 'Rani Lakshmibai · Nana Saheb · Begum Hazrat Mahal · Kunwar Singh');
+  assert.equal(m.frontLines[1], 'Bihar · Jhansi · Kanpur · Lucknow');
+  assert.ok(m.lines.includes('Nana Saheb led the revolt at Kanpur'));
+  assert.equal(leaders[0].answer, 'Rani Lakshmibai');
+});
+
+test('"name them all" lists each fact\'s first bold name, for exam-style "state four causes"', async () => {
+  const { built } = await history();
+  const list = built.decks[0].cards.at(-1);
+  assert.equal(list.kind, 'list');
+  assert.deepEqual(list.lines, ['Doctrine of Lapse', 'land revenue', 'paid less', 'Enfield rifle']);
+  assert.equal(list.ask, 'How many can you name? (4)');
+});
+
+test('check fails when a timeline line is not from the sheet', async () => {
+  const { sheet, built } = await history();
+  built.decks[1].cards.find((c) => c.kind === 'timeline').lines[0] = 'On 1 April 1857, the rebels took Agra.';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word/);
+});
+
+test('check fails when a match card front adds a name that is not on the sheet', async () => {
+  const { sheet, built } = await history();
+  built.decks[2].cards.find((c) => c.kind === 'match').frontLines[0] += ' · Tantia Tope';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /card front is not from the sheet: "Tantia Tope"/);
+});
+
+test('check fails when a why card answer is not in its sentence', async () => {
+  const { sheet, built } = await history();
+  built.decks[3].cards.find((c) => c.kind === 'why').answer = 'the British were afraid';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /is not in its sentence/);
+});
+
+test('history sketches: revolt, acts, rifles and leaders get their own pictures', () => {
+  assert.equal(pickSymbol('the cartridges of the new Enfield rifle were rumoured to be greased', 'Enfield rifle'), 'rifle');
+  assert.equal(pickSymbol("Queen Victoria's Proclamation of 1858", "Queen Victoria's Proclamation"), 'scroll');
+  assert.equal(pickSymbol('Nana Saheb led the revolt at Kanpur', 'Nana Saheb'), 'person');
+  assert.equal(pickSymbol('sepoys at Meerut rose in revolt', 'Meerut'), 'sword');
+  assert.equal(pickSymbol('At the heart of the Industrial Revolution', 'Industrial Revolution'), 'factory');
+});

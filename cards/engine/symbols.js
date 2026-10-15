@@ -24,7 +24,30 @@ const polar = (cx, cy, r, deg) => {
   return [(cx + r * Math.cos(a)).toFixed(1), (cy + r * Math.sin(a)).toFixed(1)];
 };
 
+const sword = `<path d="M85 8 L90 18 V68 H80 V18 Z" fill="${P}"/><path d="M68 68 H102" stroke-width="3.4"/>
+  <path d="M85 68 V86" stroke-width="3.4"/><circle cx="85" cy="90" r="4" fill="${P}"/>`;
+
 export const ART = {
+  sword() {
+    return `<g transform="rotate(38 85 55)">${sword}</g><g transform="rotate(-38 85 55)">${sword}</g>`;
+  },
+  scroll() {
+    return `<path d="M54 28 H118 V84 H54 Z" fill="${P}"/>
+      <rect x="46" y="20" width="80" height="11" rx="5.5" fill="${P}"/><rect x="46" y="81" width="80" height="11" rx="5.5" fill="${P}"/>
+      <path d="M64 44 H110 M64 52 H110 M64 60 H102 M64 68 H92" stroke-width="1.4"/>
+      <circle cx="106" cy="71" r="6" fill="currentColor"/>`;
+  },
+  rifle() {
+    let rounds = '';
+    [60, 78, 96].forEach((x) => (rounds += `<path d="M${x} 98 V88 Q${x + 4} 80 ${x + 8} 88 V98 Z" fill="${P}" stroke-width="1.6"/>`));
+    return `<path d="M56 50 H156" stroke-width="4"/><path d="M150 46 V50" stroke-width="2"/>
+      <path d="M26 56 H122 V64 H66 L50 78 H28 L36 64 H26 Z" fill="${P}"/><path d="M74 64 Q76 72 84 72" stroke-width="1.8"/>
+      ${rounds}`;
+  },
+  person() {
+    return `<circle cx="85" cy="36" r="16" fill="${P}"/>
+      <path d="M50 98 Q50 60 85 60 Q120 60 120 98 Z" fill="${P}"/><path d="M85 60 L78 74 L85 98 L92 74 Z" stroke-width="1.4"/>`;
+  },
   ship() {
     let f = '';
     [56, 76, 96, 116].forEach((x, i) => {
@@ -224,6 +247,10 @@ export const ART = {
 
 // Words that point to each picture. Earlier pictures win ties; the generic ones at the end count for less.
 const KEYWORDS = [
+  ['rifle', ['rifle', 'rifles', 'cartridge', 'cartridges', 'gun', 'guns', 'musket']],
+  ['scroll', ['act', 'proclamation', 'treaty', 'constitution', 'doctrine', 'policy', 'annexed', 'promised']],
+  ['sword', ['revolt', 'uprising', 'rebellion', 'rebels', 'mutiny', 'war', 'battle', 'fight', 'fought', 'attacked', 'sepoys', 'soldiers', 'army']],
+  ['person', ['leader', 'leaders', 'led', 'rani', 'begum', 'saheb', 'viceroy', 'governor-general']],
   ['coal', ['coal', 'mine', 'mines', 'mining', 'minerals']],
   ['ship', ['ship', 'ships', 'shipbuilding', 'shipyard', 'titanic', 'port', 'harbour', 'harbor', 'boat', 'navy', 'vessel']],
   ['steam', ['steam', 'locomotive', 'railway', 'railways', 'train']],
@@ -231,7 +258,7 @@ const KEYWORDS = [
   ['jobs', ['linen', 'rope', 'rope-making', 'tobacco', 'textile', 'textiles', 'cotton', 'weaving']],
   ['river', ['river', 'thames', 'lagan', 'rea', 'canal', 'lake', 'tidal', 'stream']],
   ['parliament', ['parliament', 'assembly', 'senedd', 'political', 'government', 'law', 'politics', 'council']],
-  ['bank', ['bank', 'banking', 'financial', 'finance', 'money', 'commercial', 'retail', 'business', '£']],
+  ['bank', ['bank', 'banking', 'financial', 'finance', 'money', 'commercial', 'retail', 'business', '£', 'revenue', 'tax', 'taxes', 'debt']],
   ['crown', ['capital', 'king', 'queen', 'monarchy', 'royal', 'crown', 'throne', 'emperor', 'empire']],
   ['factory', ['industry', 'industries', 'industrial', 'factory', 'factories', 'manufacturing', 'mill', 'mills']],
   ['theatre', ['theatre', 'theater', 'arts', 'cultural', 'culture', 'creative', 'media', 'entertainment', 'music', 'film']],
@@ -243,7 +270,7 @@ const KEYWORDS = [
   ['sport', ['sport', 'sports', 'sporting', 'football', 'cricket']],
   ['market', ['market', 'markets', 'shop', 'shops', 'trade', 'trading']],
   ['gear', ['engine', 'economic', 'economy', 'machine', 'machines', 'technology']],
-  ['people', ['population', 'populous', 'people', 'census', 'inhabitants', 'residents', 'jobs']],
+  ['people', ['population', 'populous', 'people', 'census', 'inhabitants', 'residents', 'jobs', 'peasants']],
   ['calendar', ['century', 'founded', 'period', 'year', 'years', 'since', 'until'], 0.5],
   ['globe', ['world', 'worldwide', 'international', 'global', 'europe', 'continent'], 0.5],
   ['pin', ['situated', 'region', 'located', 'southeastern', 'midlands', 'area', 'metropolitan', 'island', 'lying'], 0.5],

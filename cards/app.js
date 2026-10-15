@@ -30,16 +30,18 @@ drop.addEventListener('drop', (e) => {
   const file = e.dataTransfer.files[0];
   if (file) loadFile(file);
 });
-$('sample').addEventListener('click', async () => {
-  setStatus('Loading the sample…');
-  try {
-    const res = await fetch('sample/sample-sheet.pdf');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    await run(new Uint8Array(await res.arrayBuffer()), 'Sample sheet');
-  } catch (err) {
-    setStatus(`Could not load the sample (${err.message}).`, true);
-  }
-});
+for (const b of document.querySelectorAll('[data-sample]')) {
+  b.addEventListener('click', async () => {
+    setStatus('Loading the sample…');
+    try {
+      const res = await fetch(b.dataset.sample);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await run(new Uint8Array(await res.arrayBuffer()), 'Sample sheet');
+    } catch (err) {
+      setStatus(`Could not load the sample (${err.message}).`, true);
+    }
+  });
+}
 
 async function loadFile(file) {
   if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') {
@@ -133,7 +135,10 @@ function startDeck(i) {
 function startMixed() {
   state.mixed = true;
   const decks = state.result.built.decks;
-  const all = decks.flatMap((d) => d.cards.filter((c) => c.kind !== 'portrait' && c.kind !== 'compare'));
+  // Only single-fact cards are shuffled; cards about a whole topic (final picture, lists, timelines,
+  // pairs, the comparison) would give the game away mid-round.
+  const SINGLE = new Set(['hook', 'cloze', 'who', 'why', 'recall']);
+  const all = decks.flatMap((d) => d.cards.filter((c) => SINGLE.has(c.kind)));
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [all[i], all[j]] = [all[j], all[i]];

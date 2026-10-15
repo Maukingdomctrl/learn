@@ -2,6 +2,15 @@
 
 import { BLANK } from './cards.js';
 
+// Cards about a whole topic or sheet: their front is a fixed prompt, their sheet words are in lines/frontLines.
+const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list']);
+
+const pieces = (line) =>
+  line
+    .split(new RegExp(`${BLANK}|…`))
+    .map((p) => p.trim())
+    .filter(Boolean);
+
 const norm = (s) =>
   s
     .toLowerCase()
@@ -37,15 +46,22 @@ export function checkDecks(sheet, built) {
 
   for (const c of allCards) {
     // Exactness: the back is the sheet's own words.
-    for (const piece of c.lines || [c.exact]) {
-      if (!source.includes(norm(piece))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${piece}".`);
+    for (const line of c.lines || [c.exact]) {
+      for (const piece of pieces(line)) {
+        if (!source.includes(norm(piece))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${piece}".`);
+      }
     }
-    if (c.kind === 'cloze' && !norm(c.exact).includes(norm(c.answer))) {
+    for (const line of c.frontLines || []) {
+      for (const piece of pieces(line).flatMap((p) => p.split(' · '))) {
+        if (!source.includes(norm(piece))) problems.push(`${c.entity}: card front is not from the sheet: "${piece}".`);
+      }
+    }
+    if ((c.kind === 'cloze' || c.kind === 'why') && !norm(c.exact).includes(norm(c.answer))) {
       problems.push(`${c.entity}: the answer "${c.answer}" is not in its sentence.`);
     }
     // Fronts add nothing: each visible piece of the clue appears in the sheet (the comparison card's
     // front is a fixed prompt).
-    if (c.kind === 'compare') continue;
+    if (DECK_CARDS.has(c.kind)) continue;
     for (const piece of c.clue.split(new RegExp(`${BLANK}|…`)).map((p) => p.trim())) {
       if (piece && !source.includes(norm(piece))) problems.push(`${c.entity}: clue text not found in the sheet: "${piece}".`);
     }
@@ -89,7 +105,7 @@ export function checkDecks(sheet, built) {
       `${untaught} lines (tables, questions, tips) are not on cards yet. This version only makes cards from headed bullet lists.`,
     );
   }
-  const noPicture = allCards.filter((c) => c.kind !== 'portrait' && !c.symbol).length;
+  const noPicture = allCards.filter((c) => !c.symbol && !c.symbols?.length).length;
   if (noPicture) notes.push(`${noPicture} cards have no matching picture, so they show a "draw it!" box.`);
 
   return { ok: problems.length === 0, problems, notes };

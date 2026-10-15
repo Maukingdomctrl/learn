@@ -1,6 +1,7 @@
 // Facts -> cards. Fixed rules only. Every word on a card back is copied from the sheet;
 // a card front is a piece of the same sentence with one part hidden, plus a fixed prompt.
 
+import { ASK_BY_LABEL, listCard, matchCard, recallClue, timelineCard, whyCard } from './events.js';
 import { nameTip, thingFact } from './nametips.js';
 import { pickSymbol } from './symbols.js';
 
@@ -11,7 +12,9 @@ export const BLANK = '_____';
 /**
  * @returns {{title, kindWord, decks: Deck[]}}
  * Deck = { entity, cards: Card[] }
- * Card = { id, entity, kind: 'hook'|'cloze'|'who'|'portrait', clue, ask, answer, exact, page, symbol, symbols, star }
+ * Card = { id, entity, kind, clue, ask, answer, exact, page, symbol, symbols, star, hint?, tip?, link?, lines?, frontLines? }
+ * kind: places use 'hook' | 'cloze' | 'who' | 'portrait'; other topics use 'cloze' | 'recall' | 'list' | 'timeline' | 'match';
+ * either may add 'why' (a sentence's own because/led to) and the sheet-level 'compare'.
  */
 export function buildDecks(sheet) {
   const lowerText = sheet.text.toLowerCase();
@@ -19,6 +22,7 @@ export function buildDecks(sheet) {
   const who = sheet.kindWord ? `Which ${sheet.kindWord}?` : 'Who am I?';
 
   const decks = sheet.entities.map((e) => {
+    if (e.type === 'aspect') return topicDeck(e, lowerText);
     const hook = {
       id: `${slugOf(e.display)}-hook`,
       entity: e.display,
@@ -75,15 +79,24 @@ export function buildDecks(sheet) {
       const fact = thingFact(c.answer);
       if (fact) c.tip = fact;
     }
-    const cards = [hook, ...body.map(({ order, score, ...c }) => c), portrait];
+    const whys = e.facts
+      .map((f) => whyCard(f, e.display))
+      .filter(Boolean)
+      .map((c) => ({ ...c, id: `${c.id}-why`, symbol: pickSymbol(c.exact), star: false }));
+    const cards = [hook, ...body.map(({ order, score, ...c }) => c), ...whys, portrait];
     // A name tip goes on backs whose answer is the place name itself, where the child is learning that name.
     const tip = nameTip(e.display);
     if (tip) for (const c of cards) if (c.answer === e.display) c.tip = tip;
     return { entity: e.display, cards };
   });
 
-  // Every card except the final picture gets a small hint: the answer's shape, first letters only.
-  for (const d of decks) for (const c of d.cards) if (c.kind !== 'portrait') c.hint = letterHint(c.answer);
+  // Short answers get a small hint: the answer's shape, first letters only. Long answers (a whole reason)
+  // and the final cards get none.
+  for (const d of decks) {
+    for (const c of d.cards) {
+      if (['hook', 'cloze', 'who'].includes(c.kind) && c.answer.split(' ').length <= 5) c.hint = letterHint(c.answer);
+    }
+  }
 
   // Prefer pictures the other places on the sheet don't have: four capitals all have a crown,
   // but only Belfast has the ship. Shared pictures fill in only when nothing distinctive is left.
@@ -95,6 +108,7 @@ export function buildDecks(sheet) {
   }
   for (const d of decks) {
     const portrait = d.cards[d.cards.length - 1];
+    if (portrait.kind !== 'portrait' && portrait.kind !== 'list') continue; // timelines and pairs keep their own picture
     const candidates = [];
     for (const c of d.cards) {
       if (c.symbol && !GENERIC_SYMBOLS.has(c.symbol) && !candidates.includes(c.symbol)) candidates.push(c.symbol);
@@ -132,6 +146,47 @@ export function buildDecks(sheet) {
   }
 
   return { title: sheet.title, kindWord: sheet.kindWord, decks };
+}
+
+/**
+ * A topic that is not a place ("Causes of the Uprising"): one card per fact in the sheet's order,
+ * then a timeline, a matching card and a "name them all" card where the facts allow it.
+ */
+function topicDeck(e, lowerText) {
+  const body = e.facts.map((f) => {
+    // For people, the person is the thing to learn: hide the first bold name ("_____ led the revolt at Kanpur").
+    const key = f.label === 'people' && f.keys[0] ? f.keys[0] : chooseKey(f, e.display, lowerText);
+    const why = whyCard(f, e.display);
+    if (!key && why) return { ...why, symbol: pickSymbol(f.text), star: false };
+    const front = key
+      ? { kind: 'cloze', clue: clozeClue(f.text, key), ask: ASK_BY_LABEL[f.label] || '', answer: key }
+      : { kind: 'recall', clue: recallClue(f.text), ask: 'Finish it.', answer: f.text };
+    return {
+      id: f.id,
+      entity: e.display,
+      ...front,
+      exact: f.text,
+      page: f.page,
+      symbol: pickSymbol(f.text, key || ''),
+      star: key ? count(lowerText, key.toLowerCase()) >= 3 : false,
+    };
+  });
+  for (const c of body) {
+    if (c.kind !== 'cloze') continue;
+    const fact = thingFact(c.answer);
+    if (fact) c.tip = fact;
+  }
+  // A fact with both a bold name and a because/led to also gets the "why?" card.
+  const whys = e.facts
+    .filter((f) => chooseKey(f, e.display, lowerText))
+    .map((f) => whyCard(f, e.display))
+    .filter(Boolean)
+    .map((c) => ({ ...c, id: `${c.id}-why`, symbol: pickSymbol(c.exact), star: false }));
+  const timeline = timelineCard(e.facts, e.display);
+  const match = matchCard(e.facts, e.display);
+  // Course of events ends with its timeline, people with their pairs; other topics with "name them all".
+  const last = match || (timeline ? null : listCard(e.facts, e.display));
+  return { entity: e.display, cards: [...body, ...whys, ...[timeline, last].filter(Boolean)] };
 }
 
 /**

@@ -362,6 +362,9 @@ h3 {
   line-height: 1.12;
   text-wrap: balance;
 }
+.cardface .answer.long {
+  font-size: 8cqh;
+}
 .cardface .exact {
   font-size: 7.6cqh;
   line-height: 1.22;
@@ -394,7 +397,7 @@ h3 {
   text-transform: uppercase;
   margin-right: 1cqw;
 }
-.cardface .jobs {
+.cardface .lines {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -405,7 +408,12 @@ h3 {
   text-align: left;
   justify-self: stretch;
 }
-.cardface .jobs li::before {
+.cardface .pic .lines {
+  align-self: center;
+  font-size: 6.4cqh;
+  gap: 2.2cqh;
+}
+.cardface .lines li::before {
   content: '▸ ';
 }
 .cardface .src {
