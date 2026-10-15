@@ -54,3 +54,24 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+  cards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: cards
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: cards/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run card engine tests
+        run: npm test

@@ -15,6 +15,8 @@ The specification is [`methodology/CORE_TEACHING_METHODOLOGY_FINAL.md`](methodol
 > - The automated tests use a synthetic one-page curriculum PDF and a **scripted fake model** (see [Testing](#testing)).
 > - All timing numbers are the methodology's provisional values.
 
+**Also in this repo:** `cards/` is a separate, browser-only prototype. It turns a study-sheet PDF into printable picture flashcards with no AI. See [`cards/README.md`](cards/README.md).
+
 ---
 
 ## Setup
