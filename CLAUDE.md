@@ -24,7 +24,7 @@ In Claude Code cloud sessions, `.claude/hooks/session-start.sh` does the setup: 
 ## Layout
 Pipeline in `learn/pipeline.py`:
 
-extract → select + sufficiency → generate → timing → render → checks → repair (≤2 rounds) → deliver or report
+extract → select + sufficiency → focus → teaching plan → generate → timing → render → checks → repair (≤2 rounds) → deliver or report
 
 | Area | Files |
 | :--- | :--- |
@@ -53,6 +53,8 @@ extract → select + sufficiency → generate → timing → render → checks �
 - **Numeric answers carry a `calculation`.** `calc.py` re-evaluates it (D7). Keep the evaluator restricted: no `eval`, no names beyond `sqrt`/`pi`.
 - **The A2 blind solver gets only the student-PDF text.** Never the key, never the source.
 - **Model calls go through `LLM.json(task, system, prompt)`.** This keeps every call replaceable by the scripted fake in `tests/conftest.py`.
+- **After selection, the model sees only the focused source** (`SourceIndex.focus`). Never pass the whole PDF to planning, generation or repair. D2 rejects citations outside the focus.
+- **Output limits:** thinking counts toward `max_tokens`. Retry a cut-off response at most once, clamp to the model's limit, and log every request (`AnthropicLLM.call_log` → `report.model_calls`).
 - **Errors become reports.** Missing credentials and unexpected exceptions produce a stopped `Report`, never a crash.
 
 Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requirements-dev.txt`, which CI uses.

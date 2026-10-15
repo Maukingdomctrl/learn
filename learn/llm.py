@@ -1,9 +1,18 @@
-"""Model client. One JSON-returning call per task, so tests can substitute a scripted fake."""
+"""Model client. One JSON-returning call per task, so tests can substitute a scripted fake.
+
+Every API request is recorded in `call_log` (task, limits, stop reason, token usage, error) so a run's report
+shows why a response was cut off or failed. Thinking counts toward `max_tokens` on current models, so a
+response stopped at `max_tokens` is retried once with a larger budget, never above the model's own output limit.
+"""
 
 import base64
 import json
 import re
-from typing import Protocol
+import time
+from dataclasses import asdict, dataclass
+from typing import Optional, Protocol
+
+from . import config as C
 
 
 class LLMError(Exception):
@@ -26,56 +35,149 @@ def parse_json(text: str) -> dict:
     return json.loads(text[start : end + 1])
 
 
+@dataclass
+class CallRecord:
+    task: str
+    model: str
+    effort: str
+    max_tokens: int
+    attempt: int
+    stop_reason: Optional[str] = None
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    thinking_tokens: Optional[int] = None
+    seconds: float = 0.0
+    error: Optional[str] = None
+
+
 class AnthropicLLM:
     """Claude via the Anthropic SDK. Credentials come from the environment (ANTHROPIC_API_KEY etc.)."""
 
-    def __init__(self, model: str, effort: str = "high"):
+    def __init__(
+        self,
+        model: str,
+        effort: str = "high",
+        check_effort: str = "medium",
+        max_tokens: int = 32000,
+        retry_max_tokens: int = 64000,
+        client=None,
+    ):
         import anthropic
 
         self._anthropic = anthropic
-        self.client = anthropic.Anthropic()
+        self.client = client if client is not None else anthropic.Anthropic()
         self.model = model
         self.effort = effort
+        self.check_effort = check_effort
+        self.max_tokens = max_tokens
+        self.retry_max_tokens = retry_max_tokens
+        self.call_log: list[dict] = []
+        self.notes: list[str] = []
+        self._model_cap: Optional[int] = None
+        self._cap_checked = False
 
-    def _call(self, system: str, content) -> str:
+    @classmethod
+    def from_config(cls) -> "AnthropicLLM":
+        return cls(C.model_name(), C.model_effort(), C.check_effort(), C.max_output_tokens(), C.retry_output_tokens())
+
+    def model_output_cap(self) -> Optional[int]:
+        """The model's maximum output tokens from the Models API, or None if it cannot be read."""
+        if not self._cap_checked:
+            self._cap_checked = True
+            try:
+                self._model_cap = int(self.client.models.retrieve(self.model).max_tokens)
+                self.notes.append(f"{self.model}: Models API reports max output {self._model_cap} tokens")
+            except Exception as e:  # noqa: BLE001 - fall back to configured limits, but say so
+                self.notes.append(
+                    f"Could not read {self.model}'s output limit ({type(e).__name__}); using configured limits"
+                )
+        return self._model_cap
+
+    def budgets(self) -> tuple[int, int]:
+        """(first attempt, retry) output budgets, each clamped to the model's limit when known."""
+        cap = self.model_output_cap()
+        first, retry = self.max_tokens, max(self.retry_max_tokens, self.max_tokens)
+        if cap:
+            first, retry = min(first, cap), min(retry, cap)
+        return first, retry
+
+    def effort_for(self, task: str) -> str:
+        return self.effort if task in C.WRITING_TASKS else self.check_effort
+
+    def _request(self, task: str, system: str, content, max_tokens: int, attempt: int):
+        effort = self.effort_for(task)
+        rec = CallRecord(task=task, model=self.model, effort=effort, max_tokens=max_tokens, attempt=attempt)
+        start = time.monotonic()
         try:
             with self.client.beta.messages.stream(
                 model=self.model,
-                max_tokens=32000,
+                max_tokens=max_tokens,
                 system=system,
                 messages=[{"role": "user", "content": content}],
                 thinking={"type": "adaptive"},
-                output_config={"effort": self.effort},
+                output_config={"effort": effort},
                 betas=["server-side-fallback-2026-07-01"],
                 fallbacks="default",
             ) as stream:
                 msg = stream.get_final_message()
-        except self._anthropic.AuthenticationError as e:
-            raise LLMError("Claude API credentials are missing or invalid (set ANTHROPIC_API_KEY).") from e
-        except self._anthropic.RateLimitError as e:
-            raise LLMError("Claude API rate limit reached; try again later.") from e
-        except self._anthropic.APIStatusError as e:
-            raise LLMError(f"Claude API error {e.status_code}: {e.message}") from e
-        except self._anthropic.APIConnectionError as e:
-            raise LLMError(f"Cannot reach the Claude API: {e}") from e
-        except TypeError as e:  # the SDK raises TypeError when no credentials can be resolved
-            if "authentication" in str(e).lower():
-                raise LLMError("Claude API credentials are not configured (set ANTHROPIC_API_KEY).") from e
-            raise
+        except Exception as e:
+            rec.error = f"{type(e).__name__}: {e}"
+            rec.seconds = round(time.monotonic() - start, 2)
+            self.call_log.append(asdict(rec))
+            translated = self._translate(e)
+            if translated is e:
+                raise
+            raise translated from e
+        rec.seconds = round(time.monotonic() - start, 2)
+        rec.stop_reason = msg.stop_reason
+        usage = getattr(msg, "usage", None)
+        if usage is not None:
+            rec.input_tokens = getattr(usage, "input_tokens", None)
+            rec.output_tokens = getattr(usage, "output_tokens", None)
+            details = getattr(usage, "output_tokens_details", None)
+            rec.thinking_tokens = getattr(details, "thinking_tokens", None) if details else None
+        self.call_log.append(asdict(rec))
+        return msg
+
+    def _translate(self, e: Exception) -> Exception:
+        a = self._anthropic
+        if isinstance(e, a.AuthenticationError):
+            return LLMError("Claude API credentials are missing or invalid (set ANTHROPIC_API_KEY).")
+        if isinstance(e, a.RateLimitError):
+            return LLMError("Claude API rate limit reached; try again later.")
+        if isinstance(e, a.APIStatusError):
+            return LLMError(f"Claude API error {e.status_code}: {e.message}")
+        if isinstance(e, a.APIConnectionError):
+            return LLMError(f"Cannot reach the Claude API: {e}")
+        if isinstance(e, TypeError) and "authentication" in str(e).lower():  # SDK: no credentials resolved
+            return LLMError("Claude API credentials are not configured (set ANTHROPIC_API_KEY).")
+        return e
+
+    def _call(self, task: str, system: str, content) -> str:
+        first, retry = self.budgets()
+        msg = self._request(task, system, content, first, attempt=1)
+        if msg.stop_reason == "max_tokens" and retry > first:
+            # Safe to retry: the request was accepted and only ran out of output budget.
+            msg = self._request(task, system, content, retry, attempt=2)
         if msg.stop_reason == "refusal":
-            raise LLMError("The model declined the request.")
+            raise LLMError(f"{task}: the model declined the request.")
         if msg.stop_reason == "max_tokens":
-            raise LLMError("The model response was cut off (max_tokens).")
+            last = self.call_log[-1]
+            raise LLMError(
+                f"{task}: the model response was cut off at its {last['max_tokens']}-token output limit "
+                f"({last['output_tokens']} output tokens, of which {last['thinking_tokens']} thinking). "
+                "Lower LEARN_EFFORT or raise LEARN_MAX_TOKENS_RETRY (it cannot exceed the model's limit)."
+            )
         return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
 
     def json(self, task: str, system: str, prompt: str) -> dict:
-        text = self._call(system, prompt)
+        text = self._call(task, system, prompt)
         try:
             return parse_json(text)
         except ValueError as e:
             retry = f"{prompt}\n\nYour previous reply was not valid JSON ({e}). Reply with one JSON object only."
             try:
-                return parse_json(self._call(system, retry))
+                return parse_json(self._call(task, system, retry))
             except ValueError as e2:
                 raise LLMError(f"{task}: model did not return valid JSON ({e2})") from e2
 
@@ -98,4 +200,4 @@ class AnthropicLLM:
                 ),
             },
         ]
-        return self._call("You are a careful OCR transcriber.", content)
+        return self._call("ocr", "You are a careful OCR transcriber.", content)

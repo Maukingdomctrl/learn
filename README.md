@@ -61,8 +61,8 @@ The exit code is 0 when a lesson was delivered and 2 when it stopped with a limi
 | Path | Contents |
 | :--- | :--- |
 | `deliver/student_lesson.pdf`, `deliver/parent_answer_key.pdf` | Created **only** when every check passed. |
-| `work/` | Lesson JSON, HTML and PDFs for each repair round. Kept for debugging; **never** served or delivered. |
-| `report.json` | Status, parent message, every check result, computed timing, PDF warnings, log. |
+| `work/` | Teaching plan, lesson JSON, HTML and PDFs for each repair round. Kept for debugging; **never** served or delivered. |
+| `report.json` | Status, parent message, every check result, computed timing, PDF warnings, log; the technical `error` that stopped a run; the focused source units and the teaching plan; and `model_calls`: one record per API request with its task, effort, `max_tokens`, `stop_reason`, input/output/thinking tokens and any error. |
 
 ---
 
@@ -73,7 +73,9 @@ The exit code is 0 when a lesson was delivered and 2 when it stopped with a limi
 | 1. Input (PDF, Standard 7/8, optional topic or page range) | `learn/web.py`, `learn/cli.py`, `learn/grounding.py` (page ranges) |
 | 2. Extract text blocks into source units `SRC-P{page}-U{n}`; OCR for pages with no text layer | `learn/extraction.py` |
 | 3–4. Choose the concept; sufficiency test (§3.3) | `learn/generation.py` (model proposes, citing units) + `learn/grounding.py::check_selection` (code verifies the cited units exist) |
-| 5. Generate lesson and answer-key data (§9 schema) | `learn/generation.py`, `learn/models.py` |
+| Focus: from here on the model sees only the selected units plus one neighbour either side on the same page | `learn/grounding.py::SourceIndex.focus` |
+| 5a. Teaching plan: concept, 2–3 incremental learning steps, one likely misconception, a worked example, a visual type. Code checks its shape, citations (inside the focus) and worked-example arithmetic, re-asking once | `learn/generation.py::plan_lesson`, `learn/grounding.py::check_plan` |
+| 5b. Generate lesson and answer-key data (§9 schema) from the plan | `learn/generation.py`, `learn/models.py` |
 | 6. Timing (§6), computed in code from the lesson data | `learn/timing.py`, `learn/sequence.py` |
 | 7. Render HTML to PDF (fixed template, §7) | `learn/rendering.py`, `learn/templates/*.j2` |
 | 8. Validate: D1–D7 in code, A1–A4 as separate model calls | `learn/validation.py`, `learn/calc.py` |
@@ -89,13 +91,19 @@ Design rules the code enforces:
   - A numeric SOLVE or COMPLETE_STEPS answer without a calculation fails D7.
 - **The blind solver (A2) sees only the student pages.** It gets the text of the rendered student PDF, never the key or the source. A test asserts this.
 - **Every model call is mockable.** Calls go through `learn/llm.py` (`LLM.json(task, system, prompt)`).
+- **Output limits are explicit.** On current models thinking counts toward `max_tokens`.
+  - Each response gets `LEARN_MAX_TOKENS` (default 32000).
+  - A response stopped at `max_tokens` is retried **once** with `LEARN_MAX_TOKENS_RETRY` (default 64000).
+  - Both are clamped to the model's own output limit, read from the Models API. If that can't be read, the configured values are used and the report says so.
+  - Refusals and API errors are never retried.
+  - Writing tasks (plan, lesson, repair) use `LEARN_EFFORT` (default high); selection, OCR and the AI checks use `LEARN_CHECK_EFFORT` (default medium).
 
 ### Checks: what is implemented
 
 | ID | Check | How | Status |
 | :--- | :--- | :--- | :--- |
 | D1 | Structure: 5 stages in order, item counts per stage, total 7–13, hook, worked example, Standard 7/8 | code | Implemented and tested |
-| D2 | Citations: every concept, claim, term, table and key entry cites existing source units | code | Implemented and tested |
+| D2 | Citations: every concept, claim, term, table and key entry cites source units from the focused selection the model was given | code | Implemented and tested |
 | D3 | Activity rules (§5.1, §5.2): allowed stages, ≥3 types, no consecutive repeats, required `Ex`, options ≥ prompts + 1, CHOOSE 3–4 options with exactly one correct, ANNOTATE targets, SORT groups, SPOT_MISTAKE single step, SKETCH criteria | code | Implemented and tested |
 | D4 | Text limits (§5.3): instruction ≤22 words and ≤2 actions, sentences ≤25 words, ≤65 words before the first mark, ≤120-word reading runs; banned patterns (scores, timers, NOT/EXCEPT stems, word searches…); colour words in instructions | code | Implemented and tested. Action counting uses a fixed verb list (heuristic). |
 | D5 | Timing (§6.3) with Rule S (§6.4) | code | Implemented and tested |
@@ -104,7 +112,7 @@ Design rules the code enforces:
 | A1 | Grounding and factual correctness | model call | Implemented. Exercised only with a scripted fake in tests; **not yet run against the real API**. |
 | A2 | Blind solve from student pages only | model call + code (all items answered, zero flags) | Same as A1 |
 | A3 | Blind-solver answers agree with the key | model call | Same as A1 |
-| A4 | Clarity and age fit | model call | Same as A1 |
+| A4 | Clarity and age fit; with a teaching plan, also whether the lesson builds through the plan's steps, uses its worked example and addresses its misconception | model call | Same as A1 |
 | H (§8.4) | Pilot calibration with children, print tests, parent review | humans | **Not done.** No testing with children has happened. |
 
 The sufficiency test (§3.3) is split three ways:
@@ -122,7 +130,7 @@ ruff check .        # lint; rules in ruff.toml
 ruff format .       # format (CI runs ruff format --check)
 ```
 
-50 tests run in about 20 s, including real Chromium rendering. GitHub Actions runs the tests, the ruff lint and a ruff format check on every pull request and on pushes to `main` (`.github/workflows/tests.yml`); CI needs no API key. What the tests cover:
+71 tests run in about 30 s, including real Chromium rendering. GitHub Actions runs the tests, the ruff lint and a ruff format check on every pull request and on pushes to `main` (`.github/workflows/tests.yml`); CI needs no API key. What the tests cover:
 - **Timing:** the methodology's §6.5 worked example is reproduced exactly (903.3 s); word-counting rules; sketch time counted once.
 - **Arithmetic evaluator:** correct results; rejects unsafe or invalid input; allows the answer's stated rounding.
 - **Extraction:** text PDFs; page ranges; scanned pages with OCR off and with a fake OCR; non-PDF files.
@@ -136,6 +144,9 @@ ruff format .       # format (CI runs ruff format --check)
   - an AI-check failure blocks delivery;
   - missing credentials and unexpected errors produce a report, not a crash.
 - **Web:** upload, then download only the delivered files; a non-PDF upload and a bad Standard are rejected.
+- **Model client (fake SDK client):** a truncated response is retried once with a larger budget; a second truncation stops with details and no third request; budgets are clamped to the model's limit; no retry when the first budget is already at the limit; Models API failure falls back to configured limits; refusals aren't retried; effort per task; errors are logged.
+- **Teaching plan:** the sample plan passes; too many steps, unselected citations, wrong worked-example arithmetic and a missing visual purpose are caught; one re-ask with the problems, then stop; the plan reaches the generation prompt; a bad plan stops the run with nothing delivered.
+- **Focused source:** neighbours stay on the same page; plan and generation prompts contain no unselected units; a lesson citing an unselected unit fails D2; the report carries the model call log and error.
 
 **What the tests do not show.**
 - `tests/fixtures.py` holds a **synthetic** "area of a triangle" PDF and a hand-written lesson. Neither is the curriculum PDF the methodology was tested against; that PDF is not in the repository.
@@ -150,14 +161,21 @@ ruff format .       # format (CI runs ruff format --check)
    - Prompt wording, JSON compliance and repair success rates are unknown until someone runs Learn with a key on real curriculum PDFs.
 2. **Figures are not interpreted.**
    - Pages with pictures or diagrams are flagged in the warnings and the answer key, and only their text is used.
-   - The only visuals in V1 lessons are tables (no generated diagrams).
-3. **Timing adjustment (§2 step 6) is folded into the repair loop.** A timing failure is repaired with the §6.4 hierarchy, then re-rendered and fully re-checked, and it counts toward the 2-round limit.
-4. **Rule S** is accepted only from repair round 1 onward. It needs a `shortened_lesson_note` and a time of 600–780 s. This stops the first draft from declaring itself "short" instead of being lengthened.
-5. **Template labels are not counted as reading words.** These are labels such as "Step 1 · Discover", "Worked example", "Answer:" and "Name/Date". They add a few seconds that the timing model does not count.
-6. **Page 2 is tight.**
+   - The only visuals in V1 lessons are tables (no generated diagrams). The teaching plan already names a visual type (shape, number line, bar model, flow sequence, table or none), but only tables are printed until the visual engine exists.
+3. **The teaching plan is a model output.** Code checks its grounding and arithmetic, not whether its learning steps are a good teaching order; A4 reviews that, and A4 is itself a fallible model check.
+4. **Focused context depends on the selection.** If the selection step leaves out a unit the lesson needs, generation cannot see it. The plan and lesson then fail their checks and the run stops with a report, rather than inventing the missing material.
+5. **Timing adjustment (§2 step 6) is folded into the repair loop.** A timing failure is repaired with the §6.4 hierarchy, then re-rendered and fully re-checked, and it counts toward the 2-round limit.
+6. **Rule S** is accepted only from repair round 1 onward. It needs a `shortened_lesson_note` and a time of 600–780 s. This stops the first draft from declaring itself "short" instead of being lengthened.
+7. **Template labels are not counted as reading words.** These are labels such as "Step 1 · Discover", "Worked example", "Answer:" and "Name/Date". They add a few seconds that the timing model does not count.
+8. **Page 2 is tight.**
    - Its right column holds both Apply and the Recall box, about 177 mm in all.
    - Two SOLVE problems (each needs ≥35 mm of workspace) plus two Recall items do not fit.
    - The prompt gives the model a space budget, and D6 rejects overflow. Expect repairs to remove an item in such cases. This follows from the fixed §7.1 layout and may deserve a methodology revision after pilot use.
-7. **Methodology rounding:** §6.5 states 15.06 min; 903.29 s ÷ 60 = 15.055, which rounds to 15.05 (15.06 comes from rounding 903.3 first). This makes no practical difference.
-8. **OCR quality is untested.** Neither the Tesseract path nor the Claude vision path has been tested on a real scan here. Tesseract was not installable in the development environment, and there was no API key.
-9. **Local prototype only.** Requests run synchronously. There are no accounts, no job queue and no clean-up of old output folders.
+9. **Methodology rounding:** §6.5 states 15.06 min; 903.29 s ÷ 60 = 15.055, which rounds to 15.05 (15.06 comes from rounding 903.3 first). This makes no practical difference.
+10. **OCR quality is untested.** Neither the Tesseract path nor the Claude vision path has been tested on a real scan here. Tesseract was not installable in the development environment, and there was no API key.
+11. **Local prototype only.** Requests run synchronously. There are no accounts, no job queue and no clean-up of old output folders.
+12. **Extraction keeps some layout noise.** On a real 6-page Grade 8 notes PDF:
+    - running page footers were merged into the last unit of a page;
+    - a comparison table came out as flattened text rather than rows and columns.
+
+    Learn grounds lessons in that text as extracted.

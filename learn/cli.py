@@ -15,7 +15,7 @@ def make_llm():
     try:
         from .llm import AnthropicLLM
 
-        return AnthropicLLM(C.model_name(), C.model_effort()), ""
+        return AnthropicLLM.from_config(), ""
     except Exception as e:  # missing credentials surface here or on the first call
         return None, str(e)
 

@@ -9,7 +9,7 @@ import copy
 import os
 
 from learn.pipeline import run
-from tests.fixtures import SAMPLE_LESSON
+from tests.fixtures import SAMPLE_LESSON, SAMPLE_PLAN
 
 SELECTION = {
     "status": "ok",
@@ -18,7 +18,7 @@ SELECTION = {
     "is_procedure": True,
     "explanation_unit_ids": ["SRC-P1-U3"],
     "procedure_unit_ids": ["SRC-P1-U4"],
-    "supporting_unit_ids": ["SRC-P1-U2", "SRC-P1-U5"],
+    "supporting_unit_ids": ["SRC-P1-U2", "SRC-P1-U5", "SRC-P1-U6", "SRC-P2-U1", "SRC-P2-U2"],
     "can_support_7_items": True,
     "not_covered": "",
     "source_issues": [],
@@ -32,6 +32,7 @@ BLIND = {"answers": [{"item_number": n, "answer": "x", "flag": None} for n in ra
 def responses(**over):
     r = {
         "select_concept": SELECTION,
+        "plan_lesson": copy.deepcopy(SAMPLE_PLAN),
         "generate_lesson": copy.deepcopy(SAMPLE_LESSON),
         "repair_lesson": copy.deepcopy(SAMPLE_LESSON),
         "A1": PASS,
@@ -51,7 +52,7 @@ def test_delivers_when_all_checks_pass(sample_pdf, tmp_path, scripted):
     assert rep.rounds == 0
     assert {c["id"] for c in rep.checks} == {"D1", "D2", "D3", "D4", "D5", "D6", "D7", "A1", "A2", "A3", "A4"}
     tasks = [t for t, _ in llm.calls]
-    assert tasks == ["select_concept", "generate_lesson", "A1", "A2", "A3", "A4"]
+    assert tasks == ["select_concept", "plan_lesson", "generate_lesson", "A1", "A2", "A3", "A4"]
     # The blind solver sees only student-page text: never the answer key.
     a2_prompt = dict(llm.calls)["A2"]
     assert "Parent answer key" not in a2_prompt and "Why it is correct" not in a2_prompt

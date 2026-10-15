@@ -1,4 +1,4 @@
-"""Model prompts: concept selection (steps 3-4), lesson generation (step 5), repair (step 9).
+"""Model prompts: concept selection (steps 3-4), teaching plan and lesson generation (step 5), repair (step 9).
 
 The model writes lesson content only. Code computes timing, source pages, and every check.
 """
@@ -8,9 +8,9 @@ import json
 from pydantic import ValidationError
 
 from . import config as C
-from .grounding import SourceIndex
+from .grounding import SourceIndex, check_plan
 from .llm import LLM, LLMError
-from .models import Lesson
+from .models import Lesson, TeachingPlan
 
 
 class GenerationError(Exception):
@@ -227,17 +227,69 @@ SCHEMA_EXAMPLE = {
     },
 }
 
+PLAN_PROMPT = """Plan how one ~15-minute paper lesson will TEACH this concept to a first-time learner, step by step.
+Do not summarise the source. Decide how understanding is built up, then practised.
+
+Standard: {standard}
+Concept selection: {selection}
+
+Plan:
+- concept: the one concept (or at most 3 closely related sub-concepts) this lesson teaches.
+- learning_steps: {lo}-{hi} small steps, in teaching order. Each step adds one idea to the previous one
+  (for example: what the quantity is -> how the rule works -> how to use it backwards). Each step cites the
+  source units that support it.
+- misconception: one mistake a first-time learner is likely to make (wrong_idea), and the correct idea from the
+  source (correct_idea, cited). The wrong idea is scaffolding; it is never taught as true.
+- worked_example: one complete example taken from the source or applying exactly the source's method with
+  numbers no harder than the source's: problem, steps (at least 2), answer, and calculation (a plain arithmetic
+  expression that reproduces a numeric answer, else null). Cite the units.
+- visual_type: the one picture that would best help a learner SEE the idea:
+  "shape" (geometry with labelled sides/heights), "number_line", "bar_model" (part-whole or comparison),
+  "flow_sequence" (steps, stages, a timeline or a cycle), "table" (comparing a few items on the same features),
+  or "none" if no picture would genuinely teach something. visual_purpose: one sentence on what the learner
+  should notice in it.
+
+Use only the source units below. Every cited ID must be one of them.
+
+Source units:
+{units}
+
+Reply with JSON:
+{{
+  "concept": "...",
+  "learning_steps": [{{"title": "...", "idea": "...", "source_unit_ids": ["SRC-..."]}}],
+  "misconception": {{"wrong_idea": "...", "correct_idea": "...", "source_unit_ids": ["SRC-..."]}},
+  "worked_example": {{"problem": "...", "steps": ["...", "..."], "answer": "...", "calculation": "... or null",
+                      "source_unit_ids": ["SRC-..."]}},
+  "visual_type": "shape | number_line | bar_model | flow_sequence | table | none",
+  "visual_purpose": "..."
+}}"""
+
+PLAN_GUIDE = """FOLLOW THE TEACHING PLAN (it was checked against the source):
+{plan}
+- Discover: the hook leads into learning step 1. body_text introduces the learning steps in order, one short
+  sentence group per step, each building on the last. worked_example is the plan's worked example (same numbers,
+  one line per step).
+- Reinforce practises learning steps 1-2 with high support. Vary includes at least one item built on the plan's
+  misconception (for example a SPOT_MISTAKE whose peer makes that mistake, or a CHOOSE with it as a distractor).
+  Apply uses the last learning step in a new context. Recall retrieves the main rule or idea.
+- Visual: this version can print tables only. If visual_type is "table", include one table in Discover that
+  serves the visual_purpose. For any other visual_type, include a table only if it genuinely helps; otherwise
+  include no visual. Never invent a picture."""
+
 GENERATE_PROMPT = """Write the lesson.
 
 Standard: {standard}
 Concept selection: {selection}
+
+{plan_guide}
 
 {rules}
 
 JSON shape (fill every field; items/entries abbreviated here):
 {schema}
 
-Source units (the ONLY allowed source of facts, terms and methods):
+Source units (the ONLY allowed source of facts, terms and methods; cite only these IDs):
 {units}
 
 Reply with the complete lesson JSON object only."""
@@ -266,6 +318,8 @@ Too short:
 Fix every other failure directly. Keep item numbering continuous and the answer key in sync.
 Never add content that is not supported by the source units.
 
+{plan_guide}
+
 {rules}
 
 Current lesson:
@@ -282,12 +336,50 @@ def select_concept(llm: LLM, index: SourceIndex, standard: int, topic: str) -> d
     return llm.json("select_concept", SYSTEM, prompt)
 
 
+def _format_errors(e: ValidationError) -> str:
+    return "; ".join(f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors()[:15])
+
+
+def plan_lesson(llm: LLM, index: SourceIndex, standard: int, selection: dict) -> TeachingPlan:
+    """Ask for a teaching plan, check it in code, and re-ask once with the problems if it fails."""
+    lo, hi = C.PLAN_STEP_RANGE
+    prompt = PLAN_PROMPT.format(
+        standard=standard,
+        selection=json.dumps(selection, ensure_ascii=False),
+        lo=lo,
+        hi=hi,
+        units=index.prompt_block(),
+    )
+    problems: list[str] = []
+    for _attempt in range(2):
+        ask = prompt
+        if problems:
+            ask = f"{prompt}\n\nYour previous plan had these problems; fix all of them:\n- " + "\n- ".join(problems)
+        try:
+            data = llm.json("plan_lesson", SYSTEM, ask)
+        except LLMError as e:
+            raise GenerationError(str(e)) from e
+        try:
+            plan = TeachingPlan.model_validate(data)
+        except ValidationError as e:
+            problems = [f"plan did not match the required shape: {_format_errors(e)}"]
+            continue
+        problems = check_plan(plan, index, C.PLAN_STEP_RANGE)
+        if not problems:
+            return plan
+    raise GenerationError("the teaching plan failed its checks: " + "; ".join(problems))
+
+
+def _plan_guide(plan: TeachingPlan) -> str:
+    return PLAN_GUIDE.format(plan=plan.model_dump_json(indent=1))
+
+
 def _to_lesson(llm: LLM, task: str, prompt: str) -> Lesson:
     data = llm.json(task, SYSTEM, prompt)
     try:
         return Lesson.model_validate(data)
     except ValidationError as e:
-        errors = "; ".join(f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors()[:15])
+        errors = _format_errors(e)
         retry = f"{prompt}\n\nYour previous JSON did not match the required shape: {errors}. Reply with corrected JSON."
         try:
             return Lesson.model_validate(llm.json(task, SYSTEM, retry))
@@ -295,10 +387,12 @@ def _to_lesson(llm: LLM, task: str, prompt: str) -> Lesson:
             raise GenerationError(f"model output did not match the lesson schema: {e2.errors()[:3]}") from e2
 
 
-def generate_lesson(llm: LLM, index: SourceIndex, standard: int, selection: dict) -> Lesson:
+def generate_lesson(llm: LLM, index: SourceIndex, standard: int, selection: dict, plan: TeachingPlan) -> Lesson:
+    """Write the lesson from the teaching plan. `index` is the focused source (selected units and neighbours)."""
     prompt = GENERATE_PROMPT.format(
         standard=standard,
         selection=json.dumps(selection, ensure_ascii=False),
+        plan_guide=_plan_guide(plan),
         rules=LESSON_RULES,
         schema=json.dumps(SCHEMA_EXAMPLE, indent=1),
         units=index.prompt_block(),
@@ -310,10 +404,13 @@ def generate_lesson(llm: LLM, index: SourceIndex, standard: int, selection: dict
     return lesson
 
 
-def repair_lesson(llm: LLM, index: SourceIndex, lesson: Lesson, failures: list[str], timing: dict) -> Lesson:
+def repair_lesson(
+    llm: LLM, index: SourceIndex, lesson: Lesson, failures: list[str], timing: dict, plan: TeachingPlan
+) -> Lesson:
     prompt = REPAIR_PROMPT.format(
         failures="\n".join(f"- {f}" for f in failures),
         timing=json.dumps(timing),
+        plan_guide=_plan_guide(plan),
         rules=LESSON_RULES,
         lesson=lesson.model_dump_json(indent=1),
         units=index.prompt_block(),
