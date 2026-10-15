@@ -213,3 +213,77 @@ export function peopleTimelineCard(entities) {
     symbol: 'calendar',
   };
 }
+
+// ---------- remembering people: lifelines, ages ----------
+
+const YEAR = /\b(1[0-9]{3}|20[0-9]{2})\b/;
+
+/** Life years from a heading's description: "Social reformer (1772–1833)" -> {born: 1772, died: 1833, text}. */
+export function lifeOf(entity) {
+  const m = entity.descriptor?.match(LIFE);
+  return m ? { born: Number(m[1]), died: Number(m[2]), text: m[0] } : null;
+}
+
+/** The person's dated facts that fall inside their life: [{year, fact}]. */
+export function datedFacts(entity) {
+  const life = lifeOf(entity);
+  if (!life) return [];
+  return entity.facts
+    .map((f) => ({ year: Number(f.text.match(YEAR)?.[1]), fact: f }))
+    .filter((x) => x.year >= life.born && x.year <= life.died);
+}
+
+/**
+ * "Their lives on one line": two or more people with life years. The front is a drawn time line with
+ * a bar for each life and a dot for each dated fact; the back lists each life and its dated facts.
+ */
+export function lifelineCard(entities) {
+  const people = entities.filter((e) => e.type === 'person' && lifeOf(e));
+  if (people.length < 2) return null;
+  const rows = people.map((e) => ({
+    name: e.display,
+    ...lifeOf(e),
+    events: datedFacts(e).map((x) => x.year),
+  }));
+  const lines = [];
+  for (const e of people) {
+    lines.push(`${e.display} … ${lifeOf(e).text}`);
+    for (const x of datedFacts(e).sort((a, b) => a.year - b.year)) lines.push(x.fact.text.replace(/[.\s]+$/, ''));
+  }
+  return {
+    id: 'lifeline',
+    entity: 'Lifelines',
+    kind: 'lifeline',
+    clue: 'Their lives on one line.',
+    ask: 'Who lived at the same time?',
+    answer: 'Lifelines',
+    exact: '',
+    lifeline: rows,
+    lines,
+    page: people[0].page,
+    symbol: 'calendar',
+  };
+}
+
+/**
+ * "How old?": for each dated fact in a person's life, their age that year, worked out from the sheet's
+ * own years (fact year − birth year). It can be a year out, depending on birthdays, so it says "about".
+ */
+export function ageCards(entity) {
+  const life = lifeOf(entity);
+  if (!life) return [];
+  return datedFacts(entity)
+    .filter((x) => x.year > life.born)
+    .map((x) => ({
+      id: `${x.fact.id}-age`,
+      entity: entity.display,
+      kind: 'age',
+      clue: x.fact.text.replace(/[.\s]+$/, ''),
+      ask: `Born ${life.born}. How old, about?`,
+      answer: `about ${x.year - life.born}`,
+      exact: x.fact.text,
+      sum: { year: x.year, born: life.born },
+      page: x.fact.page,
+      symbol: 'calendar',
+    }));
+}

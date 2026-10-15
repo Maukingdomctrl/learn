@@ -2,7 +2,9 @@
 // a card front is a piece of the same sentence with one part hidden, plus a fixed prompt.
 
 import {
+  ageCards,
   ASK_BY_LABEL,
+  lifelineCard,
   listCard,
   matchCard,
   PURPOSE_ASK,
@@ -111,7 +113,37 @@ export function buildDecks(sheet) {
       })
       .filter(Boolean)
       .map((c) => ({ ...c, id: `${c.id}-why`, symbol: pickSymbol(c.exact), star: false }));
-    const cards = [hook, ...body.map(({ order, score, ...c }) => c), ...whys, portrait];
+    const facts = body.map(({ order, score, ...c }) => c);
+    const extra = [];
+    if (person) {
+      extra.push(...ageCards(e));
+      // Both directions: the work -> who did it, as well as the person -> their work. They come after
+      // the ages, so the answer isn't still on screen from the card before.
+      for (const c of facts) {
+        if (c.kind !== 'cloze') continue;
+        const f = e.facts.find((x) => x.id === c.id);
+        extra.push({
+          id: `${c.id}-who`,
+          entity: e.display,
+          kind: 'who',
+          clue: shortClue(hideNames(f.text, hidden)),
+          ask: 'Who am I?',
+          answer: e.display,
+          exact: f.text,
+          page: f.page,
+          symbol: c.symbol,
+          star: false,
+        });
+      }
+      // Once more from memory: the most repeated answers come back without hint or picture.
+      for (const c of [...facts].filter((x) => x.kind === 'cloze').slice(0, 3)) {
+        extra.push({ ...c, id: `${c.id}-again`, kind: 'again', symbol: null, star: false });
+      }
+    }
+    const cards = [hook, ...facts, ...whys, ...extra, portrait];
+    // The place's or person's one-line summary from the sheet, on the back of every card about them.
+    const identity = sheet.summaries.get(e.display);
+    if (identity) for (const c of cards) if (c.kind !== 'portrait') c.identity = identity;
     // A name tip goes on backs whose answer is the place name itself, where the child is learning that name.
     const tip = nameTip(e.display);
     if (tip) for (const c of cards) if (c.answer === e.display) c.tip = tip;
@@ -173,6 +205,8 @@ export function buildDecks(sheet) {
     };
     decks.push({ entity: group, cards: [compare], compare: true });
   }
+  const lifeline = lifelineCard(sheet.entities);
+  if (lifeline) decks.push({ entity: lifeline.entity, cards: [lifeline], compare: true });
   const born = peopleTimelineCard(sheet.entities);
   if (born) decks.push({ entity: born.entity, cards: [born], compare: true });
 
