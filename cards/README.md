@@ -53,6 +53,16 @@ These came from trying the cards out with the family. Every new card type, trick
 5. **Tricks are never answers.** Mark them as tricks. The card back keeps the sheet's exact words, because exams mark the book's wording.
 6. **A generic picture only says *what kind* of answer it is** (a river, a ship, a date). It doesn't say *which one*. When several cards share a picture (Thames, Rea, Lagan), the clues must tell them apart.
 
+## Name tips
+
+Some card backs carry a small footer such as **Name tip:** "-ham" is an old English word for home (Birmingham).
+
+- **Where:** only on backs whose answer is the place name itself (the riddle cards and the final card).
+- **Never:** on a card front, as an answer, or in any test of the child. A tip is extra, not from the sheet.
+- **Source:** only exact names listed in `engine/nametips.js`. There is no rule like "every -ham means home", because Durham and Oldham would come out wrong.
+- **Left out:** names with uncertain or disputed origins (London, Lagan, for now).
+- **Status:** the four entries (Belfast, Birmingham, Cardiff, Edinburgh) were drafted from standard place-name explanations. A person should confirm them before wide use.
+
 ## What it does not do yet
 
 - Tables, practice questions and memory tips are not turned into cards.

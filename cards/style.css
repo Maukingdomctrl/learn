@@ -366,6 +366,23 @@ h3 {
   border-radius: 4px;
   padding: 0.6cqh 2cqw;
 }
+.cardface .tip {
+  font-size: 6cqh;
+  line-height: 1.2;
+  color: var(--ink-soft);
+  border-top: 0.3cqh solid #bbb;
+  padding-top: 1.6cqh;
+  max-width: 92%;
+  text-wrap: balance;
+}
+.cardface .tip b {
+  font-family: var(--type);
+  font-weight: 400;
+  font-size: 5cqh;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 1cqw;
+}
 .cardface .src {
   position: absolute;
   right: 3cqw;

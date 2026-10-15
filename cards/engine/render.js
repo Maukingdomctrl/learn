@@ -24,6 +24,7 @@ export function frontHtml(card) {
 export function backHtml(card) {
   const also = card.alsoTrue?.length ? `<div class="also">Also linked: ${esc(card.alsoTrue.join(', '))}</div>` : '';
   const exact = card.exact === card.answer ? '' : `<div class="exact">${esc(card.exact)}</div>`;
-  return `<div class="answer">${esc(card.answer)}</div>${exact}${also}
+  const tip = card.tip ? `<div class="tip"><b>Name tip</b> ${esc(card.tip)}</div>` : '';
+  return `<div class="answer">${esc(card.answer)}</div>${exact}${also}${tip}
     <span class="src">${esc(card.entity)} · p.${esc(card.page)}</span>`;
 }

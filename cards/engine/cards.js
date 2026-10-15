@@ -1,6 +1,7 @@
 // Facts -> cards. Fixed rules only. Every word on a card back is copied from the sheet;
 // a card front is a piece of the same sentence with one part hidden, plus a fixed prompt.
 
+import { nameTip } from './nametips.js';
 import { pickSymbol } from './symbols.js';
 
 const MAX_CLUE_WORDS = 10;
@@ -69,7 +70,11 @@ export function buildDecks(sheet) {
       symbols,
       star: false,
     };
-    return { entity: e.display, cards: [hook, ...body.map(({ order, score, ...c }) => c), portrait] };
+    const cards = [hook, ...body.map(({ order, score, ...c }) => c), portrait];
+    // A name tip goes on backs whose answer is the place name itself, where the child is learning that name.
+    const tip = nameTip(e.display);
+    if (tip) for (const c of cards) if (c.answer === e.display) c.tip = tip;
+    return { entity: e.display, cards };
   });
 
   return { title: sheet.title, kindWord: sheet.kindWord, decks };

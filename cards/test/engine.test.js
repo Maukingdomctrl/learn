@@ -14,6 +14,7 @@ import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
 import { backHtml, esc, frontHtml } from '../engine/render.js';
 import { dropRunningHeaders, parseSheet, splitFacts } from '../engine/structure.js';
+import { nameTip } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -294,4 +295,31 @@ test('sheet text is escaped before it reaches the page', () => {
   const html = frontHtml(card) + backHtml(card);
   assert.ok(!html.includes('<script>') && !html.includes('<i>') && !html.includes('<b>X'));
   assert.match(frontHtml(card), /class="blank"/);
+});
+
+// ---------- name tips ----------
+
+test('name tips go only on backs whose answer is the place name, never on fronts', () => {
+  const { built } = cityDecks();
+  const birmingham = built.decks.find((d) => d.entity === 'Birmingham').cards;
+  const withTip = birmingham.filter((c) => c.tip);
+  assert.ok(withTip.length >= 2, 'hook and portrait carry the tip');
+  for (const c of withTip) assert.equal(c.answer, 'Birmingham');
+  for (const c of birmingham.filter((c) => c.kind === 'cloze')) assert.equal(c.tip, undefined);
+  const card = withTip[0];
+  assert.match(backHtml(card), /Name tip/);
+  assert.doesNotMatch(frontHtml(card), /home/);
+});
+
+test('name tips come only from the checked list, never from a rule on the ending', () => {
+  assert.match(nameTip('Birmingham'), /home/);
+  assert.equal(nameTip('Durham'), null);
+  assert.equal(nameTip('Oldham'), null);
+  assert.equal(nameTip('London'), null);
+});
+
+test('a name tip is not part of the exact-words check and does not break it', () => {
+  const { sheet, built } = cityDecks();
+  const check = checkDecks(sheet, built);
+  assert.equal(check.ok, true, check.problems.join('\n'));
 });
