@@ -37,7 +37,8 @@ extract → select + sufficiency → focus → teaching plan → generate → ti
 | Timing (§6) | `timing.py` |
 | Answer arithmetic | `calc.py` |
 | HTML → PDF, layout measurement | `rendering.py` + `templates/` |
-| Checks D1–D7 and A1–A4 | `validation.py` |
+| Visual specs, deterministic SVG, D8 helpers | `visuals/specs.py`, `visuals/svg.py`, `visuals/checks.py` |
+| Checks D1–D8 and A1–A4 | `validation.py` |
 | UI | `web.py`, `cli.py` |
 
 ## Rules that must not regress
@@ -52,6 +53,12 @@ extract → select + sufficiency → focus → teaching plan → generate → ti
   - If you change `templates/student.html.j2`, keep `sequence.py` in step with it.
 - **Numeric answers carry a `calculation`.** `calc.py` re-evaluates it (D7). Keep the evaluator restricted: no `eval`, no names beyond `sqrt`/`pi`.
 - **The A2 blind solver gets only the student-PDF text.** Never the key, never the source.
+- **Visuals are drawn by code, never by the model.**
+  - SVG must be deterministic: same spec, same output.
+  - Pencil-style line art only: black outlines, white fill (`INK_FILLS`), small black arrowheads and dots.
+  - Each type has a fixed size budget.
+  - Labels come from the spec, so the picture can't contradict its numbers.
+  - Keep older tables without `kind` loading.
 - **Model calls go through `LLM.json(task, system, prompt)`.** This keeps every call replaceable by the scripted fake in `tests/conftest.py`.
 - **After selection, the model sees only the focused source** (`SourceIndex.focus`). Never pass the whole PDF to planning, generation or repair. D2 rejects citations outside the focus.
 - **Output limits:** thinking counts toward `max_tokens`. Retry a cut-off response at most once, clamp to the model's limit, and log every request (`AnthropicLLM.call_log` → `report.model_calls`).

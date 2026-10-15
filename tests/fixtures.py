@@ -98,10 +98,14 @@ SAMPLE_LESSON = {
             ],
             "visuals": [
                 {
-                    "caption": "Base, height and area",
-                    "headers": ["Base", "Height", "Area"],
-                    "rows": [["8 cm", "5 cm", "20 cm²"], ["6 cm", "8 cm", "24 cm²"]],
-                    "source_unit_ids": ["SRC-P1-U4", "SRC-P1-U5"],
+                    "kind": "shape",
+                    "caption": "The triangle in the worked example",
+                    "purpose": "See that the height is perpendicular to the base, from the opposite vertex.",
+                    "shape": "triangle",
+                    "base": 8,
+                    "height": 5,
+                    "unit": "cm",
+                    "source_unit_ids": ["SRC-P1-U2", "SRC-P1-U4"],
                 }
             ],
             "items": [
@@ -314,6 +318,6 @@ SAMPLE_PLAN = {
         "calculation": "0.5*8*5",
         "source_unit_ids": ["SRC-P1-U4"],
     },
-    "visual_type": "table",
-    "visual_purpose": "Compare base, height and area for two triangles to see the halving.",
+    "visual_type": "shape",
+    "visual_purpose": "See that the height is perpendicular to the base, from the opposite vertex.",
 }

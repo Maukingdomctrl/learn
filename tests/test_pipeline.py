@@ -50,7 +50,7 @@ def test_delivers_when_all_checks_pass(sample_pdf, tmp_path, scripted):
     assert rep.status == "delivered", (rep.parent_message, rep.checks)
     assert os.path.exists(rep.student_pdf) and os.path.exists(rep.key_pdf)
     assert rep.rounds == 0
-    assert {c["id"] for c in rep.checks} == {"D1", "D2", "D3", "D4", "D5", "D6", "D7", "A1", "A2", "A3", "A4"}
+    assert {c["id"] for c in rep.checks} == {"D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "A1", "A2", "A3", "A4"}
     tasks = [t for t, _ in llm.calls]
     assert tasks == ["select_concept", "plan_lesson", "generate_lesson", "A1", "A2", "A3", "A4"]
     # The blind solver sees only student-page text: never the answer key.

@@ -33,6 +33,11 @@
   table.visual { border-collapse: collapse; margin: 1.5mm 0; }
   table.visual th, table.visual td { border: 1px solid #000; padding: 0.8mm 2mm; text-align: left; }
   .caption { font-weight: bold; }
+  figure.visual { margin: 1.5mm 0; }
+  .worked-row { display: flex; gap: 3mm; align-items: flex-start; }
+  .worked-row .worked { flex: 1 1 auto; min-width: 0; }
+  .worked-row figure.visual { flex: 0 0 auto; margin: 0; }
+  figure.visual svg { display: block; }
   .targets span { display: inline-block; border: 1px solid #000; padding: 0.5mm 2mm; margin: 1mm 4mm 1mm 0; }
   .choices div { margin: 0.6mm 0 0.6mm 5mm; }
   .bank { border: 1px solid #000; padding: 1mm 2mm; margin: 1.5mm 0; }
@@ -108,13 +113,14 @@
     <p class="instruction">{{ stage.instruction }}</p>
     {% if stage.items %}{{ item_block(stage, stage.items[0]) }}{% endif %}
     {% if stage.body_text %}<p>{{ stage.body_text }}</p>{% endif %}
-    {% if stage.worked_example %}<div class="worked"><div><b>Worked example</b></div>{% for l in stage.worked_example %}<div>{{ l }}</div>{% endfor %}</div>{% endif %}
-    {% for v in stage.visuals %}{{ table(v) }}{% endfor %}
+    {%- set side = stage.visuals[0] if stage.visuals and stage.visuals[0].kind == "shape" and stage.worked_example else none %}
+    {% if stage.worked_example %}<div class="worked-row"><div class="worked"><div><b>Worked example</b></div>{% for l in stage.worked_example %}<div>{{ l }}</div>{% endfor %}</div>{% if side %}{{ visual(side) }}{% endif %}</div>{% endif %}
+    {% for v in stage.visuals %}{% if v is not sameas side %}{{ visual(v) }}{% endif %}{% endfor %}
     {% for item in stage.items[1:] %}{{ item_block(stage, item) }}{% endfor %}
   {%- else -%}
     <p class="instruction">{{ stage.instruction }}</p>
     {% if stage.body_text %}<p>{{ stage.body_text }}</p>{% endif %}
-    {% for v in stage.visuals %}{{ table(v) }}{% endfor %}
+    {% for v in stage.visuals %}{{ visual(v) }}{% endfor %}
     {% if stage.word_bank %}<div class="bank"><b>Word bank:</b> {{ stage.word_bank | join("  ·  ") }}</div>{% endif %}
     {% if stage.groups %}<div class="bank">{% for g in stage.groups %}<b>{{ letters[loop.index0] }}</b> = {{ g }}&nbsp;&nbsp;&nbsp;{% endfor %}</div>{% endif %}
     {{ example_block(stage) }}
@@ -129,6 +135,12 @@
     {% if stage.hint_pointer %}<div class="hint" data-hint="{{ stage.stage }}">{{ stage.hint_pointer }}</div>{% endif %}
   {%- endif -%}
 </section>
+{%- endmacro -%}
+
+{%- macro visual(v) -%}
+{%- if v.kind == "table" -%}{{ table(v) }}{%- else -%}
+<figure class="visual" data-kind="{{ v.kind }}">{% if v.caption %}<figcaption class="caption">{{ v.caption }}</figcaption>{% endif %}{{ draw_svg(v) }}</figure>
+{%- endif -%}
 {%- endmacro -%}
 
 {%- macro table(v) -%}
