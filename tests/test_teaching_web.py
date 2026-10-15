@@ -18,7 +18,7 @@ def test_keyless_teaching_web_returns_plan_without_saving_files(sample_pdf, tmp_
     assert response.headers["content-type"].startswith("application/json")
     assert response.headers["content-disposition"] == 'attachment; filename="teaching_lesson.json"'
     assert json.loads(response.text)["lesson"]["topics"]
-    assert not tmp_path.exists()
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_teaching_web_rejects_bad_file_and_page_range(sample_pdf):
