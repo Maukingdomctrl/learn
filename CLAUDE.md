@@ -68,6 +68,15 @@ extract → select + sufficiency → focus → teaching plan → generate → ti
 
 Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requirements-dev.txt`, which CI uses.
 
+## Cards (`cards/`)
+A separate browser-only tool: study-sheet PDF → picture flashcards, no AI. It shares no code with `learn/`, and the methodology spec doesn't govern it. See `cards/README.md`.
+- Test with `cd cards && npm ci && npm test` (CI runs this too).
+- Card backs must stay word-for-word from the sheet. Clue fronts may add only fixed prompts. `engine/checks.js` enforces both, and a failed check blocks showing and printing.
+- When you change a check, add a passing case and a targeted failing mutation in `cards/test/engine.test.js`.
+- Pictures are drawn by code (`engine/symbols.js`), never fetched. No match means a "draw it!" box, not a guess.
+- The pdf.js version is pinned in both `cards/package.json` and `cards/app.js`. Change them together.
+- All sheet text goes through `esc()` before it reaches the page.
+
 ## Tests
 - Tests must not need an API key or network. Use `ScriptedLLM` and the synthetic fixtures in `tests/fixtures.py`.
 - The fixtures are synthetic and the fake model's outputs are canned. Don't present test results as evidence of lesson quality.

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Learn Cards</title>
+    <meta name="description" content="Turn a study sheet PDF into picture cards to flip and print. Free, in your browser, no AI." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Special+Elite&display=swap" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="screen">
+      <header class="masthead">
+        <div class="eyebrow">Learn Cards</div>
+        <h1>Sheet in. Cards out.</h1>
+        <p class="hint">Upload a study sheet PDF. Get picture cards to flip on screen or print and cut.</p>
+      </header>
+
+      <section class="upload" id="upload">
+        <label class="drop" id="drop" for="file">
+          <input type="file" id="file" accept="application/pdf,.pdf" />
+          <span class="drop-big">Choose a PDF</span>
+          <span class="drop-small">or drop it here · it stays on this device</span>
+        </label>
+        <button class="btn" id="sample" type="button">Try the sample sheet</button>
+        <p class="status" id="status" role="status"></p>
+      </section>
+
+      <section class="result" id="result" hidden>
+        <div class="doc-title">
+          <div class="eyebrow" id="doc-meta"></div>
+          <h2 id="doc-title"></h2>
+        </div>
+
+        <div class="checks" id="checks"></div>
+
+        <nav class="decks" id="decks" aria-label="Choose a deck"></nav>
+
+        <div class="stage" id="stage">
+          <button class="card" id="card" type="button" aria-label="Flip card">
+            <span class="flip">
+              <span class="face front" id="front"></span>
+              <span class="face back" id="back"></span>
+            </span>
+          </button>
+          <div class="dots" id="dots" aria-hidden="true"></div>
+          <div class="controls">
+            <button class="btn" id="prev" type="button">‹ Back</button>
+            <button class="btn" id="next" type="button">Next ›</button>
+          </div>
+          <p class="hint small">Look. Say it. Tap to check. Arrow keys work too.</p>
+        </div>
+
+        <div class="closed" id="closed" hidden>
+          <div class="stampbox">CASE CLOSED</div>
+          <p class="hint" id="closed-text"></p>
+          <div class="controls">
+            <button class="btn" id="again" type="button">Play again</button>
+            <button class="btn" id="mixed" type="button">Play mixed</button>
+          </div>
+        </div>
+
+        <section class="print-area">
+          <div class="print-head">
+            <h3>On paper</h3>
+            <button class="btn solid" id="print" type="button">Print cards</button>
+          </div>
+          <p class="hint small">
+            A4, 10 cards a page, business-card size. Print fronts and backs double-sided ("flip on long edge"),
+            then cut along the dashed lines.
+          </p>
+          <div id="sheets" class="sheets"></div>
+        </section>
+      </section>
+
+      <footer class="foot">
+        Cards use only the words in your PDF. Every card back is checked word-for-word against the sheet before it
+        can be printed. Pictures are simple sketches drawn by code; "draw it!" means none fitted.
+      </footer>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

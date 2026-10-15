@@ -1,0 +1,15 @@
+{
+  "name": "learn-cards",
+  "private": true,
+  "description": "Turns a study sheet PDF into printable picture cards, in the browser, with no AI.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "5.4.624"
+  },
+  "engines": {
+    "node": ">=20.16"
+  }
+}
