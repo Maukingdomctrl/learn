@@ -5,6 +5,8 @@ const BULLET = /^[•●▪◦‣*–-]\s+/;
 const ENTITY_HEADING = /^(?:\d+[.)]\s+)?([A-Z][A-Z .'’&]*[A-Z])\s*[–—-]\s*(.*[a-z].*)$/;
 const SECTION_HEADING = /^\d+[.)]\s+[A-Z][A-Z0-9 &,'’:–—-]+$/;
 const LABEL = /^[A-Z][A-Z ]{2,}:/;
+const SUBHEADING = /^[A-Z][A-Za-z ]{2,30}:$/; // "Causes:" inside a topic: labels the bullets under it
+const FACT_LABEL = /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact)\s*:/i;
 const PAGE_NUMBER = /^page\s+\d+$/i;
 
 /**
@@ -37,14 +39,30 @@ export function parseSheet(lines) {
         descriptor: heading[2].trim(),
         page: line.page,
         bullets: [],
+        type: 'place',
       };
       entities.push(current);
       continue;
     }
-    if (SECTION_HEADING.test(text) || LABEL.test(text)) {
+    if (SECTION_HEADING.test(text)) {
+      // A numbered section ("1. CAUSES OF THE UPRISING") is a topic of its own if bullets follow it.
+      // Sections with no bullets of their own (notes headers, tables, questions) are dropped below.
+      closeBullet();
+      const name = text.replace(/^\d+[.)]\s+/, '').trim();
+      current = { name, heading: text, display: sentenceCase(name), descriptor: '', page: line.page, bullets: [], type: 'aspect' };
+      current.label = labelFor(name);
+      entities.push(current);
+      continue;
+    }
+    if (LABEL.test(text)) {
       closeBullet();
       current = null;
       other.push(text);
+      continue;
+    }
+    if (current && SUBHEADING.test(text) && !BULLET.test(text)) {
+      closeBullet();
+      current.sublabel = labelFor(text);
       continue;
     }
     if (BULLET.test(text)) {
@@ -55,7 +73,7 @@ export function parseSheet(lines) {
         continue;
       }
       closeBullet();
-      if (current) bullet = { page: line.page, segments: stripBullet(line.segments) };
+      if (current) bullet = { page: line.page, segments: stripBullet(line.segments), label: current.sublabel || null };
       else other.push(text);
       continue;
     }
@@ -68,13 +86,23 @@ export function parseSheet(lines) {
   closeBullet();
 
   const docText = body.map((l) => l.text).join('\n');
-  const result = entities.map((e) => ({
-    name: e.name,
-    display: e.display,
-    descriptor: e.descriptor,
-    page: e.page,
-    facts: e.bullets.flatMap((b, i) => splitFacts(b, e.display, `${slug(e.display)}-${i + 1}`)),
-  }));
+  for (const e of entities) if (e.type === 'aspect' && !e.bullets.length) other.push(e.heading);
+  const result = entities
+    .filter((e) => e.bullets.length || e.type === 'place')
+    .map((e) => ({
+      name: e.name,
+      display: e.display,
+      descriptor: e.descriptor,
+      page: e.page,
+      type: e.type,
+      label: e.label || null,
+      facts: e.bullets.flatMap((b, i) =>
+        splitFacts(b, e.display, `${slug(e.display)}-${i + 1}`).map((f) => ({
+          ...f,
+          label: labelFor(f.text.match(FACT_LABEL)?.[1] || '') || b.label || e.label || null,
+        })),
+      ),
+    }));
   return {
     title,
     kindWord: kindWordFrom(title),
@@ -214,4 +242,24 @@ export function slug(s) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+/** What a heading or label says its bullets are: causes, results, a course of events, or people. */
+export function labelFor(text) {
+  const t = text.toLowerCase();
+  if (/\b(causes?|reasons?|why)\b/.test(t)) return 'cause';
+  if (/\b(results?|consequences?|effects?|impact|significance|outcome)\b/.test(t)) return 'result';
+  if (/\b(course|events?|timeline|chronology)\b/.test(t)) return 'course';
+  if (/\b(leaders?|people|personalities|centres?|who)\b/.test(t)) return 'people';
+  return null;
+}
+
+const SMALL = new Set(['of', 'the', 'and', 'in', 'at', 'to', 'for', 'a', 'an', 'on', 'by']);
+
+/** "CAUSES OF THE UPRISING" -> "Causes of the Uprising". */
+export function sentenceCase(s) {
+  return titleCase(s)
+    .split(' ')
+    .map((w, i) => (i > 0 && SMALL.has(w.toLowerCase()) ? w.toLowerCase() : w))
+    .join(' ');
 }

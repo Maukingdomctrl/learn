@@ -59,6 +59,23 @@ These came from trying the cards out with the family. Every new card type, trick
 5. **Tricks are never answers.** Mark them as tricks. The card back keeps the sheet's exact words, because exams mark the book's wording.
 6. **A generic picture only says *what kind* of answer it is** (a river, a ship, a date). It doesn't say *which one*. When several cards share a picture (Thames, Rea, Lagan), the clues must tell them apart.
 
+## History: events, causes and results
+
+A sheet can also be laid out as numbered sections with bullets under them, as history notes usually are ("1. CAUSES OF THE UPRISING", "2. COURSE OF THE UPRISING", "3. LEADERS AND CENTRES", "4. RESULTS…"). Each section becomes its own deck, and its heading tells the engine what the bullets are:
+
+| Section heading has… | Cards |
+| :--- | :--- |
+| causes / reasons | Fill-in cards asking **"Why did it happen?"**, then **"Name them all"**: each cause's bold name, for "state four causes" questions |
+| results / consequences / effects / impact | Fill-in cards asking **"What changed after?"**, then "Name them all" |
+| course / events / timeline | Fill-in cards, then a **timeline card**: the dated events scrambled with their dates blanked on the front, in date order with dates on the back |
+| leaders / people / centres | Fill-in cards that hide the person's name, then a **match card**: names on one line, places on the other |
+
+On any sheet, a sentence with *because / due to / led to / resulted in* becomes a **why card**, for example "The army was reorganised because _____ — Why?". The answer is the sheet's own reason. A bullet with nothing bold and no date becomes a "Finish it." card showing its first few words.
+
+Mixed rounds shuffle only single-fact cards. Whole-topic cards (lists, timelines, pairs, final pictures, the comparison) stay with their deck.
+
+`sample/history-sheet.pdf` is a synthetic example built by `test/fixtures/make_sample.py`. These rules have not yet been tried on a real school history sheet.
+
 ## Name fun facts
 
 Some card backs carry a small footer such as **Fun fact:** "-ham" is an old English word for home (Birmingham). Names are among the hardest things to remember, and knowing what a name means makes it stick.
@@ -98,7 +115,7 @@ npm ci
 npm test        # node --test; uses the sample PDF and hand-made lines, no network
 ```
 
-`sample/sample-sheet.pdf` is synthetic. Rebuild it with `python cards/test/fixtures/make_sample.py` from the repo root.
+Both sample PDFs in `sample/` are synthetic. Rebuild them with `python cards/test/fixtures/make_sample.py` from the repo root.
 
 Passing tests show the rules work as designed. They say nothing about whether children learn from the cards.
 
@@ -108,7 +125,9 @@ Passing tests show the rules work as designed. They say nothing about whether ch
 | :--- | :--- |
 | `engine/extract.js` | PDF → lines, with bold runs marked |
 | `engine/structure.js` | Lines → topics, facts, summary lines; everything else goes into `other` |
-| `engine/cards.js` | Facts → cards (answer choice, clue shortening, order, portrait) |
+| `engine/cards.js` | Facts → cards (answer choice, clue shortening, order, portrait, hints, links) |
+| `engine/events.js` | Why, timeline, match and "name them all" cards for history-style topics |
+| `engine/nametips.js` | The checked name and thing fun facts |
 | `engine/symbols.js` | The sketch library and the word → picture rules |
 | `engine/checks.js` | The checks above |
 | `engine/render.js` | Card → HTML, shared by the screen and the print sheets; escapes all sheet text |
