@@ -143,7 +143,8 @@ MEASURE_JS = """
   const out = {overflow: [], pages: document.querySelectorAll('.page').length};
   document.querySelectorAll('.page, .col').forEach(el => {
     if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) {
-      out.overflow.push((el.dataset.zone || el.id) + ` (content ${mm(el.scrollHeight).toFixed(0)}mm in ${mm(el.clientHeight).toFixed(0)}mm)`);
+      const used = mm(el.scrollHeight).toFixed(0), room = mm(el.clientHeight).toFixed(0);
+      out.overflow.push((el.dataset.zone || el.id) + ` (content ${used}mm in ${room}mm)`);
     }
   });
   let minFont = 1e9;

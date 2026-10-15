@@ -118,7 +118,8 @@ def _run(pdf_path: str, standard: int, llm: Optional[LLM], out_dir: str, topic: 
     report.log.append(f"Selection: {json.dumps(sel, ensure_ascii=False)[:400]}")
     if sel.get("status") != "ok":
         return _stop(report, "sufficiency",
-                     sel.get("insufficiency_reason") or "The material does not explain a topic fully enough to teach it.",
+                     sel.get("insufficiency_reason")
+                     or "The material does not explain a topic fully enough to teach it.",
                      [sel.get("parent_action") or "Upload the pages that explain the topic."])
     problems = check_selection(sel, index)
     if problems:

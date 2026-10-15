@@ -98,7 +98,7 @@ def d3_activities(lesson: Lesson) -> CheckResult:
     types = [s.activity_type for s in lesson.stages]
     if len(set(types)) < 3:
         p.append(f"only {len(set(types))} distinct activity types; need at least 3")
-    for a, b in zip(lesson.stages, lesson.stages[1:]):
+    for a, b in zip(lesson.stages, lesson.stages[1:], strict=False):
         if a.activity_type == b.activity_type:
             p.append(f"{a.stage} and {b.stage} both use {a.activity_type}")
     for s in lesson.stages:
@@ -206,10 +206,12 @@ def d4_text(lesson: Lesson) -> CheckResult:
                 for sent in sentences(c.text):
                     n = count_words(sent)
                     if n > C.MAX_INSTRUCTION_WORDS:
-                        p.append(f"{s.stage} instruction sentence has {n} words (max {C.MAX_INSTRUCTION_WORDS}): '{sent[:60]}'")
+                        p.append(f"{s.stage} instruction sentence has {n} words "
+                                 f"(max {C.MAX_INSTRUCTION_WORDS}): '{sent[:60]}'")
                     verbs = [w for w in re.findall(r"[a-z]+", sent.lower()) if w in ACTION_VERBS]
                     if len(verbs) > C.MAX_ACTIONS_PER_INSTRUCTION:
-                        p.append(f"{s.stage} instruction has {len(verbs)} actions {verbs} (max {C.MAX_ACTIONS_PER_INSTRUCTION})")
+                        p.append(f"{s.stage} instruction has {len(verbs)} actions {verbs} "
+                                 f"(max {C.MAX_ACTIONS_PER_INSTRUCTION})")
                 if COLOUR_RE.search(c.text):
                     p.append(f"{s.stage} instruction refers to colour: '{c.text[:60]}'")
             elif c.kind == "text":
@@ -406,7 +408,8 @@ Source units:
 
 Reply: {{"pass": true|false, "issues": [{{"location": "item N", "problem": "..."}}]}}"""
 
-A4_PROMPT = """Check clarity and age fit of these student pages for Standard 7-8 (ages 12-14), first-time learners (check A4).
+A4_PROMPT = """Check clarity and age fit of these student pages for Standard 7-8 (ages 12-14), first-time learners
+(check A4).
 Pass only if: instructions are clear without adult help; every technical term used after Discover is explained
 in Discover; language suits ages 12-14; the hook is relevant and answered by the lesson; no trick questions;
 no item can be answered by copying a sentence word for word; items within a stage differ meaningfully;

@@ -99,7 +99,8 @@ Activity types:
 - SKETCH: simple drawing in a frame; item.sketch_criteria = countable criteria ("Draw 3 arrows that show...").
 
 Text limits (counted by code; a number or expression like "1/2 x 8 x 5 = 20" counts as 1 word):
-- Each instruction sentence <= {C.MAX_INSTRUCTION_WORDS} words, at most {C.MAX_ACTIONS_PER_INSTRUCTION} action verbs, verb first.
+- Each instruction sentence <= {C.MAX_INSTRUCTION_WORDS} words, at most {C.MAX_ACTIONS_PER_INSTRUCTION} action verbs,
+  verb first.
 - Every other sentence <= {C.MAX_SENTENCE_WORDS} words.
 - Words before the first pencil mark (hook + Discover instruction + item 1 text) <= {C.MAX_WORDS_BEFORE_FIRST_MARK}.
 - Continuous reading between two pencil marks <= {C.MAX_READING_RUN_WORDS} words.
@@ -154,8 +155,10 @@ SCHEMA_EXAMPLE = {
         {"stage": "Reinforce", "activity_type": "MATCH", "instruction": "...",
          "example": {"prompt": "...", "answer": "..."}, "options": ["...", "...", "...", "..."],
          "items": [{"number": 2, "prompt": "..."}, {"number": 3, "prompt": "..."}]},
-        {"stage": "Vary", "activity_type": "SPOT_MISTAKE", "instruction": "...", "hint_pointer": "Stuck? Look at ... on Page 1.",
-         "items": [{"number": 4, "prompt": "...", "peer_work": {"intro": "...", "steps": ["...", "..."], "mistake_step": 2}}]},
+        {"stage": "Vary", "activity_type": "SPOT_MISTAKE", "instruction": "...",
+         "hint_pointer": "Stuck? Look at ... on Page 1.",
+         "items": [{"number": 4, "prompt": "...",
+                    "peer_work": {"intro": "...", "steps": ["...", "..."], "mistake_step": 2}}]},
         {"stage": "Apply", "activity_type": "SOLVE", "instruction": "...", "hint_pointer": "Stuck? ...",
          "items": [{"number": 6, "prompt": "...", "unit": "cm"}]},
         {"stage": "Recall", "activity_type": "SHORT_ANSWER", "instruction": "...", "hint_pointer": None,
