@@ -54,7 +54,7 @@ test('sample sheet: two decks, every fact on a card, all checks pass', async () 
   const { sheet, built, check } = await sample();
   assert.deepEqual(
     built.decks.map((d) => d.entity),
-    ['Belfast', 'Edinburgh'],
+    ['Belfast', 'Edinburgh', 'All cities'],
   );
   assert.equal(check.ok, true, check.problems.join('\n'));
   for (const e of sheet.entities) {
@@ -365,7 +365,7 @@ test('every card but the final picture carries a hint on its front', async () =>
   const { built } = await sample();
   for (const d of built.decks) {
     for (const c of d.cards) {
-      if (c.kind === 'portrait') assert.equal(c.hint, undefined);
+      if (c.kind === 'portrait' || c.kind === 'compare') assert.equal(c.hint, undefined);
       else {
         assert.ok(c.hint, c.id);
         assert.match(frontHtml(c), /Hint:/);
@@ -405,4 +405,23 @@ test('check fails when a link is not from the sheet or gives the answer away', (
   assert.match(checkDecks(sheet, built).problems.join('\n'), /link text not found/);
   card.link = `Situated on the ${card.answer}`;
   assert.match(checkDecks(sheet, built).problems.join('\n'), /link gives the answer away/);
+});
+
+// ---------- comparison card ----------
+
+test('a "who did what?" card lists every place\'s job in the sheet\'s own words', async () => {
+  const { built, check } = await sample();
+  assert.ok(check.ok, check.problems.join('\n'));
+  const last = built.decks.at(-1);
+  assert.equal(last.entity, 'All cities');
+  const [card] = last.cards;
+  assert.equal(card.kind, 'compare');
+  assert.deepEqual(card.lines, ['Belfast = Shipbuilding & Titanic', 'Edinburgh = Banking Capital of Scotland']);
+  assert.match(backHtml(card), /Banking Capital of Scotland/);
+});
+
+test('check fails when a job line is not from the sheet', async () => {
+  const { sheet, built } = await sample();
+  built.decks.at(-1).cards[0].lines[0] = 'Belfast = Biggest city in the world';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word/);
 });

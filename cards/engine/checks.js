@@ -37,11 +37,15 @@ export function checkDecks(sheet, built) {
 
   for (const c of allCards) {
     // Exactness: the back is the sheet's own words.
-    if (!source.includes(norm(c.exact))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${c.exact}".`);
+    for (const piece of c.lines || [c.exact]) {
+      if (!source.includes(norm(piece))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${piece}".`);
+    }
     if (c.kind === 'cloze' && !norm(c.exact).includes(norm(c.answer))) {
       problems.push(`${c.entity}: the answer "${c.answer}" is not in its sentence.`);
     }
-    // Fronts add nothing: each visible piece of the clue appears in the sheet.
+    // Fronts add nothing: each visible piece of the clue appears in the sheet (the comparison card's
+    // front is a fixed prompt).
+    if (c.kind === 'compare') continue;
     for (const piece of c.clue.split(new RegExp(`${BLANK}|…`)).map((p) => p.trim())) {
       if (piece && !source.includes(norm(piece))) problems.push(`${c.entity}: clue text not found in the sheet: "${piece}".`);
     }

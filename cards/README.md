@@ -24,6 +24,8 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
    | Riddle | A fact with no bold word or number, names hidden | The topic name + the full sentence |
    | Portrait | Up to four of the deck's pictures together, preferring ones the other topics don't share (never the generic crowd, pin, calendar, globe or star) + "Name the city!" | The topic name + the author's summary line |
 
+   When the sheet has summary lines for two or more topics, one more card goes at the end: **"Which city did what?"**. Its back lists each topic's summary line ("Edinburgh = Banking Capital of Scotland"), so the child sees why each place mattered and how the places differ. It also closes the "Mix all" round.
+
    Cards whose answer the sheet repeats most come first and get a ★.
 
    A fill-in answer that shares a name with another fact about the same place gets a **"Think:" link** made of that fact's own words. For example, the museum card shows "Think: … shipyard built the RMS Titanic". The linking word can't come from the place's heading, and it must end a name in the other fact, so "Bank" in "Bank of Scotland" doesn't count.

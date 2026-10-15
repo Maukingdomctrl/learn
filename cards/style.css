@@ -394,6 +394,20 @@ h3 {
   text-transform: uppercase;
   margin-right: 1cqw;
 }
+.cardface .jobs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 1.6cqh;
+  font-size: 6.6cqh;
+  line-height: 1.15;
+  text-align: left;
+  justify-self: stretch;
+}
+.cardface .jobs li::before {
+  content: '▸ ';
+}
 .cardface .src {
   position: absolute;
   right: 3cqw;

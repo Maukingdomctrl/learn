@@ -107,6 +107,30 @@ export function buildDecks(sheet) {
       .map((x) => x.sym);
   }
 
+  // "Why this city and not the others?": every place had its own job. The author's summary lines say so,
+  // side by side on one card (brackets left out to keep it short; the words stay the sheet's own).
+  const jobs = decks
+    .filter((d) => sheet.summaries.has(d.entity))
+    .map((d) => sheet.summaries.get(d.entity).replace(/\s*\([^)]*\)\s*$/, ''));
+  if (jobs.length >= 2) {
+    const group = sheet.kindPlural ? `All ${sheet.kindPlural}` : 'All together';
+    const compare = {
+      id: 'compare',
+      entity: group,
+      kind: 'compare',
+      clue: `Every ${sheet.kindWord || 'one'} had its own job.`,
+      ask: sheet.kindWord ? `Which ${sheet.kindWord} did what?` : 'Who did what?',
+      answer: 'Each one’s job',
+      exact: '',
+      lines: jobs,
+      page: decks[0].cards[0].page,
+      symbol: null,
+      symbols: decks.map((d) => d.cards[d.cards.length - 1].symbols[0]).filter(Boolean).slice(0, 4),
+      star: false,
+    };
+    decks.push({ entity: group, cards: [compare], compare: true });
+  }
+
   return { title: sheet.title, kindWord: sheet.kindWord, decks };
 }
 

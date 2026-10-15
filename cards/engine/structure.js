@@ -75,7 +75,15 @@ export function parseSheet(lines) {
     page: e.page,
     facts: e.bullets.flatMap((b, i) => splitFacts(b, e.display, `${slug(e.display)}-${i + 1}`)),
   }));
-  return { title, kindWord: kindWordFrom(title), entities: result, summaries, other, text: docText };
+  return {
+    title,
+    kindWord: kindWordFrom(title),
+    kindPlural: kindPluralFrom(title),
+    entities: result,
+    summaries,
+    other,
+    text: docText,
+  };
 }
 
 /** Lines that repeat on most pages (running headers, footers, page numbers) carry no teaching. */
@@ -115,6 +123,11 @@ const KIND_WORDS = {
   planets: 'planet',
   mountains: 'mountain',
 };
+
+function kindPluralFrom(title) {
+  const words = title.toLowerCase().match(/[a-z]+/g) || [];
+  return words.find((w) => KIND_WORDS[w]) || null;
+}
 
 function kindWordFrom(title) {
   const words = title.toLowerCase().match(/[a-z]+/g) || [];

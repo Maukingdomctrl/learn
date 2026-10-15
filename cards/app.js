@@ -109,7 +109,7 @@ function renderChips() {
           `<button type="button" class="chip${state.done.has(i) ? ' done' : ''}" data-i="${i}" aria-pressed="${!state.mixed && i === state.deckIndex}">${esc(d.entity)}</button>`,
       )
       .join('') +
-    (decks.length > 1
+    (decks.filter((d) => !d.compare).length > 1
       ? `<button type="button" class="chip" data-mix="1" aria-pressed="${state.mixed}">Mix all</button>`
       : '');
 }
@@ -132,12 +132,14 @@ function startDeck(i) {
 
 function startMixed() {
   state.mixed = true;
-  const all = state.result.built.decks.flatMap((d) => d.cards.filter((c) => c.kind !== 'portrait'));
+  const decks = state.result.built.decks;
+  const all = decks.flatMap((d) => d.cards.filter((c) => c.kind !== 'portrait' && c.kind !== 'compare'));
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [all[i], all[j]] = [all[j], all[i]];
   }
-  state.order = all;
+  // The "who did what?" card comes last: after mixing, compare them all.
+  state.order = [...all, ...decks.flatMap((d) => d.cards.filter((c) => c.kind === 'compare'))];
   begin();
 }
 

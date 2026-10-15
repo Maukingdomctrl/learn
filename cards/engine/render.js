@@ -13,7 +13,7 @@ function clueHtml(clue) {
 }
 
 export function frontHtml(card) {
-  const picture = card.kind === 'portrait' ? portraitSvg(card.symbols) : svg(card.symbol);
+  const picture = card.kind === 'portrait' || card.kind === 'compare' ? portraitSvg(card.symbols) : svg(card.symbol);
   // A fill-in clue names its place, so it still makes sense when decks are mixed.
   const tag = card.kind === 'cloze' ? card.entity : '';
   return `${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${card.star ? '<span class="star" title="The sheet repeats this">★</span>' : ''}
@@ -26,6 +26,10 @@ export function frontHtml(card) {
 
 export function backHtml(card) {
   const also = card.alsoTrue?.length ? `<div class="also">Also linked: ${esc(card.alsoTrue.join(', '))}</div>` : '';
+  if (card.lines) {
+    return `<ul class="jobs">${card.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>
+    <span class="src">${esc(card.entity)} · p.${esc(card.page)}</span>`;
+  }
   const exact = card.exact === card.answer ? '' : `<div class="exact">${esc(card.exact)}</div>`;
   const tip = card.tip ? `<div class="tip"><b>Fun fact</b> ${esc(card.tip)}</div>` : '';
   return `<div class="answer">${esc(card.answer)}</div>${exact}${also}${tip}
