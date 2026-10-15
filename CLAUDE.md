@@ -76,6 +76,7 @@ A separate browser-only tool: study-sheet PDF → picture flashcards, no AI. It 
 - Pictures are drawn by code (`engine/symbols.js`), never fetched. No match means a "draw it!" box, not a guess.
 - The pdf.js version is pinned in both `cards/package.json` and `cards/app.js`. Change them together.
 - All sheet text goes through `esc()` before it reaches the page.
+- Follow the teaching rules for hard names in `cards/README.md`: 2–3 supporting clues, one-jump tricks from the child's world, a "my trick" box, and tricks are never answers.
 
 ## Tests
 - Tests must not need an API key or network. Use `ScriptedLLM` and the synthetic fixtures in `tests/fixtures.py`.

@@ -40,11 +40,24 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
    - **On screen:** one deck at a time, or "Mix all" shuffles every topic together.
    - **On paper:** A4 sheets with 10 business-card-size cards each (85 × 55 mm) and dashed cut lines. The backs come mirrored for double-sided printing ("flip on long edge").
 
+## Teaching rules for hard names, places and concepts
+
+These came from trying the cards out with the family. Every new card type, trick list or game must follow them.
+
+1. **Hard things get extra help.** New place names, people's names and technical words are what children forget first. Give each one **2–3 supporting clues from different angles**, for example a picture, a sound trick and another fact from the same sheet, rather than one bare card.
+2. **One jump only.** A trick must go straight from something the child already knows to the answer:
+   - Good: "LAG-an: the river is so laggy" (gamers know *lag*).
+   - Bad: snail → slow → "lagging" → Lagan (three jumps, through an adult word).
+3. **From the child's world.** Hooks use games, cricket, food, school and YouTube, not adult vocabulary.
+4. **Let the child make the trick.** Leave a "my trick: ____" box. A link the child invents sticks better than one handed over, and it can't be too adult.
+5. **Tricks are never answers.** Mark them as tricks. The card back keeps the sheet's exact words, because exams mark the book's wording.
+6. **A generic picture only says *what kind* of answer it is** (a river, a ship, a date). It doesn't say *which one*. When several cards share a picture (Thames, Rea, Lagan), the clues must tell them apart.
+
 ## What it does not do yet
 
 - Tables, practice questions and memory tips are not turned into cards.
 - Scanned pages or phone photos are not read (no OCR).
-- It has no memory tricks, no games beyond flip-and-mix, and no progress tracking.
+- It has no memory tricks, no "my trick" box, no supporting clues for hard names, no games beyond flip-and-mix, and no progress tracking.
 - It can't catch a mistake in the sheet itself. Cards are only as correct as the PDF.
 
 ## Run it
