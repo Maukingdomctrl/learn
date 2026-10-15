@@ -3,6 +3,7 @@
 Every number here is a starting value from CORE_TEACHING_METHODOLOGY_FINAL.md.
 None has been calibrated with children.
 """
+
 import os
 
 STAGES = ("Discover", "Reinforce", "Vary", "Apply", "Recall")

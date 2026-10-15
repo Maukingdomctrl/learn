@@ -54,8 +54,13 @@ def test_choose_ocr_off():
 
 def test_check_selection(sample_pdf):
     index = SourceIndex(extract(sample_pdf).units)
-    good = {"concept": "Area of a triangle", "explanation_unit_ids": ["SRC-P1-U3"], "is_procedure": True,
-            "procedure_unit_ids": ["SRC-P1-U4"], "can_support_7_items": True}
+    good = {
+        "concept": "Area of a triangle",
+        "explanation_unit_ids": ["SRC-P1-U3"],
+        "is_procedure": True,
+        "procedure_unit_ids": ["SRC-P1-U4"],
+        "can_support_7_items": True,
+    }
     assert check_selection(good, index) == []
     bad = dict(good, explanation_unit_ids=["SRC-P9-U1"], can_support_7_items=False)
     problems = check_selection(bad, index)

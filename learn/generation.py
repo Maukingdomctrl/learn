@@ -2,6 +2,7 @@
 
 The model writes lesson content only. Code computes timing, source pages, and every check.
 """
+
 import json
 
 from pydantic import ValidationError
@@ -99,7 +100,8 @@ Activity types:
 - SKETCH: simple drawing in a frame; item.sketch_criteria = countable criteria ("Draw 3 arrows that show...").
 
 Text limits (counted by code; a number or expression like "1/2 x 8 x 5 = 20" counts as 1 word):
-- Each instruction sentence <= {C.MAX_INSTRUCTION_WORDS} words, at most {C.MAX_ACTIONS_PER_INSTRUCTION} action verbs, verb first.
+- Each instruction sentence <= {C.MAX_INSTRUCTION_WORDS} words, at most {C.MAX_ACTIONS_PER_INSTRUCTION} action verbs,
+  verb first.
 - Every other sentence <= {C.MAX_SENTENCE_WORDS} words.
 - Words before the first pencil mark (hook + Discover instruction + item 1 text) <= {C.MAX_WORDS_BEFORE_FIRST_MARK}.
 - Continuous reading between two pencil marks <= {C.MAX_READING_RUN_WORDS} words.
@@ -145,26 +147,83 @@ SCHEMA_EXAMPLE = {
     "core_claims": [{"text": "...", "source_unit_ids": ["SRC-P1-U2"], "is_analogy": False}],
     "terms": [{"term": "...", "definition": "...", "source_unit_ids": ["SRC-P1-U3"]}],
     "stages": [
-        {"stage": "Discover", "activity_type": "CHOOSE", "hook": "...", "instruction": "...",
-         "body_text": "...", "worked_example": ["Step 1: ...", "Step 2: ..."],
-         "visuals": [{"caption": "...", "headers": ["..."], "rows": [["..."]], "source_unit_ids": ["SRC-P1-U4"]}],
-         "example": None, "hint_pointer": None, "options": [], "word_bank": [], "groups": [],
-         "items": [{"number": 1, "prompt": "...", "options": ["...", "...", "..."], "unit": None,
-                    "sentence_stem": None, "keywords": [], "peer_work": None, "sketch_criteria": None}]},
-        {"stage": "Reinforce", "activity_type": "MATCH", "instruction": "...",
-         "example": {"prompt": "...", "answer": "..."}, "options": ["...", "...", "...", "..."],
-         "items": [{"number": 2, "prompt": "..."}, {"number": 3, "prompt": "..."}]},
-        {"stage": "Vary", "activity_type": "SPOT_MISTAKE", "instruction": "...", "hint_pointer": "Stuck? Look at ... on Page 1.",
-         "items": [{"number": 4, "prompt": "...", "peer_work": {"intro": "...", "steps": ["...", "..."], "mistake_step": 2}}]},
-        {"stage": "Apply", "activity_type": "SOLVE", "instruction": "...", "hint_pointer": "Stuck? ...",
-         "items": [{"number": 6, "prompt": "...", "unit": "cm"}]},
-        {"stage": "Recall", "activity_type": "SHORT_ANSWER", "instruction": "...", "hint_pointer": None,
-         "items": [{"number": 8, "prompt": "...", "keywords": ["...", "..."]}]},
+        {
+            "stage": "Discover",
+            "activity_type": "CHOOSE",
+            "hook": "...",
+            "instruction": "...",
+            "body_text": "...",
+            "worked_example": ["Step 1: ...", "Step 2: ..."],
+            "visuals": [{"caption": "...", "headers": ["..."], "rows": [["..."]], "source_unit_ids": ["SRC-P1-U4"]}],
+            "example": None,
+            "hint_pointer": None,
+            "options": [],
+            "word_bank": [],
+            "groups": [],
+            "items": [
+                {
+                    "number": 1,
+                    "prompt": "...",
+                    "options": ["...", "...", "..."],
+                    "unit": None,
+                    "sentence_stem": None,
+                    "keywords": [],
+                    "peer_work": None,
+                    "sketch_criteria": None,
+                }
+            ],
+        },
+        {
+            "stage": "Reinforce",
+            "activity_type": "MATCH",
+            "instruction": "...",
+            "example": {"prompt": "...", "answer": "..."},
+            "options": ["...", "...", "...", "..."],
+            "items": [{"number": 2, "prompt": "..."}, {"number": 3, "prompt": "..."}],
+        },
+        {
+            "stage": "Vary",
+            "activity_type": "SPOT_MISTAKE",
+            "instruction": "...",
+            "hint_pointer": "Stuck? Look at ... on Page 1.",
+            "items": [
+                {
+                    "number": 4,
+                    "prompt": "...",
+                    "peer_work": {"intro": "...", "steps": ["...", "..."], "mistake_step": 2},
+                }
+            ],
+        },
+        {
+            "stage": "Apply",
+            "activity_type": "SOLVE",
+            "instruction": "...",
+            "hint_pointer": "Stuck? ...",
+            "items": [{"number": 6, "prompt": "...", "unit": "cm"}],
+        },
+        {
+            "stage": "Recall",
+            "activity_type": "SHORT_ANSWER",
+            "instruction": "...",
+            "hint_pointer": None,
+            "items": [{"number": 8, "prompt": "...", "keywords": ["...", "..."]}],
+        },
     ],
     "answer_key": {
-        "entries": [{"item_number": 1, "answer": "...", "accepted_alternatives": [], "reason": "...",
-                     "calculation": None, "source_unit_ids": ["SRC-P1-U2"]}],
-        "scope_covered": "...", "not_covered": "...", "source_issues": [], "shortened_lesson_note": None,
+        "entries": [
+            {
+                "item_number": 1,
+                "answer": "...",
+                "accepted_alternatives": [],
+                "reason": "...",
+                "calculation": None,
+                "source_unit_ids": ["SRC-P1-U2"],
+            }
+        ],
+        "scope_covered": "...",
+        "not_covered": "...",
+        "source_issues": [],
+        "shortened_lesson_note": None,
     },
 }
 
@@ -238,8 +297,11 @@ def _to_lesson(llm: LLM, task: str, prompt: str) -> Lesson:
 
 def generate_lesson(llm: LLM, index: SourceIndex, standard: int, selection: dict) -> Lesson:
     prompt = GENERATE_PROMPT.format(
-        standard=standard, selection=json.dumps(selection, ensure_ascii=False), rules=LESSON_RULES,
-        schema=json.dumps(SCHEMA_EXAMPLE, indent=1), units=index.prompt_block(),
+        standard=standard,
+        selection=json.dumps(selection, ensure_ascii=False),
+        rules=LESSON_RULES,
+        schema=json.dumps(SCHEMA_EXAMPLE, indent=1),
+        units=index.prompt_block(),
     )
     try:
         lesson = _to_lesson(llm, "generate_lesson", prompt)
@@ -250,8 +312,11 @@ def generate_lesson(llm: LLM, index: SourceIndex, standard: int, selection: dict
 
 def repair_lesson(llm: LLM, index: SourceIndex, lesson: Lesson, failures: list[str], timing: dict) -> Lesson:
     prompt = REPAIR_PROMPT.format(
-        failures="\n".join(f"- {f}" for f in failures), timing=json.dumps(timing),
-        rules=LESSON_RULES, lesson=lesson.model_dump_json(indent=1), units=index.prompt_block(),
+        failures="\n".join(f"- {f}" for f in failures),
+        timing=json.dumps(timing),
+        rules=LESSON_RULES,
+        lesson=lesson.model_dump_json(indent=1),
+        units=index.prompt_block(),
     )
     try:
         return _to_lesson(llm, "repair_lesson", prompt)

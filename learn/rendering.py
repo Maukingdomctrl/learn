@@ -3,6 +3,7 @@
 HTML/CSS templates are printed with headless Chromium through Playwright. Layout measurements are taken
 from the same browser page that produced the PDF; page count and size come from the PDF files themselves.
 """
+
 import glob
 import math
 import os
@@ -22,8 +23,13 @@ from .textutil import has_blank, written_words
 from .timing import LessonTiming
 
 TEMPLATES = Path(__file__).parent / "templates"
-STAGE_TITLES = {"Discover": "Discover", "Reinforce": "Practise", "Vary": "Try it another way",
-                "Apply": "Use it", "Recall": "Memory check"}
+STAGE_TITLES = {
+    "Discover": "Discover",
+    "Reinforce": "Practise",
+    "Vary": "Try it another way",
+    "Apply": "Use it",
+    "Recall": "Memory check",
+}
 PX_PER_MM = 96 / 25.4
 _BLANK_RE = re.compile(r"_{3,}")
 
@@ -75,7 +81,7 @@ def _env() -> Environment:
         return Markup(_BLANK_RE.sub(f'<span class="blank" style="width:{width}mm"></span>', str(text)))
 
     def fill_blank(text, answer):
-        filled = f'<u>&nbsp;{Markup.escape(answer)}&nbsp;</u>'
+        filled = f"<u>&nbsp;{Markup.escape(answer)}&nbsp;</u>"
         out = _BLANK_RE.sub(filled, str(text), count=1)
         return Markup(out if out != str(text) else f"{text} &rarr; {filled}")
 
@@ -92,10 +98,20 @@ def student_html(lesson: Lesson) -> str:
         raise RenderError(f"cannot render: missing stages {missing}")
     req = {i.number: required_lines(lesson, s, i.number) for s, i in lesson.items()}
     blanks = {i.number: blank_width_mm(lesson, i.number) for _, i in lesson.items()}
-    return _env().get_template("student.html.j2").render(
-        lesson=lesson, stages=stages, stage_titles=STAGE_TITLES, req_lines=req, blank_mm=blanks,
-        recall_banner=C.RECALL_BANNER, margin=C.MARGIN_MM, group_letter=group_letter,
-        letters=string.ascii_uppercase * 2,
+    return (
+        _env()
+        .get_template("student.html.j2")
+        .render(
+            lesson=lesson,
+            stages=stages,
+            stage_titles=STAGE_TITLES,
+            req_lines=req,
+            blank_mm=blanks,
+            recall_banner=C.RECALL_BANNER,
+            margin=C.MARGIN_MM,
+            group_letter=group_letter,
+            letters=string.ascii_uppercase * 2,
+        )
     )
 
 
@@ -116,12 +132,15 @@ def key_rows(lesson: Lesson, index: SourceIndex) -> list[dict]:
         elif stage.activity_type == "SPOT_MISTAKE" and item.peer_work:
             answer = f"Step {item.peer_work.mistake_step} is wrong. Correct: {answer}"
         pages = index.pages(entry.source_unit_ids)
-        rows.append({
-            "number": item.number, "answer": answer,
-            "alternatives": "; ".join(entry.accepted_alternatives) or "-",
-            "reason": entry.reason,
-            "source": ("p. " + ", ".join(map(str, pages))) if pages else "-",
-        })
+        rows.append(
+            {
+                "number": item.number,
+                "answer": answer,
+                "alternatives": "; ".join(entry.accepted_alternatives) or "-",
+                "reason": entry.reason,
+                "source": ("p. " + ", ".join(map(str, pages))) if pages else "-",
+            }
+        )
     return rows
 
 
@@ -129,11 +148,18 @@ def key_html(lesson: Lesson, index: SourceIndex, timing: LessonTiming, warnings:
     cited = [i for c in lesson.core_claims for i in c.source_unit_ids]
     cited += [i for e in lesson.answer_key.entries for i in e.source_unit_ids]
     pages = index.pages(cited)
-    return _env().get_template("key.html.j2").render(
-        lesson=lesson, rows=key_rows(lesson, index), margin=C.MARGIN_MM,
-        concepts=", ".join(c.name for c in lesson.concepts),
-        source_pages=", ".join(map(str, pages)) or "-",
-        minutes=max(1, round(timing.t_lesson / 60)), warnings=warnings,
+    return (
+        _env()
+        .get_template("key.html.j2")
+        .render(
+            lesson=lesson,
+            rows=key_rows(lesson, index),
+            margin=C.MARGIN_MM,
+            concepts=", ".join(c.name for c in lesson.concepts),
+            source_pages=", ".join(map(str, pages)) or "-",
+            minutes=max(1, round(timing.t_lesson / 60)),
+            warnings=warnings,
+        )
     )
 
 
@@ -143,7 +169,8 @@ MEASURE_JS = """
   const out = {overflow: [], pages: document.querySelectorAll('.page').length};
   document.querySelectorAll('.page, .col').forEach(el => {
     if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) {
-      out.overflow.push((el.dataset.zone || el.id) + ` (content ${mm(el.scrollHeight).toFixed(0)}mm in ${mm(el.clientHeight).toFixed(0)}mm)`);
+      const used = mm(el.scrollHeight).toFixed(0), room = mm(el.clientHeight).toFixed(0);
+      out.overflow.push((el.dataset.zone || el.id) + ` (content ${used}mm in ${room}mm)`);
     }
   });
   let minFont = 1e9;
@@ -188,8 +215,9 @@ def _chromium(playwright):
         for exe in candidates:
             if exe and os.path.exists(exe):
                 return playwright.chromium.launch(executable_path=exe)
-        raise RenderError(f"cannot start Chromium: {first}. Run 'playwright install chromium' "
-                          "or set CHROMIUM_EXECUTABLE.") from first
+        raise RenderError(
+            f"cannot start Chromium: {first}. Run 'playwright install chromium' or set CHROMIUM_EXECUTABLE."
+        ) from first
 
 
 def _pdf_info(path: str) -> tuple[list[tuple[float, float]], str]:
@@ -199,8 +227,9 @@ def _pdf_info(path: str) -> tuple[list[tuple[float, float]], str]:
     return pages, text
 
 
-def render(lesson: Lesson, index: SourceIndex, timing: LessonTiming, workdir: str,
-           warnings: list[str] | None = None) -> RenderResult:
+def render(
+    lesson: Lesson, index: SourceIndex, timing: LessonTiming, workdir: str, warnings: list[str] | None = None
+) -> RenderResult:
     from playwright.sync_api import sync_playwright
 
     os.makedirs(workdir, exist_ok=True)
@@ -229,5 +258,12 @@ def render(lesson: Lesson, index: SourceIndex, timing: LessonTiming, workdir: st
 
     s_pages, s_text = _pdf_info(student_path)
     k_pages, k_text = _pdf_info(key_path)
-    return RenderResult(student_pdf=student_path, key_pdf=key_path, layout=layout,
-                        student_pages=s_pages, key_pages=k_pages, student_text=s_text, key_text=k_text)
+    return RenderResult(
+        student_pdf=student_path,
+        key_pdf=key_path,
+        layout=layout,
+        student_pages=s_pages,
+        key_pages=k_pages,
+        student_text=s_text,
+        key_text=k_text,
+    )

@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   pull_request:
@@ -13,6 +13,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install ruff
+        run: pip install "$(grep '^ruff==' requirements-dev.txt)"
+
+      - name: Lint
+        run: ruff check --output-format=github .
+
+      - name: Check formatting
+        run: ruff format --check --diff .
+
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 15

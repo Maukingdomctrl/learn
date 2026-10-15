@@ -1,12 +1,21 @@
 """Lesson data (methodology Section 9). The model produces this; code computes timing and source pages."""
+
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 StageName = Literal["Discover", "Reinforce", "Vary", "Apply", "Recall"]
 ActivityType = Literal[
-    "ANNOTATE", "CHOOSE", "MATCH", "FILL_IN", "SORT",
-    "COMPLETE_STEPS", "SPOT_MISTAKE", "SOLVE", "SHORT_ANSWER", "SKETCH",
+    "ANNOTATE",
+    "CHOOSE",
+    "MATCH",
+    "FILL_IN",
+    "SORT",
+    "COMPLETE_STEPS",
+    "SPOT_MISTAKE",
+    "SOLVE",
+    "SHORT_ANSWER",
+    "SKETCH",
 ]
 
 
@@ -23,6 +32,7 @@ class Table(_Base):
 
 class Example(_Base):
     """Done-for-you example ("Ex"). Never scored."""
+
     prompt: str
     answer: str
 

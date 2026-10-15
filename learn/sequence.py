@@ -4,6 +4,7 @@ The renderer prints each stage in exactly this order, so timing (printed words) 
 Section 5.3 reading limits are computed from the same sequence the child sees.
 Table contents are excluded: they are counted as visuals (Section 6.2).
 """
+
 from dataclasses import dataclass
 
 from .config import RECALL_BANNER

@@ -1,0 +1,10 @@
+line-length = 120
+target-version = "py311"
+
+[lint]
+# pyflakes, pycodestyle errors/warnings, import sorting, bugbear
+select = ["F", "E", "W", "I", "B"]
+
+[lint.flake8-bugbear]
+# FastAPI declares request parameters with these calls in argument defaults.
+extend-immutable-calls = ["fastapi.File", "fastapi.Form"]

@@ -1,4 +1,5 @@
 """Model client. One JSON-returning call per task, so tests can substitute a scripted fake."""
+
 import base64
 import json
 import re
@@ -22,7 +23,7 @@ def parse_json(text: str) -> dict:
     start, end = text.find("{"), text.rfind("}")
     if start < 0 or end <= start:
         raise ValueError("no JSON object in response")
-    return json.loads(text[start:end + 1])
+    return json.loads(text[start : end + 1])
 
 
 class AnthropicLLM:
@@ -80,11 +81,21 @@ class AnthropicLLM:
 
     def transcribe_image(self, png: bytes) -> str:
         content = [
-            {"type": "image", "source": {"type": "base64", "media_type": "image/png",
-                                         "data": base64.standard_b64encode(png).decode()}},
-            {"type": "text", "text": (
-                "Transcribe all text on this scanned textbook page exactly as printed, in reading order. "
-                "Separate paragraphs with a blank line. Do not add, correct, summarise or explain anything. "
-                "Write [unreadable] for text you cannot read. Output only the transcription.")},
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": base64.standard_b64encode(png).decode(),
+                },
+            },
+            {
+                "type": "text",
+                "text": (
+                    "Transcribe all text on this scanned textbook page exactly as printed, in reading order. "
+                    "Separate paragraphs with a blank line. Do not add, correct, summarise or explain anything. "
+                    "Write [unreadable] for text you cannot read. Output only the transcription."
+                ),
+            },
         ]
         return self._call("You are a careful OCR transcriber.", content)
