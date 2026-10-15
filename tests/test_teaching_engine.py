@@ -100,9 +100,7 @@ def test_teaching_engine_approval_can_release_a_flagged_fact():
 
 
 def test_teaching_engine_preserves_complete_fact_coverage_without_model():
-    inventory = extract_facts(
-        [SourceUnit("SRC-P1-U1", 1, "London is in England. It is on the River Thames.", "text")]
-    )
+    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, "London is in England. It is on the River Thames.", "text")])
 
     lesson = create_teaching_lesson(inventory)
 

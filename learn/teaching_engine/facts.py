@@ -157,8 +157,10 @@ def _mentions(statement: str, unit: SourceUnit, offset: int) -> tuple[Mention, .
                     start += article.end()
                 entity = statement[start:end]
                 sentence_pronoun = re.match(r"(?:it|this|that|these|those|they|he|she|we|i)\b", entity, re.IGNORECASE)
-                if entity and not (match.start() == 0 and sentence_pronoun) and (
-                    match.start() != 0 or article is not None or len(entity) > 1 or entity.isupper()
+                if (
+                    entity
+                    and not (match.start() == 0 and sentence_pronoun)
+                    and (match.start() != 0 or article is not None or len(entity) > 1 or entity.isupper())
                 ):
                     add("entity", start, end)
             else:
