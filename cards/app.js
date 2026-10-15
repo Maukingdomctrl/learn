@@ -200,7 +200,7 @@ function startMixed() {
   const decks = state.result.built.decks;
   // Only single-fact cards are shuffled; cards about a whole topic (final picture, lists, timelines,
   // pairs, the comparison) would give the game away mid-round.
-  const SINGLE = new Set(['hook', 'cloze', 'who', 'why', 'recall']);
+  const SINGLE = new Set(['hook', 'cloze', 'who', 'why', 'recall', 'age']);
   const all = decks.flatMap((d) => d.cards.filter((c) => SINGLE.has(c.kind)));
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

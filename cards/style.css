@@ -428,6 +428,14 @@ h3 {
 .cardface .lines li::before {
   content: '▸ ';
 }
+.cardface .identity {
+  font-size: 5.6cqh;
+  line-height: 1.2;
+  color: var(--ink-soft);
+  font-style: italic;
+  max-width: 92%;
+  text-wrap: balance;
+}
 .cardface .src {
   position: absolute;
   right: 3cqw;

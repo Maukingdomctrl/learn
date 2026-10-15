@@ -84,7 +84,14 @@ A heading is treated as a **person** when its description says what they were (r
 - **"What problem were they solving?"** For sentences with *against / to stop / to end / to improve / to abolish…*, the card hides what they worked against or for ("Fought against _____ discrimination").
 - The usual fill-ins, why cards and a final "Who am I?" picture card.
 
-Across the sheet, people with life years get a **"Who came first?"** card: names scrambled on the front, birth order with years on the back. The "who did what?" card speaks of causes ("Every reformer had their own cause").
+To make people stick, not just be quizzed once, each person's deck also gets:
+
+- **Ages:** for each dated fact in their life, "Born 1820. How old, about?" → "about 36", with the sum on the back (1856 − 1820 = 36). It uses only the sheet's years and says "about" because birthdays can make it a year out. A check confirms every sum.
+- **Both directions:** after the "what did they do?" cards and the ages, each piece of work comes back as "Founded the Brahmo Samaj in 1828 — Who am I?".
+- **From memory:** the three most-repeated answers return near the end with no hint and no picture, just a "?".
+- **A reminder line:** every card back about the person repeats their summary line from the sheet ("Remember: Raja Ram Mohan Roy = Brahmo Samaj + end of Sati"). Places get the same reminder when the sheet has summary lines.
+
+Across the sheet, people with life years also get a **lifeline card**: a drawn time line with a bar for each life and a dot for each dated fact, so the child can see who lived at the same time. The back lists each life and its dated facts. There's also a **"Who came first?"** card: names scrambled on the front, birth order with years on the back. The "who did what?" card speaks of causes ("Every reformer had their own cause").
 
 `sample/people-sheet.pdf` (three 19th-century reformers) is a synthetic example. Not yet tried on a real school sheet.
 

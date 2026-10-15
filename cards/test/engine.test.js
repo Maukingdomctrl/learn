@@ -10,11 +10,11 @@ import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
-import { purposeOf } from '../engine/events.js';
+import { ageCards, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
 import { assignPhotos, unitSquare } from '../engine/photos.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
-import { backHtml, esc, frontHtml } from '../engine/render.js';
+import { backHtml, esc, frontHtml, lifelineSvg } from '../engine/render.js';
 import { dropRunningHeaders, isPerson, parseSheet, splitFacts } from '../engine/structure.js';
 import { nameTip, thingFact } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
@@ -669,4 +669,78 @@ test('only data: image URLs are ever put on a card', () => {
   assert.match(frontHtml({ ...card, photoUrl: 'data:image/jpeg;base64,AAAA' }), /<img class="photo" src="data:image\/jpeg/);
   assert.doesNotMatch(frontHtml({ ...card, photoUrl: 'https://example.com/x.jpg' }), /<img/);
   assert.doesNotMatch(frontHtml({ ...card, photoUrl: 'javascript:alert(1)' }), /<img/);
+});
+
+// ---------- remembering people: lifelines, ages, both directions, repeats, reminders ----------
+
+test('ages are worked out from the sheet\'s own years and say "about"', async () => {
+  const { sheet, built } = await people();
+  const v = sheet.entities.find((e) => e.display === 'Ishwar Chandra Vidyasagar');
+  assert.deepEqual(lifeOf(v), { born: 1820, died: 1891, text: '(1820–1891)' });
+  const [age] = ageCards(v);
+  assert.equal(age.answer, 'about 36');
+  assert.equal(age.ask, 'Born 1820. How old, about?');
+  assert.match(backHtml(age), /1856 − 1820 = 36/);
+  const phule = built.decks[2].cards.filter((c) => c.kind === 'age').map((c) => c.answer);
+  assert.deepEqual(phule, ['about 21', 'about 46']);
+});
+
+test('check fails when an age does not follow from the sheet\'s years', async () => {
+  const { sheet, built } = await people();
+  built.decks[1].cards.find((c) => c.kind === 'age').answer = 'about 40';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /does not follow from the sheet's years/);
+});
+
+test('the lifeline puts every life on one time line with a dot for each dated fact', async () => {
+  const { sheet, built } = await people();
+  const card = lifelineCard(sheet.entities);
+  assert.deepEqual(
+    card.lifeline.map((r) => [r.name, r.born, r.died, r.events]),
+    [
+      ['Raja Ram Mohan Roy', 1772, 1833, [1828, 1829]],
+      ['Ishwar Chandra Vidyasagar', 1820, 1891, [1856]],
+      ['Jyotirao Phule', 1827, 1890, [1848, 1873]],
+    ],
+  );
+  const svgText = lifelineSvg(card.lifeline);
+  assert.equal(svgText, lifelineSvg(card.lifeline), 'same drawing every time');
+  assert.equal((svgText.match(/<rect/g) || []).length, 3);
+  assert.equal((svgText.match(/<circle/g) || []).length, 5);
+  assert.ok(svgText.includes('>1780<') && svgText.includes('>1900<'));
+  assert.ok(built.decks.some((d) => d.entity === 'Lifelines'));
+});
+
+test('lifeline names are escaped', () => {
+  const svgText = lifelineSvg([{ name: '<b>x</b>', born: 1800, died: 1850, events: [] }, { name: 'y', born: 1810, died: 1860, events: [] }]);
+  assert.ok(!svgText.includes('<b>'));
+});
+
+test('every piece of work is asked both ways: what they did, and who did it', async () => {
+  const { built } = await people();
+  const roy = built.decks[0].cards;
+  const cloze = roy.find((c) => c.kind === 'cloze' && c.answer === 'Brahmo Samaj');
+  const reverse = roy.find((c) => c.id === `${cloze.id}-who`);
+  assert.equal(reverse.clue, 'Founded the Brahmo Samaj in 1828');
+  assert.equal(reverse.answer, 'Raja Ram Mohan Roy');
+  assert.ok(roy.indexOf(reverse) > roy.indexOf(roy.find((c) => c.kind === 'age')), 'reverse cards come after the ages');
+});
+
+test('the key answers come back once more without hint or picture', async () => {
+  const { built } = await people();
+  const again = built.decks[0].cards.filter((c) => c.kind === 'again');
+  assert.equal(again.length, 3);
+  for (const c of again) {
+    assert.equal(c.hint, undefined);
+    assert.match(frontHtml(c), /from memory/);
+  }
+});
+
+test('every card about a person carries their summary line as a reminder', async () => {
+  const { sheet, built } = await people();
+  for (const c of built.decks[0].cards.filter((x) => x.kind !== 'portrait')) {
+    assert.equal(c.identity, 'Raja Ram Mohan Roy = Brahmo Samaj + end of Sati', c.id);
+  }
+  assert.match(backHtml(built.decks[0].cards[1]), /Remember: Raja Ram Mohan Roy = Brahmo Samaj/);
+  built.decks[0].cards[1].identity = 'Raja Ram Mohan Roy = inventor of the telephone';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /reminder line is not from the sheet/);
 });

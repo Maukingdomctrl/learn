@@ -3,7 +3,7 @@
 import { BLANK, nameParts } from './cards.js';
 
 // Cards about a whole topic or sheet: their front is a fixed prompt, their sheet words are in lines/frontLines.
-const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list']);
+const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list', 'lifeline']);
 
 const pieces = (line) =>
   line
@@ -56,7 +56,7 @@ export function checkDecks(sheet, built) {
         if (!source.includes(norm(piece))) problems.push(`${c.entity}: card front is not from the sheet: "${piece}".`);
       }
     }
-    if ((c.kind === 'cloze' || c.kind === 'why') && !norm(c.exact).includes(norm(c.answer))) {
+    if (['cloze', 'why', 'again'].includes(c.kind) && !norm(c.exact).includes(norm(c.answer))) {
       problems.push(`${c.entity}: the answer "${c.answer}" is not in its sentence.`);
     }
     // Fronts add nothing: each visible piece of the clue appears in the sheet (the comparison card's
@@ -64,6 +64,17 @@ export function checkDecks(sheet, built) {
     if (DECK_CARDS.has(c.kind)) continue;
     for (const piece of c.clue.split(new RegExp(`${BLANK}|…`)).map((p) => p.trim())) {
       if (piece && !source.includes(norm(piece))) problems.push(`${c.entity}: clue text not found in the sheet: "${piece}".`);
+    }
+    // An age is plain arithmetic on two years the sheet gives: the fact's year and the birth year.
+    if (c.kind === 'age') {
+      const { year, born } = c.sum || {};
+      if (c.answer !== `about ${year - born}` || !c.exact.includes(String(year)) || !source.includes(String(born))) {
+        problems.push(`${c.entity}: the age "${c.answer}" does not follow from the sheet's years.`);
+      }
+    }
+    // The summary line repeated on each back is the sheet's own.
+    if (c.identity && !source.includes(norm(c.identity))) {
+      problems.push(`${c.entity}: the reminder line is not from the sheet: "${c.identity}".`);
     }
     // A link is the sheet's own words and must not hold the answer.
     if (c.link) {
