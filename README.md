@@ -66,7 +66,7 @@ The exit code is 0 when a lesson was delivered and 2 when it stopped with a limi
 python -m learn.teaching_engine path/to/curriculum.pdf --out teaching_lesson.json [--pages 3-5]
 ```
 
-This writes a source-linked JSON teaching scaffold. It is separate from the older printable-PDF command above.
+This writes a source-linked JSON teaching scaffold. The standalone teaching web app returns a print-ready PDF; it remains separate from the older printable-PDF command above.
 
 **Offline Teaching Engine web app:**
 

@@ -2,6 +2,7 @@
 
 from .facts import Fact, FactInventory, Mention, extract_facts
 from .lesson import TeachingEngineError, TeachingLesson, create_teaching_lesson
+from .printable import render_teaching_pdf
 
 __all__ = [
     "Fact",
@@ -11,4 +12,5 @@ __all__ = [
     "TeachingLesson",
     "create_teaching_lesson",
     "extract_facts",
+    "render_teaching_pdf",
 ]

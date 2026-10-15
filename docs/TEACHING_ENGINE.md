@@ -43,7 +43,9 @@ uvicorn learn.teaching_web:app --reload
 
 The repository's `render.yaml` defines a Render web service that launches only `learn.teaching_web:app` and installs `requirements-teaching.txt`, which excludes the Anthropic SDK and Playwright. In Render, create a new Blueprint from the GitHub repository and review the service before applying it. No AI/API secret or app password is needed.
 
-The app has a 30 MB upload limit. It does not save uploaded PDFs or generated plans to app-managed storage: extraction reads PDF bytes, and the generated JSON is returned directly as the upload response. There is no database, object-storage bucket, job history, or download endpoint. The HTTP upload framework may transiently buffer request data on the Render instance while processing; visitors' PDFs still travel to Render for processing. Render's free service can sleep while idle. The web app is public and requires no username or password. The app makes no paid AI calls.
+The app has a 30 MB upload limit. It does not save uploaded PDFs or generated plans to app-managed storage: extraction reads the uploaded PDF in memory, and a print-ready A4 PDF is returned directly as the response. There is no database, object-storage bucket, job history, or server-side output archive. The HTTP upload framework may transiently buffer request data on the Render instance while processing; visitors' PDFs still travel to Render for processing. Render's free service can sleep while idle. The web app is public and requires no username or password. The app makes no paid AI calls.
+
+The web PDF includes source excerpts and page numbers, learner-friendly prompts, memory and drawing activities, recall practice, source notes, and a separate section for claims held for verification. The command-line interface continues to produce JSON when requested.
 
 To use `learn.mauforge.com`, first deploy and test the Render URL, then add that custom domain to the Render service and follow the DNS record Render provides in Cloudflare. DNS records should be taken from the live Render dashboard rather than guessed. Keep the hostname behind Cloudflare Access if access should remain private.
 

@@ -1,15 +1,14 @@
 """Standalone, offline web app for the Teaching Engine."""
 
-import json
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .extraction import ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
-from .teaching_engine import create_teaching_lesson, extract_facts
+from .teaching_engine import create_teaching_lesson, extract_facts, render_teaching_pdf
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
@@ -50,8 +49,9 @@ def generate(pdf: UploadFile = File(...), pages: str = Form("")):
         return _page("teaching_result.html.j2", job=None, error=message, warnings=source.warnings)
 
     lesson = create_teaching_lesson(extract_facts(source.units))
-    payload = {"lesson": lesson.model_dump(), "source_warnings": source.warnings}
-    return JSONResponse(
-        content=payload,
-        headers={"Content-Disposition": 'attachment; filename="teaching_lesson.json"'},
+    pdf_bytes = render_teaching_pdf(lesson, source.warnings)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="learn_teaching_plan.pdf"'},
     )

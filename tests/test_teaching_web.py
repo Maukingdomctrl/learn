@@ -1,11 +1,10 @@
-import json
-
 from fastapi.testclient import TestClient
+import pymupdf
 
 import learn.teaching_web as web
 
 
-def test_keyless_teaching_web_returns_plan_without_saving_files(sample_pdf, tmp_path, monkeypatch):
+def test_keyless_teaching_web_returns_printable_pdf_without_saving_files(sample_pdf, tmp_path, monkeypatch):
     monkeypatch.setenv("LEARN_OUTPUT_DIR", str(tmp_path))
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     client = TestClient(web.app)
@@ -15,9 +14,13 @@ def test_keyless_teaching_web_returns_plan_without_saving_files(sample_pdf, tmp_
         response = client.post("/generate", files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")})
 
     assert response.status_code == 200
-    assert response.headers["content-type"].startswith("application/json")
-    assert response.headers["content-disposition"] == 'attachment; filename="teaching_lesson.json"'
-    assert json.loads(response.text)["lesson"]["topics"]
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.headers["content-disposition"] == 'attachment; filename="learn_teaching_plan.pdf"'
+    document = pymupdf.open(stream=response.content, filetype="pdf")
+    assert document.page_count >= 1
+    pdf_text = "\n".join(page.get_text() for page in document)
+    assert "SOURCE" in pdf_text
+    assert "PAGE 1" in pdf_text
     assert list(tmp_path.iterdir()) == []
 
 
