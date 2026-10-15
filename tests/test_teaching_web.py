@@ -35,18 +35,9 @@ def test_teaching_web_rejects_bad_file_and_page_range(sample_pdf):
     assert "outside the PDF" in response.text
 
 
-def test_teaching_web_requires_password_when_deployed(monkeypatch):
+def test_teaching_web_does_not_require_credentials(monkeypatch):
     monkeypatch.setenv("LEARN_REQUIRE_ACCESS", "1")
     monkeypatch.setenv("LEARN_ACCESS_PASSWORD", "test-secret")
     client = TestClient(web.app)
 
-    assert client.get("/").status_code == 401
-    assert client.get("/", auth=("learn", "wrong-secret")).status_code == 401
-    assert client.get("/", auth=("learn", "test-secret")).status_code == 200
-
-
-def test_teaching_web_fails_closed_if_deployed_password_missing(monkeypatch):
-    monkeypatch.setenv("LEARN_REQUIRE_ACCESS", "1")
-    monkeypatch.delenv("LEARN_ACCESS_PASSWORD", raising=False)
-
-    assert TestClient(web.app).get("/").status_code == 503
+    assert client.get("/").status_code == 200

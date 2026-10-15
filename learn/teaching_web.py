@@ -1,13 +1,10 @@
 """Standalone, offline web app for the Teaching Engine."""
 
-import hmac
 import json
-import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .extraction import ExtractionError, choose_ocr, extract, pdf_page_count
@@ -19,30 +16,11 @@ app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
 )
-_basic = HTTPBasic(auto_error=False)
-
-
-def _authorize(credentials: HTTPBasicCredentials | None = Depends(_basic)) -> None:
-    if os.getenv("LEARN_REQUIRE_ACCESS") != "1":
-        return
-    password = os.getenv("LEARN_ACCESS_PASSWORD", "")
-    if not password:
-        raise HTTPException(503, "Access protection is not configured. Set LEARN_ACCESS_PASSWORD.")
-    if credentials is None or not (
-        hmac.compare_digest(credentials.username, "learn") and hmac.compare_digest(credentials.password, password)
-    ):
-        raise HTTPException(
-            401,
-            "Sign-in required",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-
-
 def _page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(_env.get_template(name).render(**ctx))
 
 
-@app.get("/", response_class=HTMLResponse, dependencies=[Depends(_authorize)])
+@app.get("/", response_class=HTMLResponse)
 def index():
     return _page("teaching_upload.html.j2")
 
@@ -52,7 +30,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/generate", response_class=HTMLResponse, dependencies=[Depends(_authorize)])
+@app.post("/generate", response_class=HTMLResponse)
 def generate(pdf: UploadFile = File(...), pages: str = Form("")):
     data = pdf.file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
