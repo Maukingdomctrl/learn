@@ -267,6 +267,9 @@ export const ART = Object.fromEntries(
 
 // Words that point to each picture. Earlier pictures win ties; the generic ones at the end count for less.
 const KEYWORDS = [
+  ['quake', ['earthquake', 'earthquakes', 'tectonic', 'plates', 'epicentre', 'epicenter', 'richter', 'seismograph', 'tremors']],
+  ['car', ['traffic', 'cars', 'vehicles', 'jams']],
+  ['building', ['buildings', 'housing', 'houses', 'slums', 'collapse']],
   ['vote', ['elected', 'election', 'elections', 'vote', 'votes', 'voters', 'voting', 'electoral']],
   ['shield', ['protects', 'protect', 'guardian', 'rights', 'defence']],
   ['metal', ['iron', 'steel', 'metal', 'metals', 'ore', 'aluminium', 'copper']],

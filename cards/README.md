@@ -6,6 +6,8 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
 - No AI and no accounts. Fixed rules make every decision.
 - Separate from the Python lesson engine in `learn/`. It shares no code with it and doesn't follow its methodology spec.
 
+> **The uploaded PDF is the fact sheet.** Every fact on every card comes from the PDF the parent or child uploads, and the checks block anything else. The engine only learns *how to ask*: what a question looks like for a place, a person, a cause or an institution. It never learns *what the facts are*. The sample PDFs in `sample/` exist only to test those rules. The one exception is the small checked list of "Fun facts" (see below), which is printed as a footer and never tested.
+
 > **Status — read this first.**
 > - This is a first prototype. It has **not** been tested with children.
 > - It has been tried on one machine-made sheet (UK cities) and on the synthetic sample in `sample/`. Other sheet layouts will often produce no cards. The page then says so.
@@ -127,6 +129,17 @@ The riddle is the heading's description ("Lower House of Parliament — Which on
 Across the sheet, **"Numbers to know"** lists every bold number once, smallest first ("2 years · 5 years · … · 65"). The back gives each fact behind them with its institution. That's the kind of detail exams ask for.
 
 `sample/civics-sheet.pdf` (Lok Sabha, Rajya Sabha, the President, the Supreme Court) is a synthetic example with stable facts only. Not yet tried on a real school sheet.
+
+## Geography: processes
+
+A heading is a **process** when its name is one: MIGRATION, URBANISATION, POPULATION, EARTHQUAKES, FLOODS, CYCLONES, DROUGHTS, LANDSLIDES, TSUNAMIS, SOIL EROSION, DEFORESTATION, POLLUTION, GLOBAL WARMING, CLIMATE CHANGE, VOLCANOES, DISASTERS…
+
+- **Definition first:** a bullet that defines the topic ("Migration is…", "An earthquake is…") opens the deck as "_____ is the movement of people… — What is it called?". The descriptor riddle is then left out, so the same thing isn't asked twice.
+- **Fill-ins by label:** "Push factors:" → *What pushes people out?*; "Pull factors:" → *What pulls people in?*; "Causes:" → *Why does it happen?*; "Effects:" → *What does it lead to?*; "Measures:" / "Precautions:" / "Prevention:" → *What should be done?*
+- **"Cause or effect?":** mixes the bold causes and effects to sort. "Causes" and "Effects" are the card's only own words; every item is checked against the sheet.
+- **The final card is the chain** *cause → ? → effect*, from the first bold cause and effect.
+
+`sample/processes-sheet.pdf` (migration, urbanisation, earthquakes) is a synthetic example. Not yet tried on a real school sheet.
 
 ## Photos from the sheet
 

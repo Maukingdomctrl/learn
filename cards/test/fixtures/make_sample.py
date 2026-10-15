@@ -5,7 +5,8 @@
 - people-sheet.pdf: three social reformers, each with life years, a summary line and a placeholder
   portrait beside the heading (a drawn silhouette, not a real photo);
 - industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are;
-- civics-sheet.pdf: four Union institutions (two Houses, the President, the Supreme Court) with terms, ages and jobs.
+- civics-sheet.pdf: four Union institutions (two Houses, the President, the Supreme Court) with terms, ages and jobs;
+- processes-sheet.pdf: migration, urbanisation and earthquakes with definitions, causes, effects and what to do.
 
 
 Words wrapped in **double stars** are printed bold, the way a teacher marks the key words.
@@ -178,6 +179,36 @@ CIVICS = [
 ]
 
 
+PROCESSES = [
+    [
+        ("title", "POPULATION, MIGRATION AND DISASTERS"),
+        ("sub", "Class 8 Geography | Sample notes"),
+        ("heading", "1. MIGRATION – Movement of people"),
+        ("bullet", "Migration is the movement of people from one place to another."),
+        ("bullet", "Push factors: **lack of jobs**, poverty and droughts in villages."),
+        ("bullet", "Pull factors: **better jobs**, schools and hospitals in cities."),
+        ("bullet", "Effects: **crowded cities** and the growth of slums."),
+        ("bullet", "Movement from villages to cities is called **rural-urban migration**."),
+        ("heading", "2. URBANISATION – Growth of towns and cities"),
+        ("bullet", "Urbanisation is the growth in the share of people living in towns and cities."),
+        ("bullet", "Causes: **industries** and better jobs in cities."),
+        ("bullet", "Effects: **traffic jams**, pollution and a shortage of housing."),
+        ("bullet", "Measures: **planned cities** and better public transport."),
+        ("heading", "3. EARTHQUAKES – Sudden shaking of the ground"),
+        ("bullet", "An earthquake is a sudden shaking of the ground."),
+        ("bullet", "Causes: movement of the **tectonic plates** under the Earth's surface."),
+        ("bullet", "The point on the surface right above where it starts is the **epicentre**."),
+        ("bullet", "It is measured on the **Richter scale**."),
+        ("bullet", "Effects: **collapse of buildings** and loss of life."),
+        ("bullet", "Precautions: take cover under a **strong table** and stay away from windows."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Migration = people move (pushed out, pulled in)"),
+        ("bullet", "Urbanisation = cities grow (jobs in, traffic out)"),
+        ("bullet", "Earthquakes = the ground shakes (plates move)"),
+    ],
+]
+
+
 def runs(text):
     """Splits '**bold**' markup into (text, bold) runs."""
     parts = re.split(r"(\*\*.+?\*\*)", text)
@@ -253,6 +284,7 @@ def main():
     build(PEOPLE, SAMPLES / "people-sheet.pdf", "Class 8 History | Reformers sample", portraits=True)
     build(INDUSTRIES, SAMPLES / "industries-sheet.pdf", "Class 8 Geography | Industries sample")
     build(CIVICS, SAMPLES / "civics-sheet.pdf", "Class 8 Civics | Institutions sample")
+    build(PROCESSES, SAMPLES / "processes-sheet.pdf", "Class 8 Geography | Processes sample")
 
 
 if __name__ == "__main__":

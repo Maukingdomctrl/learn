@@ -18,7 +18,13 @@ export const ASK_BY_LABEL = {
   head: 'Who is in charge?',
   job: 'What does it do?',
   members: 'Who is in it?',
+  push: 'What pushes people out?',
+  pull: 'What pulls people in?',
+  action: 'What should be done?',
 };
+
+// For a process, causes and results read in the present tense.
+export const PROCESS_ASK = { cause: 'Why does it happen?', result: 'What does it lead to?' };
 
 // A reason about a location ("grew in Mumbai because…", "Plants are near … because…") asks "Why here?".
 const ABOUT_PLACE = /\b(near|located|set up|grew in|grew at|situated|centred|centered|found in)\b/i;
@@ -395,5 +401,61 @@ export function numbersCard(entities) {
     lines: rows.map((r) => `${r.e.display} … ${r.f.text.replace(/[.\s]+$/, '')}`),
     page: rows[0].f.page,
     symbol: 'calendar',
+  };
+}
+
+// ---------- processes ----------
+
+/**
+ * A definition of the topic itself: "Migration is the movement of people…", "An earthquake is a sudden…".
+ * Returns the term as written in the sentence, or null.
+ */
+export function definedTerm(text, display) {
+  const stem = display.toLowerCase().replace(/s$/, '');
+  const m = text.match(/^(?:(?:an?|the)\s+)?([A-Za-z-]+(?:\s+[A-Za-z-]+)?)\s+(?:is|are|means|refers to)\s/i);
+  if (!m) return null;
+  const word = m[1].toLowerCase().replace(/s$/, '');
+  return word === stem ? m[1] : null;
+}
+
+/** "An _____ is a sudden shaking of the ground — What is it called?" */
+export function definitionCard(fact, entity, term) {
+  return {
+    id: fact.id,
+    entity,
+    kind: 'cloze',
+    clue: fact.text.replace(/[.\s]+$/, '').replace(term, BLANK),
+    ask: 'What is it called?',
+    answer: term,
+    exact: fact.text,
+    page: fact.page,
+  };
+}
+
+/** A process's chain: its first cause, a question mark, its first effect (bold words only). */
+export function causeEffectOf(entity) {
+  const cause = entity.facts.find((f) => ['cause', 'push'].includes(f.label) && f.keys[0]);
+  const effect = entity.facts.find((f) => f.label === 'result' && f.keys[0]);
+  return cause && effect ? { raw: cause.keys[0], product: effect.keys[0] } : null;
+}
+
+/** "Cause or effect?": a process's bold causes and effects mixed together, sorted on the back. */
+export function causeOrEffectCard(entity) {
+  const causes = entity.facts.filter((f) => ['cause', 'push', 'pull'].includes(f.label) && f.keys[0]).map((f) => f.keys[0]);
+  const effects = entity.facts.filter((f) => f.label === 'result' && f.keys[0]).map((f) => f.keys[0]);
+  if (!causes.length || !effects.length || causes.length + effects.length < 3) return null;
+  return {
+    id: `${slug(entity.display)}-cause-effect`,
+    entity: entity.display,
+    kind: 'sort',
+    clue: 'Sort them.',
+    ask: 'Cause or effect?',
+    answer: 'Causes and effects',
+    exact: '',
+    frontLines: [...causes, ...effects].sort((a, b) => a.localeCompare(b)),
+    lines: [`Causes … ${causes.join(' · ')}`, `Effects … ${effects.join(' · ')}`],
+    labelWords: ['Causes', 'Effects'],
+    page: entity.page,
+    symbol: null,
   };
 }

@@ -10,7 +10,7 @@ import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
-import { ageCards, flowOf, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
+import { ageCards, causeEffectOf, definedTerm, flowOf, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
 import { assignPhotos, unitSquare } from '../engine/photos.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
@@ -910,4 +910,65 @@ test('check fails when a numbers line is not from the sheet', async () => {
   const { sheet, built } = await civics();
   built.decks.find((d) => d.entity === 'Numbers to know').cards[0].lines[0] = 'Lok Sabha … Term: 4 years';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word/);
+});
+
+// ---------- processes (geography sample) ----------
+
+async function processes() {
+  const data = new Uint8Array(readFileSync(here('../sample/processes-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('processes sample: headings are processes; every fact has a card; all checks pass', async () => {
+  const { sheet, built, check } = await processes();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Migration', 'process'],
+      ['Urbanisation', 'process'],
+      ['Earthquakes', 'process'],
+    ],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('a definition of the topic opens its deck: "_____ is the movement of people…"', async () => {
+  assert.equal(definedTerm('Migration is the movement of people.', 'Migration'), 'Migration');
+  assert.equal(definedTerm('An earthquake is a sudden shaking of the ground.', 'Earthquakes'), 'earthquake');
+  assert.equal(definedTerm('It is measured on the Richter scale.', 'Earthquakes'), null);
+  const { built } = await processes();
+  const quake = built.decks[2].cards[0];
+  assert.equal(quake.clue, `An ${BLANK} is a sudden shaking of the ground`);
+  assert.equal(quake.ask, 'What is it called?');
+  assert.ok(!built.decks[2].cards.some((c) => c.kind === 'hook'), 'no second riddle asking the same thing');
+});
+
+test('process cards ask what pushes, what pulls, why, what it leads to and what to do', async () => {
+  const { built } = await processes();
+  const ask = (deck, answer) => built.decks[deck].cards.find((c) => c.answer === answer).ask;
+  assert.equal(ask(0, 'lack of jobs'), 'What pushes people out?');
+  assert.equal(ask(0, 'better jobs'), 'What pulls people in?');
+  assert.equal(ask(1, 'industries'), 'Why does it happen?');
+  assert.equal(ask(1, 'traffic jams'), 'What does it lead to?');
+  assert.equal(ask(2, 'strong table'), 'What should be done?');
+});
+
+test('a process ends with its cause → ? → effect chain, and mixes causes with effects to sort', async () => {
+  const { sheet, built } = await processes();
+  assert.deepEqual(causeEffectOf(sheet.entities[2]), { raw: 'tectonic plates', product: 'collapse of buildings' });
+  assert.deepEqual(built.decks[0].cards.at(-1).flow, { raw: 'lack of jobs', product: 'crowded cities' });
+  const sort = built.decks[0].cards.find((c) => c.kind === 'sort');
+  assert.deepEqual(sort.frontLines, ['better jobs', 'crowded cities', 'lack of jobs']);
+  assert.deepEqual(sort.lines, ['Causes … lack of jobs · better jobs', 'Effects … crowded cities']);
+});
+
+test('the sort card\'s own headings pass the checks, but an invented item does not', async () => {
+  const { sheet, built, check } = await processes();
+  assert.ok(check.ok);
+  built.decks[0].cards.find((c) => c.kind === 'sort').lines[1] += ' · more trees';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word from the sheet: "more trees"/);
 });

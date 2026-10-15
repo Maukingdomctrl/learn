@@ -8,7 +8,7 @@ const SECTION_HEADING = /^(?:\d+[.)]\s+[A-Z][A-Z0-9 &,'’:–—-]+|[A-Z][A-Z&,
 const LABEL = /^[A-Z][A-Z ]{2,}:/;
 const SUBHEADING = /^[A-Z][A-Za-z ]{2,30}:$/; // "Causes:" inside a topic: labels the bullets under it
 const FACT_LABEL =
-  /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact|raw materials?|(?:main |other )?(?:centres|centers|states|places)|products?|(?:location )?factors|term|tenure|presiding officer|chairman|head|powers?|functions?|members|composition|strength)\s*:/i;
+  /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact|push factors?|pull factors?|measures|precautions|prevention|solutions|raw materials?|(?:main |other )?(?:centres|centers|states|places)|products?|(?:location )?factors|term|tenure|presiding officer|chairman|head|powers?|functions?|members|composition|strength)\s*:/i;
 const PAGE_NUMBER = /^page\s+\d+$/i;
 
 /**
@@ -164,9 +164,18 @@ const TITLES = /^(RAJA|RANI|SWAMI|MAHATMA|SIR|LORD|DR|BEGUM|MAHARAJA|MAHARANI|SA
 /** Place, person, industry or institution, from a heading's name and description. */
 export function kindOfHeading(name, descriptor) {
   if (isIndustry(name, descriptor)) return 'industry';
+  if (isProcess(name)) return 'process';
   if (isInstitution(name, descriptor)) return 'institution';
   if (isPerson(name, descriptor)) return 'person';
   return 'place';
+}
+
+const PROCESSES =
+  /\b(MIGRATION|URBANI[SZ]ATION|POPULATION|EARTHQUAKES?|FLOODS?|CYCLONES?|DROUGHTS?|LANDSLIDES?|TSUNAMIS?|SOIL EROSION|EROSION|DEFORESTATION|POLLUTION|GLOBAL WARMING|CLIMATE CHANGE|VOLCANO(?:ES)?|VOLCANIC ERUPTIONS?|DISASTERS?|WEATHERING|DESERTIFICATION)\b/;
+
+/** "MIGRATION – Movement of people…", "EARTHQUAKES – Sudden shaking of the ground". */
+export function isProcess(name) {
+  return PROCESSES.test(name);
 }
 
 const INSTITUTIONS =
@@ -186,6 +195,8 @@ export function isIndustry(name, descriptor) {
 export function bulletLabel(prefix) {
   const t = prefix.toLowerCase();
   if (!t) return null;
+  if (/\bpush\b/.test(t)) return 'push';
+  if (/\bpull\b/.test(t)) return 'pull';
   if (/raw material/.test(t)) return 'raw';
   if (/centres|centers|states|places/.test(t)) return 'where';
   if (/product/.test(t)) return 'product';
@@ -213,6 +224,7 @@ export function isPerson(name, descriptor) {
 
 const KIND_WORDS = {
   industries: 'industry',
+  disasters: 'disaster',
   institutions: 'institution',
   reformers: 'reformer',
   personalities: 'person',
@@ -325,6 +337,9 @@ export function slug(s) {
 /** What a heading or label says its bullets are: causes, results, a course of events, or people. */
 export function labelFor(text) {
   const t = text.toLowerCase();
+  if (/\bpush\b/.test(t)) return 'push';
+  if (/\bpull\b/.test(t)) return 'pull';
+  if (/\b(measures?|precautions?|prevention|solutions?|remedies|safety|do's)\b/.test(t)) return 'action';
   if (/\b(causes?|reasons?|why)\b/.test(t)) return 'cause';
   if (/\b(results?|consequences?|effects?|impact|significance|outcome)\b/.test(t)) return 'result';
   if (/\b(course|events?|timeline|chronology)\b/.test(t)) return 'course';

@@ -47,7 +47,10 @@ export function checkDecks(sheet, built) {
   for (const c of allCards) {
     // Exactness: the back is the sheet's own words.
     for (const line of c.lines || [c.exact]) {
-      for (const piece of pieces(line).flatMap((p) => p.split(' · '))) {
+      // labelWords are the card's own fixed headings ("Causes", "Effects"); everything else is the sheet's.
+      for (const piece of pieces(line)
+        .flatMap((p) => p.split(' · '))
+        .filter((p) => !(c.labelWords || []).includes(p))) {
         if (!source.includes(norm(piece))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${piece}".`);
       }
     }

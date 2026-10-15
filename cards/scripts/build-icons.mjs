@@ -43,6 +43,9 @@ const USE = {
   sweet: 'candy',
   vote: 'checkbox',
   shield: 'shield-check',
+  quake: 'activity',
+  car: 'car',
+  building: 'building',
 };
 
 const root = new URL('../', import.meta.url);
