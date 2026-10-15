@@ -1,4 +1,5 @@
 """Command line: python -m learn.cli path/to/curriculum.pdf --standard 7 [--topic ...] [--pages 3-5]"""
+
 import argparse
 import json
 import os
@@ -13,6 +14,7 @@ def make_llm():
     """The real Claude client, or None (with a reason) when the SDK or credentials are unavailable."""
     try:
         from .llm import AnthropicLLM
+
         return AnthropicLLM(C.model_name(), C.model_effort()), ""
     except Exception as e:  # missing credentials surface here or on the first call
         return None, str(e)

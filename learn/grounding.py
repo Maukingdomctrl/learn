@@ -1,4 +1,5 @@
 """Source-unit index, page ranges, and the code side of the sufficiency test (Section 3)."""
+
 import re
 from typing import Optional
 
@@ -62,8 +63,12 @@ def check_selection(sel: dict, index: SourceIndex) -> list[str]:
         proc = [i for i in sel.get("procedure_unit_ids", []) if index.exists(i)]
         if not proc:
             problems.append("(3.3c) procedure without source steps or worked example")
-    bad = [i for key in ("explanation_unit_ids", "procedure_unit_ids", "supporting_unit_ids")
-           for i in sel.get(key, []) if not index.exists(i)]
+    bad = [
+        i
+        for key in ("explanation_unit_ids", "procedure_unit_ids", "supporting_unit_ids")
+        for i in sel.get(key, [])
+        if not index.exists(i)
+    ]
     if bad:
         problems.append(f"cites unknown source units: {', '.join(bad[:5])}")
     if not sel.get("can_support_7_items", False):

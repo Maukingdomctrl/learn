@@ -4,6 +4,7 @@ These tests exercise the real extraction, timing, rendering, deterministic check
 rules. The model's outputs (concept selection, lesson, AI-check verdicts) are canned, so they say nothing
 about the quality of real generated lessons.
 """
+
 import copy
 import os
 
@@ -11,18 +12,33 @@ from learn.pipeline import run
 from tests.fixtures import SAMPLE_LESSON
 
 SELECTION = {
-    "status": "ok", "concept": "Area of a triangle", "sub_concepts": ["finding area", "finding height"],
-    "is_procedure": True, "explanation_unit_ids": ["SRC-P1-U3"], "procedure_unit_ids": ["SRC-P1-U4"],
-    "supporting_unit_ids": ["SRC-P1-U2", "SRC-P1-U5"], "can_support_7_items": True,
-    "not_covered": "", "source_issues": [], "insufficiency_reason": "", "parent_action": "",
+    "status": "ok",
+    "concept": "Area of a triangle",
+    "sub_concepts": ["finding area", "finding height"],
+    "is_procedure": True,
+    "explanation_unit_ids": ["SRC-P1-U3"],
+    "procedure_unit_ids": ["SRC-P1-U4"],
+    "supporting_unit_ids": ["SRC-P1-U2", "SRC-P1-U5"],
+    "can_support_7_items": True,
+    "not_covered": "",
+    "source_issues": [],
+    "insufficiency_reason": "",
+    "parent_action": "",
 }
 PASS = {"pass": True, "issues": []}
 BLIND = {"answers": [{"item_number": n, "answer": "x", "flag": None} for n in range(1, 13)]}
 
 
 def responses(**over):
-    r = {"select_concept": SELECTION, "generate_lesson": copy.deepcopy(SAMPLE_LESSON),
-         "repair_lesson": copy.deepcopy(SAMPLE_LESSON), "A1": PASS, "A2": BLIND, "A3": PASS, "A4": PASS}
+    r = {
+        "select_concept": SELECTION,
+        "generate_lesson": copy.deepcopy(SAMPLE_LESSON),
+        "repair_lesson": copy.deepcopy(SAMPLE_LESSON),
+        "A1": PASS,
+        "A2": BLIND,
+        "A3": PASS,
+        "A4": PASS,
+    }
     r.update(over)
     return r
 
@@ -42,8 +58,12 @@ def test_delivers_when_all_checks_pass(sample_pdf, tmp_path, scripted):
 
 
 def test_insufficient_source_stops_without_lesson(sample_pdf, tmp_path, scripted):
-    sel = dict(SELECTION, status="insufficient", insufficiency_reason="The topic is only listed, not explained.",
-               parent_action="Upload the chapter pages.")
+    sel = dict(
+        SELECTION,
+        status="insufficient",
+        insufficiency_reason="The topic is only listed, not explained.",
+        parent_action="Upload the chapter pages.",
+    )
     rep = run(sample_pdf, 7, scripted(responses(select_concept=sel)), str(tmp_path))
     assert rep.status == "stopped" and rep.stage == "sufficiency"
     assert "only listed" in rep.parent_message
@@ -80,8 +100,9 @@ def test_stops_after_two_repairs_and_delivers_nothing(sample_pdf, tmp_path, scri
 
 
 def test_ai_check_failure_blocks_delivery(sample_pdf, tmp_path, scripted):
-    flagged = {"answers": [{"item_number": n, "answer": "x", "flag": "ambiguous" if n == 4 else None}
-                           for n in range(1, 13)]}
+    flagged = {
+        "answers": [{"item_number": n, "answer": "x", "flag": "ambiguous" if n == 4 else None} for n in range(1, 13)]
+    }
     rep = run(sample_pdf, 7, scripted(responses(A2=flagged)), str(tmp_path))
     assert rep.status == "stopped"
     a2 = next(c for c in rep.checks if c["id"] == "A2")

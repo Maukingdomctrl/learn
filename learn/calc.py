@@ -3,14 +3,19 @@
 Evaluates a restricted arithmetic expression with Python's AST; no names except sqrt and pi,
 no attribute access, no calls other than sqrt/round/abs.
 """
+
 import ast
 import math
 import operator
 import re
 
 _BINOPS = {
-    ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
-    ast.Div: operator.truediv, ast.Pow: operator.pow, ast.Mod: operator.mod,
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.Mod: operator.mod,
 }
 _UNARY = {ast.USub: operator.neg, ast.UAdd: operator.pos}
 _FUNCS = {"sqrt": math.sqrt, "round": round, "abs": abs}
@@ -47,8 +52,13 @@ def _eval(node):
         return _UNARY[type(node.op)](_eval(node.operand))
     if isinstance(node, ast.Name) and node.id in _NAMES:
         return _NAMES[node.id]
-    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _FUNCS
-            and not node.keywords and 1 <= len(node.args) <= 2):
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id in _FUNCS
+        and not node.keywords
+        and 1 <= len(node.args) <= 2
+    ):
         return _FUNCS[node.func.id](*[_eval(a) for a in node.args])
     raise CalcError(f"unsupported expression element: {ast.dump(node)[:60]}")
 

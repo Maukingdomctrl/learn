@@ -118,9 +118,10 @@ The sufficiency test (§3.3) is split three ways:
 ```bash
 pytest -q
 ruff check .        # lint; rules in ruff.toml
+ruff format .       # format (CI runs ruff format --check)
 ```
 
-50 tests run in about 20 s, including real Chromium rendering. GitHub Actions runs the tests and the ruff lint on every pull request and on pushes to `main` (`.github/workflows/tests.yml`); CI needs no API key. What the tests cover:
+50 tests run in about 20 s, including real Chromium rendering. GitHub Actions runs the tests, the ruff lint and a ruff format check on every pull request and on pushes to `main` (`.github/workflows/tests.yml`); CI needs no API key. What the tests cover:
 - **Timing:** the methodology's §6.5 worked example is reproduced exactly (903.3 s); word-counting rules; sketch time counted once.
 - **Arithmetic evaluator:** correct results; rejects unsafe or invalid input; allows the answer's stated rounding.
 - **Extraction:** text PDFs; page ranges; scanned pages with OCR off and with a fake OCR; non-PDF files.

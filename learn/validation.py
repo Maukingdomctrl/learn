@@ -3,6 +3,7 @@
 D1-D7 are deterministic code checks. A1-A4 are separate model calls; they are fallible filters, not proof
 of quality. Each check returns a CheckResult; a lesson is delivered only when every check passes.
 """
+
 import json
 import re
 from dataclasses import asdict, dataclass, field
@@ -163,19 +164,59 @@ def d3_activities(lesson: Lesson) -> CheckResult:
 
 # ---------------------------------------------------------------- D4 text limits
 ACTION_VERBS = {
-    "circle", "underline", "tick", "write", "draw", "match", "fill", "sort", "solve", "find", "explain",
-    "complete", "choose", "label", "correct", "show", "calculate", "use", "look", "read", "turn", "list",
-    "describe", "compare", "join", "mark", "cross", "copy", "check", "work", "put", "name", "give", "add",
-    "fix", "shade", "count",
+    "circle",
+    "underline",
+    "tick",
+    "write",
+    "draw",
+    "match",
+    "fill",
+    "sort",
+    "solve",
+    "find",
+    "explain",
+    "complete",
+    "choose",
+    "label",
+    "correct",
+    "show",
+    "calculate",
+    "use",
+    "look",
+    "read",
+    "turn",
+    "list",
+    "describe",
+    "compare",
+    "join",
+    "mark",
+    "cross",
+    "copy",
+    "check",
+    "work",
+    "put",
+    "name",
+    "give",
+    "add",
+    "fix",
+    "shade",
+    "count",
 }
 BANNED_STUDENT = [
-    (r"\bscore\s*:", "score box"), (r"\btime limit\b", "time limit"),
-    (r"\btimer\b", "timer"), (r"\bstopwatch\b", "stopwatch"), (r"\bword ?search\b", "word search"),
-    (r"\bcrossword\b", "crossword"), (r"\banagram", "anagram"), (r"\bmaze\b", "maze"),
-    (r"\bcolou?r(ing)? in\b", "colouring task"), (r"\beasy!", "'Easy!' label"),
+    (r"\bscore\s*:", "score box"),
+    (r"\btime limit\b", "time limit"),
+    (r"\btimer\b", "timer"),
+    (r"\bstopwatch\b", "stopwatch"),
+    (r"\bword ?search\b", "word search"),
+    (r"\bcrossword\b", "crossword"),
+    (r"\banagram", "anagram"),
+    (r"\bmaze\b", "maze"),
+    (r"\bcolou?r(ing)? in\b", "colouring task"),
+    (r"\beasy!", "'Easy!' label"),
     (r"\b(NOT|EXCEPT)\b", "negative-stem question (NOT/EXCEPT)"),
     (r"\b(all|none) of the above\b", "all/none of the above"),
-    (r"\bguarantee", "guarantee claim"), (r"\bexam[- ]ready\b", "exam-readiness claim"),
+    (r"\bguarantee", "guarantee claim"),
+    (r"\bexam[- ]ready\b", "exam-readiness claim"),
 ]
 COLOUR_RE = re.compile(r"\b(red|blue|green|yellow|orange|purple|pink|violet|colou?r(ed|s)?)\b", re.I)
 
@@ -206,12 +247,16 @@ def d4_text(lesson: Lesson) -> CheckResult:
                 for sent in sentences(c.text):
                     n = count_words(sent)
                     if n > C.MAX_INSTRUCTION_WORDS:
-                        p.append(f"{s.stage} instruction sentence has {n} words "
-                                 f"(max {C.MAX_INSTRUCTION_WORDS}): '{sent[:60]}'")
+                        p.append(
+                            f"{s.stage} instruction sentence has {n} words "
+                            f"(max {C.MAX_INSTRUCTION_WORDS}): '{sent[:60]}'"
+                        )
                     verbs = [w for w in re.findall(r"[a-z]+", sent.lower()) if w in ACTION_VERBS]
                     if len(verbs) > C.MAX_ACTIONS_PER_INSTRUCTION:
-                        p.append(f"{s.stage} instruction has {len(verbs)} actions {verbs} "
-                                 f"(max {C.MAX_ACTIONS_PER_INSTRUCTION})")
+                        p.append(
+                            f"{s.stage} instruction has {len(verbs)} actions {verbs} "
+                            f"(max {C.MAX_ACTIONS_PER_INSTRUCTION})"
+                        )
                 if COLOUR_RE.search(c.text):
                     p.append(f"{s.stage} instruction refers to colour: '{c.text[:60]}'")
             elif c.kind == "text":
@@ -357,15 +402,22 @@ def d7_key(lesson: Lesson, index: SourceIndex) -> CheckResult:
     return _result("D7", "Answer key and arithmetic", "deterministic", p)
 
 
-def deterministic_checks(lesson: Lesson, index: SourceIndex, timing: LessonTiming,
-                         render: RenderResult, round_no: int) -> list[CheckResult]:
-    return [d1_structure(lesson), d2_citations(lesson, index), d3_activities(lesson), d4_text(lesson),
-            d5_timing(lesson, timing, round_no), d6_layout(lesson, render), d7_key(lesson, index)]
+def deterministic_checks(
+    lesson: Lesson, index: SourceIndex, timing: LessonTiming, render: RenderResult, round_no: int
+) -> list[CheckResult]:
+    return [
+        d1_structure(lesson),
+        d2_citations(lesson, index),
+        d3_activities(lesson),
+        d4_text(lesson),
+        d5_timing(lesson, timing, round_no),
+        d6_layout(lesson, render),
+        d7_key(lesson, index),
+    ]
 
 
 # ---------------------------------------------------------------- AI checks
-AI_SYSTEM = ("You are a strict reviewer of printed lessons for Standard 7-8 students. "
-             "Reply with one JSON object only.")
+AI_SYSTEM = "You are a strict reviewer of printed lessons for Standard 7-8 students. Reply with one JSON object only."
 
 A1_PROMPT = """Check grounding and factual correctness (check A1).
 Pass only if: every taught claim and every answer is supported by its cited source units; practice items use
@@ -456,8 +508,13 @@ def ai_checks(llm: LLM, lesson: Lesson, index: SourceIndex, render: RenderResult
     units = index.texts(_cited(lesson))
     results = []
     try:
-        results.append(_verdict("A1", "Grounding and factual correctness", llm.json(
-            "A1", AI_SYSTEM, A1_PROMPT.format(lesson=lesson.model_dump_json(indent=1), units=units))))
+        results.append(
+            _verdict(
+                "A1",
+                "Grounding and factual correctness",
+                llm.json("A1", AI_SYSTEM, A1_PROMPT.format(lesson=lesson.model_dump_json(indent=1), units=units)),
+            )
+        )
     except LLMError as e:
         results.append(CheckResult("A1", "Grounding and factual correctness", "ai", "failed", [str(e)]))
 
@@ -479,23 +536,51 @@ def ai_checks(llm: LLM, lesson: Lesson, index: SourceIndex, render: RenderResult
         if not a2_answers:
             raise LLMError("no blind-solver answers to compare")
         key = [e.model_dump() for e in lesson.answer_key.entries]
-        items = [{"number": i.number, "stage": s.stage, "type": s.activity_type, "prompt": i.prompt,
-                  "options": i.options or s.options or s.groups} for s, i in lesson.items()]
-        results.append(_verdict("A3", "Key agreement", llm.json("A3", AI_SYSTEM, A3_PROMPT.format(
-            answers=json.dumps(a2_answers, ensure_ascii=False), key=json.dumps(key, ensure_ascii=False),
-            items=json.dumps(items, ensure_ascii=False), units=units))))
+        items = [
+            {
+                "number": i.number,
+                "stage": s.stage,
+                "type": s.activity_type,
+                "prompt": i.prompt,
+                "options": i.options or s.options or s.groups,
+            }
+            for s, i in lesson.items()
+        ]
+        results.append(
+            _verdict(
+                "A3",
+                "Key agreement",
+                llm.json(
+                    "A3",
+                    AI_SYSTEM,
+                    A3_PROMPT.format(
+                        answers=json.dumps(a2_answers, ensure_ascii=False),
+                        key=json.dumps(key, ensure_ascii=False),
+                        items=json.dumps(items, ensure_ascii=False),
+                        units=units,
+                    ),
+                ),
+            )
+        )
     except LLMError as e:
         results.append(CheckResult("A3", "Key agreement", "ai", "failed", [str(e)]))
 
     try:
-        results.append(_verdict("A4", "Clarity and age fit", llm.json(
-            "A4", AI_SYSTEM, A4_PROMPT.format(lesson=_student_view(lesson)))))
+        results.append(
+            _verdict(
+                "A4", "Clarity and age fit", llm.json("A4", AI_SYSTEM, A4_PROMPT.format(lesson=_student_view(lesson)))
+            )
+        )
     except LLMError as e:
         results.append(CheckResult("A4", "Clarity and age fit", "ai", "failed", [str(e)]))
     return results
 
 
 def not_run_ai(reason: str) -> list[CheckResult]:
-    names = [("A1", "Grounding and factual correctness"), ("A2", "Blind solve (student pages only)"),
-             ("A3", "Key agreement"), ("A4", "Clarity and age fit")]
+    names = [
+        ("A1", "Grounding and factual correctness"),
+        ("A2", "Blind solve (student pages only)"),
+        ("A3", "Key agreement"),
+        ("A4", "Clarity and age fit"),
+    ]
     return [CheckResult(c, n, "ai", "not_run", [reason]) for c, n in names]

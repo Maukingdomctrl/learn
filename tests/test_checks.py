@@ -1,4 +1,5 @@
 """Deterministic checks D1-D5 and D7 on the sample lesson and on targeted mutations of it."""
+
 import pytest
 
 from learn.extraction import extract
@@ -20,8 +21,14 @@ def L(d):
 def test_sample_lesson_passes(lesson_data, index):
     lesson = L(lesson_data)
     t = lesson_timing(lesson)
-    for check in (d1_structure(lesson), d2_citations(lesson, index), d3_activities(lesson), d4_text(lesson),
-                  d5_timing(lesson, t, 0), d7_key(lesson, index)):
+    for check in (
+        d1_structure(lesson),
+        d2_citations(lesson, index),
+        d3_activities(lesson),
+        d4_text(lesson),
+        d5_timing(lesson, t, 0),
+        d7_key(lesson, index),
+    ):
         assert check.passed, (check.id, check.problems)
 
 
@@ -67,8 +74,10 @@ def test_d3_consecutive_types_and_disallowed_stage(lesson_data):
 
 def test_d4_instruction_limits_and_banned_patterns(lesson_data):
     st = lesson_data["stages"][1]
-    st["instruction"] = ("Read the sentences, circle the key word, write it in the blank and check your answer "
-                         "with the word bank carefully before you go on to the next part.")
+    st["instruction"] = (
+        "Read the sentences, circle the key word, write it in the blank and check your answer "
+        "with the word bank carefully before you go on to the next part."
+    )
     lesson_data["stages"][3]["items"][0]["prompt"] = "Which of these is NOT an area?"
     p = d4_text(L(lesson_data)).problems
     assert any("instruction sentence has" in x for x in p)

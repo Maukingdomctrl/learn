@@ -29,6 +29,9 @@ jobs:
       - name: Lint
         run: ruff check --output-format=github .
 
+      - name: Check formatting
+        run: ruff format --check --diff .
+
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -1,4 +1,5 @@
 """Section 6 timing model, computed in code (never taken from the model). All values in seconds."""
+
 from dataclasses import asdict, dataclass
 
 from . import config as C
@@ -59,9 +60,18 @@ def stage_timing(lesson: Lesson, stage: Stage) -> StageTiming:
     written = sum(item_written_words(lesson, stage, i.number) for i in stage.items)
     t_write = written / C.WRITING_WPM * 60
     return StageTiming(
-        stage=stage.stage, printed_words=printed, t_read=t_read, visuals=visuals, t_visual=t_visual,
-        items=n_items, sketch_items=sketches, t_items=t_items, written_words=written, t_write=t_write,
-        total=t_read + t_visual + t_items + t_write, cap=C.BLOCK_CAP_S[stage.stage],
+        stage=stage.stage,
+        printed_words=printed,
+        t_read=t_read,
+        visuals=visuals,
+        t_visual=t_visual,
+        items=n_items,
+        sketch_items=sketches,
+        t_items=t_items,
+        written_words=written,
+        t_write=t_write,
+        total=t_read + t_visual + t_items + t_write,
+        cap=C.BLOCK_CAP_S[stage.stage],
     )
 
 
@@ -69,12 +79,19 @@ def lesson_timing(lesson: Lesson) -> LessonTiming:
     stages = [stage_timing(lesson, s) for s in lesson.stages]
     t_stages = sum(s.total for s in stages)
     return LessonTiming(
-        stages=stages, t_stages=t_stages, t_lesson=C.ORIENTATION_S + t_stages,
+        stages=stages,
+        t_stages=t_stages,
+        t_lesson=C.ORIENTATION_S + t_stages,
         written_words=sum(s.written_words for s in stages),
     )
 
 
 def compute(printed_words: int, visuals: int, items: int, stage: str, written: int, sketches: int = 0) -> float:
     """Block time from raw counts; used to check the Section 6.5 worked example."""
-    return (printed_words / C.READING_WPM * 60 + visuals * C.VISUAL_S
-            + items * C.ITEM_WEIGHTS_S[stage] + sketches * C.SKETCH_S + written / C.WRITING_WPM * 60)
+    return (
+        printed_words / C.READING_WPM * 60
+        + visuals * C.VISUAL_S
+        + items * C.ITEM_WEIGHTS_S[stage]
+        + sketches * C.SKETCH_S
+        + written / C.WRITING_WPM * 60
+    )

@@ -1,4 +1,5 @@
 """Word and sentence counting shared by timing, validation and rendering."""
+
 import re
 
 _MATH_CHARS = set("0123456789.,+-−×÷*/=^()%²³√π<>≤≥:")

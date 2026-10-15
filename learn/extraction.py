@@ -3,6 +3,7 @@
 Text pages use PyMuPDF text blocks. Pages with almost no text layer are sent to OCR.
 Figures are detected and reported but not interpreted in V1.
 """
+
 import re
 import shutil
 import subprocess
@@ -103,8 +104,9 @@ def pdf_page_count(pdf_path: str) -> int:
         raise ExtractionError(f"cannot open PDF: {e}") from e
 
 
-def extract(pdf_path: str, ocr: Optional[OcrFn] = None, ocr_name: str = "none",
-            pages: Optional[set[int]] = None) -> ExtractedSource:
+def extract(
+    pdf_path: str, ocr: Optional[OcrFn] = None, ocr_name: str = "none", pages: Optional[set[int]] = None
+) -> ExtractedSource:
     try:
         doc = pymupdf.open(pdf_path)
     except Exception as e:  # PyMuPDF raises several types for bad files
@@ -146,13 +148,15 @@ def extract(pdf_path: str, ocr: Optional[OcrFn] = None, ocr_name: str = "none",
 
     if result.ocr_pages:
         result.warnings.append(
-            f"Pages {_fmt(result.ocr_pages)} were read with OCR ({ocr_name}); OCR text can contain errors.")
+            f"Pages {_fmt(result.ocr_pages)} were read with OCR ({ocr_name}); OCR text can contain errors."
+        )
     if result.unreadable_pages:
         result.warnings.append(f"Pages {_fmt(result.unreadable_pages)} had no readable text and were not used.")
     if result.figure_pages:
         result.warnings.append(
             f"Pages {_fmt(result.figure_pages)} contain pictures or diagrams. Learn V1 does not interpret "
-            "figures, so only their surrounding text was used.")
+            "figures, so only their surrounding text was used."
+        )
     return result
 
 

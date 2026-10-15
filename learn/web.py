@@ -3,6 +3,7 @@
 Run with: uvicorn learn.web:app
 No accounts or database: each request writes to its own folder under LEARN_OUTPUT_DIR.
 """
+
 import os
 import re
 import uuid
@@ -19,8 +20,9 @@ from .pipeline import run, save_report
 C.load_dotenv()
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 app = FastAPI(title="Learn V1")
-_env = Environment(loader=FileSystemLoader(str(Path(__file__).parent / "templates")),
-                   autoescape=select_autoescape(["j2", "html"]))
+_env = Environment(
+    loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
+)
 _JOB_RE = re.compile(r"^[0-9a-f]{32}$")
 
 
@@ -34,8 +36,13 @@ def index():
 
 
 @app.post("/generate", response_class=HTMLResponse)
-def generate(request: Request, pdf: UploadFile = File(...), standard: int = Form(...),
-             topic: str = Form(""), pages: str = Form("")):
+def generate(
+    request: Request,
+    pdf: UploadFile = File(...),
+    standard: int = Form(...),
+    topic: str = Form(""),
+    pages: str = Form(""),
+):
     if standard not in (7, 8):
         raise HTTPException(400, "Standard must be 7 or 8")
     data = pdf.file.read(MAX_UPLOAD_BYTES + 1)

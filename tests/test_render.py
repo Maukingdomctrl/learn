@@ -1,4 +1,5 @@
 """Rendering to PDF with headless Chromium: page counts, landscape A4, separation, overflow detection."""
+
 import pytest
 
 from learn.extraction import extract

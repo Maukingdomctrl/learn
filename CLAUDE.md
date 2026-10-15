@@ -12,7 +12,8 @@ Learn turns one curriculum PDF into a printable ~15-minute lesson for Standard 7
 ```bash
 pip install -r requirements-dev.txt && playwright install chromium   # setup
 pytest -q                      # all tests (~20 s, includes real Chromium rendering)
-ruff check .                   # lint (config in ruff.toml); CI runs both on every PR
+ruff check .                   # lint (config in ruff.toml)
+ruff format .                  # format; CI runs pytest, ruff check and ruff format --check on every PR
 python -m learn.cli some.pdf --standard 7    # one run (needs ANTHROPIC_API_KEY)
 uvicorn learn.web:app          # local web UI
 ```
