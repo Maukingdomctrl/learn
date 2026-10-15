@@ -94,7 +94,9 @@ def _paragraphs(ocr_text: str) -> list[str]:
 
 def _open_pdf(pdf_input: str | bytes):
     try:
-        return pymupdf.open(stream=pdf_input, filetype="pdf") if isinstance(pdf_input, bytes) else pymupdf.open(pdf_input)
+        if isinstance(pdf_input, bytes):
+            return pymupdf.open(stream=pdf_input, filetype="pdf")
+        return pymupdf.open(pdf_input)
     except ExtractionError:
         raise
     except Exception as e:

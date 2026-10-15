@@ -20,21 +20,41 @@ _LINE = (0.84, 0.87, 0.82)
 _ORANGE = (0.70, 0.37, 0.16)
 
 
+_ADVANCES: dict[tuple[str, str], float] = {}
+
+
+def _text_width(text: str, font: pymupdf.Font, size: float) -> float:
+    # Font.text_length crosses into MuPDF once per character on every call; caching the
+    # per-character advance keeps wrapping a long source from taking minutes.
+    total = 0.0
+    for char in text:
+        key = (font.name, char)
+        advance = _ADVANCES.get(key)
+        if advance is None:
+            advance = _ADVANCES[key] = font.text_length(char, fontsize=1)
+        total += advance
+    return total * size
+
+
 def _wrap(text: str, width: float, font: pymupdf.Font, size: float) -> list[str]:
     lines: list[str] = []
+    space = _text_width(" ", font, size)
     for paragraph in text.splitlines() or [""]:
         words = paragraph.split()
         if not words:
             lines.append("")
             continue
         line = words[0]
+        line_width = _text_width(line, font, size)
         for word in words[1:]:
-            candidate = f"{line} {word}"
-            if font.text_length(candidate, fontsize=size) <= width:
-                line = candidate
+            word_width = _text_width(word, font, size)
+            if line_width + space + word_width <= width:
+                line = f"{line} {word}"
+                line_width += space + word_width
             else:
                 lines.append(line)
                 line = word
+                line_width = word_width
         lines.append(line)
     return lines
 
@@ -44,16 +64,22 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
     document = pymupdf.open()
     regular = pymupdf.Font("helv")
     bold = pymupdf.Font("hebo")
-    page = None
-    page_number = 0
+    # Draw each page into one Shape and commit it once: page.insert_text/draw_rect re-read the
+    # page's content stream on every call, which made long lessons time out on the host.
+    canvas = None
     y = 0.0
 
+    def box(rect: pymupdf.Rect, color=None, fill=None, width: float = 1) -> None:
+        canvas.draw_rect(rect)
+        canvas.finish(color=color, fill=fill, width=width)
+
     def new_page(continued: bool = False) -> None:
-        nonlocal page, page_number, y
-        page_number += 1
-        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
-        page.draw_rect(pymupdf.Rect(0, 0, _PAGE_WIDTH, 68), color=None, fill=_GREEN)
-        page.insert_text(
+        nonlocal canvas, y
+        if canvas is not None:
+            canvas.commit()
+        canvas = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT).new_shape()
+        box(pymupdf.Rect(0, 0, _PAGE_WIDTH, 68), color=None, fill=_GREEN)
+        canvas.insert_text(
             (_LEFT, 32),
             "LEARN  /  TEACHING ENGINE",
             fontname="hebo",
@@ -61,11 +87,11 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
             color=(0.88, 0.93, 0.88),
         )
         heading = "Ideas to learn and remember" + (" · continued" if continued else "")
-        page.insert_text((_LEFT, 54), heading, fontname="hebo", fontsize=17, color=(1, 1, 1))
+        canvas.insert_text((_LEFT, 54), heading, fontname="hebo", fontsize=17, color=(1, 1, 1))
         y = 88
 
     def ensure(height: float) -> None:
-        if page is None:
+        if canvas is None:
             new_page()
         elif y + height > _CONTENT_BOTTOM:
             new_page(continued=True)
@@ -76,13 +102,13 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
         lines = _wrap(text, _CONTENT_WIDTH, font, size)
         for line in lines:
             ensure(leading)
-            page.insert_text((_LEFT, y + size), line, fontname=font.name, fontsize=size, color=color)
+            canvas.insert_text((_LEFT, y + size), line, fontname=font.name, fontsize=size, color=color)
             y += leading
 
     def section(label: str, text: str, color=_GREEN) -> None:
         nonlocal y
         ensure(29)
-        page.insert_text((_LEFT, y + 8), label.upper(), fontname="hebo", fontsize=7.2, color=color)
+        canvas.insert_text((_LEFT, y + 8), label.upper(), fontname="hebo", fontsize=7.2, color=color)
         y += 12
         paragraph(text, size=9.2)
         y += 5
@@ -94,12 +120,12 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
         height = len(lines) * 13.3 + pad_y * 2 + 12
         ensure(height + 8)
         top = y
-        page.draw_rect(
+        box(
             pymupdf.Rect(_LEFT, top, _PAGE_WIDTH - _RIGHT, top + height),
             color=None,
             fill=_PAPER,
         )
-        page.insert_text(
+        canvas.insert_text(
             (_LEFT + pad_x, top + pad_y + 8),
             f"SOURCE  ·  PAGE {page_no}",
             fontname="hebo",
@@ -108,19 +134,19 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
         )
         line_y = top + pad_y + 23
         for line in lines:
-            page.insert_text((_LEFT + pad_x, line_y), line, fontname="hebo", fontsize=10.2, color=_INK)
+            canvas.insert_text((_LEFT + pad_x, line_y), line, fontname="hebo", fontsize=10.2, color=_INK)
             line_y += 13.3
         y = top + height + 7
 
     def fact_card(number: int, fact) -> None:
         nonlocal y
         ensure(70)
-        page.draw_rect(
+        box(
             pymupdf.Rect(_LEFT, y, _PAGE_WIDTH - _RIGHT, y + 23),
             color=None,
             fill=(0.91, 0.95, 0.91),
         )
-        page.insert_text(
+        canvas.insert_text(
             (_LEFT + 9, y + 15.5),
             f"IDEA {number}  ·  {fact.source_unit_id}",
             fontname="hebo",
@@ -133,13 +159,13 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
         section("Memory picture · scaffold, not a fact", fact.memory_link, _ORANGE)
         section("Draw it", fact.visual_brief)
         ensure(48)
-        page.draw_rect(
+        box(
             pymupdf.Rect(_LEFT, y, _PAGE_WIDTH - _RIGHT, y + 37),
             color=_LINE,
             fill=(1, 1, 1),
             width=0.8,
         )
-        page.insert_text(
+        canvas.insert_text(
             (_LEFT + 9, y + 23),
             "Your sketch",
             fontname="heit",
@@ -149,7 +175,9 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
         y += 44
         section("Make your own link", fact.child_makes_a_link)
         ensure(18)
-        page.insert_text((_LEFT, y + 8), "REMEMBER IT  ·  FADE THE SUPPORT", fontname="hebo", fontsize=7.2, color=_GREEN)
+        canvas.insert_text(
+            (_LEFT, y + 8), "REMEMBER IT  ·  FADE THE SUPPORT", fontname="hebo", fontsize=7.2, color=_GREEN
+        )
         y += 13
         for recall in fact.recall_rounds:
             paragraph(f"{recall.support.upper()}  /  {recall.mode.replace('_', ' ')}: {recall.prompt}", size=8.5)
@@ -167,12 +195,12 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
 
     if lesson.held_for_review:
         ensure(65)
-        page.draw_rect(
+        box(
             pymupdf.Rect(_LEFT, y, _PAGE_WIDTH - _RIGHT, y + 25),
             color=None,
             fill=(0.98, 0.92, 0.87),
         )
-        page.insert_text(
+        canvas.insert_text(
             (_LEFT + 9, y + 17),
             "PAUSE  ·  SOURCE CLAIMS TO VERIFY BEFORE TEACHING",
             fontname="hebo",
@@ -186,23 +214,27 @@ def render_teaching_pdf(lesson: TeachingLesson, warnings: Iterable[str] = ()) ->
     for warning in warnings:
         section("Source note", warning, _ORANGE)
 
+    canvas.commit()
     total_pages = len(document)
     for number, output_page in enumerate(document, start=1):
-        output_page.draw_line((_LEFT, 811), (_PAGE_WIDTH - _RIGHT, 811), color=_LINE, width=0.6)
-        output_page.insert_text(
+        output_canvas = output_page.new_shape()
+        output_canvas.draw_line((_LEFT, 811), (_PAGE_WIDTH - _RIGHT, 811))
+        output_canvas.finish(color=_LINE, width=0.6)
+        output_canvas.insert_text(
             (_LEFT, 827),
             "Source-linked learning plan  ·  Check flagged claims against the cited page",
             fontname="helv",
             fontsize=7,
             color=_MUTED,
         )
-        output_page.insert_text(
+        output_canvas.insert_text(
             (_PAGE_WIDTH - _RIGHT - 48, 827),
             f"{number} / {total_pages}",
             fontname="hebo",
             fontsize=7,
             color=_MUTED,
         )
+        output_canvas.commit()
     document.set_metadata({"title": lesson.title, "author": "Learn Teaching Engine"})
     pdf_bytes = document.tobytes(garbage=4, deflate=True)
     document.close()

@@ -15,6 +15,8 @@ app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
 )
+
+
 def _page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(_env.get_template(name).render(**ctx))
 
