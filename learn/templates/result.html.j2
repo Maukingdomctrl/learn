@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn result</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 16px; color: #111; }
+  .ok { border-left: 4px solid #2a7; padding: .5rem 1rem; background: #f3fbf6; }
+  .stop { border-left: 4px solid #c60; padding: .5rem 1rem; background: #fff7ef; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  td, th { border: 1px solid #ccc; padding: .3rem .5rem; text-align: left; vertical-align: top; }
+  details { margin-top: 1rem; }
+</style></head>
+<body>
+<p><a href="/">&larr; Make another lesson</a></p>
+{% if error %}<div class="stop"><p>{{ error }}</p></div>
+{% elif report.status == "delivered" %}
+<div class="ok">
+  <p><b>{{ report.parent_message }}</b></p>
+  <p><a href="/jobs/{{ job }}/student_lesson.pdf">Download student lesson (2 pages)</a><br>
+     <a href="/jobs/{{ job }}/parent_answer_key.pdf">Download parent answer key</a></p>
+  <ul>{% for a in report.parent_actions %}<li>{{ a }}</li>{% endfor %}</ul>
+</div>
+{% else %}
+<div class="stop">
+  <p><b>No lesson was made.</b> {{ report.parent_message }}</p>
+  <ul>{% for a in report.parent_actions %}<li>{{ a }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% if report %}
+{% if report.warnings %}<h3>Notes about the PDF</h3><ul>{% for w in report.warnings %}<li>{{ w }}</li>{% endfor %}</ul>{% endif %}
+{% if report.checks %}
+<details><summary>Quality checks (round {{ report.rounds }})</summary>
+<table><tr><th>Check</th><th>Type</th><th>Result</th><th>Details</th></tr>
+{% for c in report.checks %}<tr><td>{{ c.id }} {{ c.name }}</td><td>{{ "code" if c.kind == "deterministic" else "AI reviewer" }}</td><td>{{ c.status }}</td><td>{{ c.problems | join("; ") }}</td></tr>{% endfor %}
+</table></details>
+{% endif %}
+{% if report.timing %}<p>Calculated lesson time: {{ report.timing.t_lesson | round | int }} s (about {{ report.timing.minutes }} min).</p>{% endif %}
+{% endif %}
+</body></html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 16px; color: #111; }
+  label { display: block; margin-top: 1rem; font-weight: 600; }
+  input, select { font-size: 1rem; margin-top: .3rem; }
+  button { margin-top: 1.5rem; font-size: 1rem; padding: .5rem 1.2rem; }
+  .note { color: #555; font-size: .9rem; }
+</style></head>
+<body>
+<h1>Learn</h1>
+<p>Upload a curriculum PDF. Learn writes a printable ~15-minute paper lesson (2 pages) for your child and a separate answer key for you.</p>
+<form action="/generate" method="post" enctype="multipart/form-data" onsubmit="document.getElementById('go').disabled=true;document.getElementById('wait').hidden=false;">
+  <label>Curriculum PDF <input type="file" name="pdf" accept="application/pdf" required></label>
+  <label>Standard
+    <select name="standard" required><option value="7">Standard 7</option><option value="8">Standard 8</option></select>
+  </label>
+  <label>Topic (optional) <input type="text" name="topic" maxlength="200" placeholder="e.g. area of a triangle"></label>
+  <label>Page range (optional) <input type="text" name="pages" maxlength="50" placeholder="e.g. 3-5"></label>
+  <button id="go" type="submit">Make lesson</button>
+  <p id="wait" class="note" hidden>Working&hellip; this usually takes a few minutes. Please keep this page open.</p>
+</form>
+</body></html>
