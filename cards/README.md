@@ -22,7 +22,7 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
    | Riddle | The heading's description + "Which city?" | The topic name and the description |
    | Fill-in | The clause with the bold word blanked (or a date/number when nothing is bold), ≤ ~10 words | The hidden words + the full sentence |
    | Riddle | A fact with no bold word or number, names hidden | The topic name + the full sentence |
-   | Portrait | Up to four of the deck's pictures together + "Name the city!" | The topic name + the author's summary line |
+   | Portrait | Up to four of the deck's pictures together, preferring ones the other topics don't share (never the generic crowd, pin, calendar, globe or star) + "Name the city!" | The topic name + the author's summary line |
 
    Cards whose answer the sheet repeats most come first and get a ★.
 4. **Picks a sketch** for each card from about 25 drawings, by words in the fact (river, ship, crown, factory, bank…). If nothing fits, the card shows a "draw it!" box instead of a wrong picture.

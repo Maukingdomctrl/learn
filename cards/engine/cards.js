@@ -5,6 +5,7 @@ import { nameTip } from './nametips.js';
 import { pickSymbol } from './symbols.js';
 
 const MAX_CLUE_WORDS = 10;
+export const GENERIC_SYMBOLS = new Set(['people', 'pin', 'calendar', 'globe', 'star']);
 export const BLANK = '_____';
 
 /**
@@ -52,11 +53,6 @@ export function buildDecks(sheet) {
     // The author's emphasis comes first: most-repeated answers lead, otherwise keep the sheet's order.
     body.sort((a, b) => b.score - a.score || a.order - b.order);
 
-    const symbols = [];
-    for (const c of [hook, ...body]) {
-      if (c.symbol && !symbols.includes(c.symbol)) symbols.push(c.symbol);
-      if (symbols.length === 4) break;
-    }
     const portrait = {
       id: `${slugOf(e.display)}-portrait`,
       entity: e.display,
@@ -67,7 +63,7 @@ export function buildDecks(sheet) {
       exact: sheet.summaries.get(e.display) || e.descriptor,
       page: e.page,
       symbol: null,
-      symbols,
+      symbols: [], // filled in below, once every deck is known
       star: false,
     };
     const cards = [hook, ...body.map(({ order, score, ...c }) => c), portrait];
@@ -76,6 +72,28 @@ export function buildDecks(sheet) {
     if (tip) for (const c of cards) if (c.answer === e.display) c.tip = tip;
     return { entity: e.display, cards };
   });
+
+  // Prefer pictures the other places on the sheet don't have: four capitals all have a crown,
+  // but only Belfast has the ship. Shared pictures fill in only when nothing distinctive is left.
+  const decksWith = new Map();
+  for (const d of decks) {
+    for (const sym of new Set(d.cards.map((c) => c.symbol).filter(Boolean))) {
+      decksWith.set(sym, (decksWith.get(sym) || 0) + 1);
+    }
+  }
+  for (const d of decks) {
+    const portrait = d.cards[d.cards.length - 1];
+    const candidates = [];
+    for (const c of d.cards) {
+      if (c.symbol && !GENERIC_SYMBOLS.has(c.symbol) && !candidates.includes(c.symbol)) candidates.push(c.symbol);
+    }
+    portrait.symbols = candidates
+      .map((sym, i) => ({ sym, i, shared: decksWith.get(sym) }))
+      .sort((a, b) => a.shared - b.shared || a.i - b.i)
+      .slice(0, 4)
+      .sort((a, b) => a.i - b.i)
+      .map((x) => x.sym);
+  }
 
   return { title: sheet.title, kindWord: sheet.kindWord, decks };
 }

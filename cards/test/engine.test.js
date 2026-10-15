@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
-import { BLANK, buildDecks, chooseKey, clozeClue, hideNames } from '../engine/cards.js';
+import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
@@ -322,4 +322,31 @@ test('a name tip is not part of the exact-words check and does not break it', ()
   const { sheet, built } = cityDecks();
   const check = checkDecks(sheet, built);
   assert.equal(check.ok, true, check.problems.join('\n'));
+});
+
+test('the final picture card never uses pictures that fit every place (crowd, pin, calendar…)', async () => {
+  const { built } = await sample();
+  for (const d of built.decks) {
+    const portrait = d.cards[d.cards.length - 1];
+    for (const sym of portrait.symbols) assert.ok(!GENERIC_SYMBOLS.has(sym), `${d.entity}: ${sym}`);
+  }
+  const belfast = built.decks.find((d) => d.entity === 'Belfast').cards;
+  assert.equal(belfast.find((c) => c.answer === '286,000').symbol, 'people', 'the population card itself keeps its crowd');
+});
+
+test('the final picture card prefers pictures the other places do not share', () => {
+  const sheet = parseSheet(
+    lines([
+      [1, 'IMPORTANT CITIES', 18],
+      [1, '1. ALPHA – Capital of the North', 12],
+      [1, '• Famous for **shipbuilding**.'],
+      [1, '2. BETA – Capital of the South', 12],
+      [1, '• Famous for **coal** mining.'],
+    ]),
+  );
+  const built = buildDecks(sheet);
+  const alpha = built.decks[0].cards.at(-1);
+  assert.equal(alpha.symbols[0], 'crown', 'shared pictures may still appear, in deck order');
+  assert.ok(alpha.symbols.includes('ship'));
+  assert.ok(!alpha.symbols.includes('coal'));
 });
