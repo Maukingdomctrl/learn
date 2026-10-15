@@ -46,6 +46,11 @@ const USE = {
   quake: 'activity',
   car: 'car',
   building: 'building',
+  sun: 'sun',
+  wind: 'wind',
+  recycle: 'recycle',
+  tree: 'trees',
+  power: 'bolt',
 };
 
 const root = new URL('../', import.meta.url);

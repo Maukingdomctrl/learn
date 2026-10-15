@@ -141,6 +141,14 @@ A heading is a **process** when its name is one: MIGRATION, URBANISATION, POPULA
 
 `sample/processes-sheet.pdf` (migration, urbanisation, earthquakes) is a synthetic example. Not yet tried on a real school sheet.
 
+## Groups: resources, soils, rocks…
+
+In a topic section, bullets shaped like **"Group: a, b and c"** ("Renewable resources: solar energy, wind energy and water") are read as groups with their items, exactly as written. Two or more of them give a **"Which group?"** sort card: every item mixed on the front, each under its group on the back. The topic then ends with that sort instead of "name them all". "Name them all" now appears only for causes and results.
+
+Sections about conservation or saving ask *What should be done?*
+
+`sample/resources-sheet.pdf` is a synthetic example. Not yet tried on a real school sheet.
+
 ## Photos from the sheet
 
 If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.

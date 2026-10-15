@@ -6,7 +6,8 @@
   portrait beside the heading (a drawn silhouette, not a real photo);
 - industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are;
 - civics-sheet.pdf: four Union institutions (two Houses, the President, the Supreme Court) with terms, ages and jobs;
-- processes-sheet.pdf: migration, urbanisation and earthquakes with definitions, causes, effects and what to do.
+- processes-sheet.pdf: migration, urbanisation and earthquakes with definitions, causes, effects and what to do;
+- resources-sheet.pdf: kinds of resources as groups with lists, and ways to conserve them.
 
 
 Words wrapped in **double stars** are printed bold, the way a teacher marks the key words.
@@ -209,6 +210,23 @@ PROCESSES = [
 ]
 
 
+RESOURCES = [
+    [
+        ("title", "RESOURCES AND THEIR CONSERVATION"),
+        ("sub", "Class 8 Geography | Sample notes"),
+        ("section", "1. TYPES OF RESOURCES"),
+        ("bullet", "Renewable resources: **solar energy**, **wind energy** and **water**."),
+        ("bullet", "Non-renewable resources: **coal**, **petroleum** and **natural gas**."),
+        ("bullet", "Renewable resources can be **used again and again**."),
+        ("bullet", "Non-renewable resources will **run out** one day."),
+        ("section", "2. CONSERVATION OF RESOURCES"),
+        ("bullet", "We should **reduce**, **reuse** and **recycle**."),
+        ("bullet", "Switching off lights when not needed saves **electricity**."),
+        ("bullet", "Planting trees helps to stop **soil erosion**."),
+    ],
+]
+
+
 def runs(text):
     """Splits '**bold**' markup into (text, bold) runs."""
     parts = re.split(r"(\*\*.+?\*\*)", text)
@@ -285,6 +303,7 @@ def main():
     build(INDUSTRIES, SAMPLES / "industries-sheet.pdf", "Class 8 Geography | Industries sample")
     build(CIVICS, SAMPLES / "civics-sheet.pdf", "Class 8 Civics | Institutions sample")
     build(PROCESSES, SAMPLES / "processes-sheet.pdf", "Class 8 Geography | Processes sample")
+    build(RESOURCES, SAMPLES / "resources-sheet.pdf", "Class 8 Geography | Resources sample")
 
 
 if __name__ == "__main__":

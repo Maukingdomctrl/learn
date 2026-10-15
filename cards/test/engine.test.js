@@ -10,7 +10,16 @@ import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
-import { ageCards, causeEffectOf, definedTerm, flowOf, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
+import {
+  ageCards,
+  causeEffectOf,
+  definedTerm,
+  flowOf,
+  groupOf,
+  lifelineCard,
+  lifeOf,
+  purposeOf,
+} from '../engine/events.js';
 import { assignPhotos, unitSquare } from '../engine/photos.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
@@ -971,4 +980,42 @@ test('the sort card\'s own headings pass the checks, but an invented item does n
   assert.ok(check.ok);
   built.decks[0].cards.find((c) => c.kind === 'sort').lines[1] += ' · more trees';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word from the sheet: "more trees"/);
+});
+
+// ---------- groups (resources sample) ----------
+
+async function resources() {
+  const data = new Uint8Array(readFileSync(here('../sample/resources-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('a bullet "Group: a, b and c" is read as a group with its items, as written', () => {
+  assert.deepEqual(groupOf('Renewable resources: solar energy, wind energy and water.'), {
+    group: 'Renewable resources',
+    items: ['solar energy', 'wind energy', 'water'],
+  });
+  assert.equal(groupOf('Today: centre for industry, arts, higher education, business and law – the economic engine'), null);
+  assert.equal(groupOf('No colon here, just words'), null);
+});
+
+test('resources sample: groups become a "Which group?" sort; all checks pass', async () => {
+  const { built, check } = await resources();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  const types = built.decks[0].cards;
+  const sort = types.find((c) => c.kind === 'sort');
+  assert.equal(sort.ask, 'Renewable resources or Non-renewable resources?');
+  assert.deepEqual(sort.lines, [
+    'Renewable resources … solar energy · wind energy · water',
+    'Non-renewable resources … coal · petroleum · natural gas',
+  ]);
+  assert.ok(!types.some((c) => c.kind === 'list'), 'no "name them all" next to a sort');
+  const save = built.decks[1].cards;
+  assert.equal(save.find((c) => c.answer === 'electricity').ask, 'What should be done?');
+  assert.ok(!save.some((c) => c.kind === 'list'), '"name them all" is only for causes and results');
+});
+
+test('check fails when an item is added to a group that the sheet does not list', async () => {
+  const { sheet, built } = await resources();
+  built.decks[0].cards.find((c) => c.kind === 'sort').lines[0] += ' · nuclear energy';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word from the sheet: "nuclear energy"/);
 });

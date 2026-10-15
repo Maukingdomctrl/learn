@@ -9,6 +9,7 @@ import {
   definedTerm,
   definitionCard,
   flowOf,
+  groupSortCard,
   numbersCard,
   sortCard,
   whereCard,
@@ -298,9 +299,11 @@ function topicDeck(e, lowerText) {
     .map((c) => ({ ...c, id: `${c.id}-why`, symbol: pickSymbol(c.exact), star: false }));
   const timeline = timelineCard(e.facts, e.display);
   const match = matchCard(e.facts, e.display);
-  // Course of events ends with its timeline, people with their pairs; other topics with "name them all".
-  const last = match || (timeline ? null : listCard(e.facts, e.display));
-  return { entity: e.display, cards: [...body, ...whys, ...[timeline, last].filter(Boolean)] };
+  const groups = groupSortCard(e.facts, e.display);
+  // Course of events ends with its timeline, people with their pairs, groups with their sort, and causes or
+  // results with "name them all" (as exams ask: "state four causes").
+  const last = match || (timeline || groups || !['cause', 'result'].includes(e.label) ? null : listCard(e.facts, e.display));
+  return { entity: e.display, cards: [...body, ...whys, ...[groups, timeline, last].filter(Boolean)] };
 }
 
 /**

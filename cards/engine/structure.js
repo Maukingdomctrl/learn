@@ -339,7 +339,7 @@ export function labelFor(text) {
   const t = text.toLowerCase();
   if (/\bpush\b/.test(t)) return 'push';
   if (/\bpull\b/.test(t)) return 'pull';
-  if (/\b(measures?|precautions?|prevention|solutions?|remedies|safety|do's)\b/.test(t)) return 'action';
+  if (/\b(measures?|precautions?|prevention|solutions?|remedies|safety|do's|conservation|conserve|saving)\b/.test(t)) return 'action';
   if (/\b(causes?|reasons?|why)\b/.test(t)) return 'cause';
   if (/\b(results?|consequences?|effects?|impact|significance|outcome)\b/.test(t)) return 'result';
   if (/\b(course|events?|timeline|chronology)\b/.test(t)) return 'course';

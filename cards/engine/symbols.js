@@ -267,6 +267,11 @@ export const ART = Object.fromEntries(
 
 // Words that point to each picture. Earlier pictures win ties; the generic ones at the end count for less.
 const KEYWORDS = [
+  ['sun', ['solar', 'sun', 'sunlight']],
+  ['wind', ['wind', 'winds']],
+  ['recycle', ['recycle', 'reuse', 'reduce', 'recycling']],
+  ['tree', ['trees', 'tree', 'forest', 'forests', 'planting', 'afforestation', 'deforestation']],
+  ['power', ['electricity', 'power', 'petroleum', 'gas']],
   ['quake', ['earthquake', 'earthquakes', 'tectonic', 'plates', 'epicentre', 'epicenter', 'richter', 'seismograph', 'tremors']],
   ['car', ['traffic', 'cars', 'vehicles', 'jams']],
   ['building', ['buildings', 'housing', 'houses', 'slums', 'collapse']],

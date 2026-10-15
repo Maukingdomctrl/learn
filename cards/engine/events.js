@@ -459,3 +459,41 @@ export function causeOrEffectCard(entity) {
     symbol: null,
   };
 }
+
+// ---------- groups (resources, soils, rocks, …) ----------
+
+const GROUP_BULLET = /^([A-Z][A-Za-z' -]{2,40}):\s+(.+)$/;
+
+/** "Renewable resources: solar energy, wind energy and water." -> {group, items} (items as written). */
+export function groupOf(text) {
+  const m = text.replace(/[.\s]+$/, '').match(GROUP_BULLET);
+  if (!m) return null;
+  const items = m[2]
+    .split(/,\s+|\s+and\s+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (items.length < 2 || items.some((x) => x.split(' ').length > 4)) return null;
+  return { group: m[1].trim(), items };
+}
+
+/**
+ * "Which group?" for a topic whose bullets are groups with lists ("Renewable resources: …",
+ * "Non-renewable resources: …"). The front mixes every item; the back puts each under its group.
+ */
+export function groupSortCard(facts, entity) {
+  const groups = facts.map((f) => groupOf(f.text)).filter(Boolean);
+  if (groups.length < 2 || new Set(groups.map((g) => g.group)).size < 2) return null;
+  return {
+    id: `${slug(entity)}-groups`,
+    entity,
+    kind: 'sort',
+    clue: 'Sort them into groups.',
+    ask: `${groups.map((g) => g.group).join(' or ')}?`,
+    answer: 'Groups',
+    exact: '',
+    frontLines: groups.flatMap((g) => g.items).sort((a, b) => a.localeCompare(b)),
+    lines: groups.map((g) => `${g.group} … ${g.items.join(' · ')}`),
+    page: facts[0].page,
+    symbol: null,
+  };
+}
