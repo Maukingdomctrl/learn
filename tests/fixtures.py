@@ -282,3 +282,38 @@ SAMPLE_LESSON = {
         "shortened_lesson_note": None,
     },
 }
+
+SAMPLE_PLAN = {
+    "concept": "Area of a triangle",
+    "learning_steps": [
+        {
+            "title": "Base and height",
+            "idea": "Any side can be the base; the height is the perpendicular distance from the opposite vertex.",
+            "source_unit_ids": ["SRC-P1-U2"],
+        },
+        {
+            "title": "Half of a rectangle",
+            "idea": "A triangle is half of a rectangle with the same base and height, so area = 1/2 × base × height.",
+            "source_unit_ids": ["SRC-P1-U6", "SRC-P1-U3"],
+        },
+        {
+            "title": "Finding a missing height",
+            "idea": "When the area and base are known, the same rule gives the height.",
+            "source_unit_ids": ["SRC-P1-U5"],
+        },
+    ],
+    "misconception": {
+        "wrong_idea": "Area of a triangle = base × height (forgetting to halve).",
+        "correct_idea": "The area of a triangle is half of base × height.",
+        "source_unit_ids": ["SRC-P1-U3", "SRC-P1-U6"],
+    },
+    "worked_example": {
+        "problem": "Find the area of a triangle with base 8 cm and height 5 cm.",
+        "steps": ["Area = 1/2 × base × height", "= 1/2 × 8 × 5", "= 20 cm²"],
+        "answer": "20 cm²",
+        "calculation": "0.5*8*5",
+        "source_unit_ids": ["SRC-P1-U4"],
+    },
+    "visual_type": "table",
+    "visual_purpose": "Compare base, height and area for two triangles to see the halving.",
+}

@@ -122,3 +122,36 @@ class Lesson(_Base):
 
     def key_for(self, number: int) -> Optional[KeyEntry]:
         return next((e for e in self.answer_key.entries if e.item_number == number), None)
+
+
+# ---------------------------------------------------------------- teaching plan (written before the lesson)
+VisualType = Literal["shape", "number_line", "bar_model", "flow_sequence", "table", "none"]
+
+
+class PlanStep(_Base):
+    title: str
+    idea: str
+    source_unit_ids: list[str] = Field(default_factory=list)
+
+
+class Misconception(_Base):
+    wrong_idea: str  # what a first-time learner may wrongly think (scaffolding, not a curriculum claim)
+    correct_idea: str  # the grounded correction
+    source_unit_ids: list[str] = Field(default_factory=list)
+
+
+class PlanWorkedExample(_Base):
+    problem: str
+    steps: list[str]
+    answer: str
+    calculation: Optional[str] = None  # arithmetic expression for a numeric answer, re-evaluated by code
+    source_unit_ids: list[str] = Field(default_factory=list)
+
+
+class TeachingPlan(_Base):
+    concept: str
+    learning_steps: list[PlanStep]
+    misconception: Misconception
+    worked_example: PlanWorkedExample
+    visual_type: VisualType
+    visual_purpose: str = ""

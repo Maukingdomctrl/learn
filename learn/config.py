@@ -47,6 +47,16 @@ MIN_SOLVE_MM = 35
 # Section 8.3
 MAX_REPAIR_ROUNDS = 2
 
+# Teaching plan (generation step before the lesson): 2-3 incremental learning steps.
+PLAN_STEP_RANGE = (2, 3)
+# Visual types a plan may name. PR A renders only "table"; the others are planned visual-engine types.
+VISUAL_TYPES = ("shape", "number_line", "bar_model", "flow_sequence", "table", "none")
+# Source units on the same page either side of each selected unit that generation also sees.
+CONTEXT_NEIGHBORS = 1
+
+# Model tasks that write lesson content use LEARN_EFFORT; analysis and review tasks use LEARN_CHECK_EFFORT.
+WRITING_TASKS = {"plan_lesson", "generate_lesson", "repair_lesson"}
+
 # Section 5.1: activity types allowed per stage
 ALLOWED_STAGES = {
     "ANNOTATE": {"Discover", "Reinforce", "Vary"},
@@ -77,6 +87,28 @@ def model_name() -> str:
 
 def model_effort() -> str:
     return env("LEARN_EFFORT", "high")
+
+
+def check_effort() -> str:
+    return env("LEARN_CHECK_EFFORT", "medium")
+
+
+def _int_env(name: str, default: int) -> int:
+    try:
+        value = int(env(name, str(default)))
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+def max_output_tokens() -> int:
+    """Output budget for a model response, thinking included (thinking counts toward max_tokens)."""
+    return _int_env("LEARN_MAX_TOKENS", 32000)
+
+
+def retry_output_tokens() -> int:
+    """Budget for the single retry of a response cut off at max_tokens. Clamped to the model's own limit."""
+    return _int_env("LEARN_MAX_TOKENS_RETRY", 64000)
 
 
 def ocr_backend() -> str:

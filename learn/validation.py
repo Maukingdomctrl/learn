@@ -67,6 +67,7 @@ def d1_structure(lesson: Lesson) -> CheckResult:
 
 # ---------------------------------------------------------------- D2 citations
 def d2_citations(lesson: Lesson, index: SourceIndex) -> CheckResult:
+    """`index` is the focused source given to generation, so citations outside the selected material fail."""
     p = []
 
     def check(label: str, ids: list[str]):
@@ -75,7 +76,7 @@ def d2_citations(lesson: Lesson, index: SourceIndex) -> CheckResult:
         if not valid:
             p.append(f"{label} has no valid source_unit_id")
         if unknown:
-            p.append(f"{label} cites unknown source units {unknown}")
+            p.append(f"{label} cites unknown or unselected source units {unknown}")
 
     for c in lesson.concepts:
         check(f"concept '{c.name}'", c.source_unit_ids)
@@ -467,6 +468,12 @@ in Discover; language suits ages 12-14; the hook is relevant and answered by the
 no item can be answered by copying a sentence word for word; items within a stage differ meaningfully;
 support fades across the stages (Discover > Reinforce > Vary > Apply > Recall); Recall cannot be answered by
 copying from Page 2; tone is neutral and respectful.
+If a teaching plan is given: the lesson builds understanding through the plan's learning steps in order (it
+teaches, rather than summarising the source), uses the plan's worked example, and at least one Vary or Apply
+item addresses the plan's misconception.
+
+Teaching plan:
+{plan}
 
 Lesson (student-facing fields):
 {lesson}
@@ -504,7 +511,7 @@ def _cited(lesson: Lesson) -> list[str]:
     return list(dict.fromkeys(ids))
 
 
-def ai_checks(llm: LLM, lesson: Lesson, index: SourceIndex, render: RenderResult) -> list[CheckResult]:
+def ai_checks(llm: LLM, lesson: Lesson, index: SourceIndex, render: RenderResult, plan=None) -> list[CheckResult]:
     units = index.texts(_cited(lesson))
     results = []
     try:
@@ -566,11 +573,9 @@ def ai_checks(llm: LLM, lesson: Lesson, index: SourceIndex, render: RenderResult
         results.append(CheckResult("A3", "Key agreement", "ai", "failed", [str(e)]))
 
     try:
-        results.append(
-            _verdict(
-                "A4", "Clarity and age fit", llm.json("A4", AI_SYSTEM, A4_PROMPT.format(lesson=_student_view(lesson)))
-            )
-        )
+        plan_text = plan.model_dump_json(indent=1) if plan else "(none)"
+        prompt = A4_PROMPT.format(lesson=_student_view(lesson), plan=plan_text)
+        results.append(_verdict("A4", "Clarity and age fit", llm.json("A4", AI_SYSTEM, prompt)))
     except LLMError as e:
         results.append(CheckResult("A4", "Clarity and age fit", "ai", "failed", [str(e)]))
     return results
