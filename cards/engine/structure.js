@@ -7,7 +7,8 @@ const ENTITY_HEADING = /^(?:\d+[.)]\s+)?([A-Z][A-Z .'’&]*[A-Z])\s*[–—-]\s*
 const SECTION_HEADING = /^(?:\d+[.)]\s+[A-Z][A-Z0-9 &,'’:–—-]+|[A-Z][A-Z&,'’-]+(?:\s+[A-Z0-9&,'’–—-]+)+)$/;
 const LABEL = /^[A-Z][A-Z ]{2,}:/;
 const SUBHEADING = /^[A-Z][A-Za-z ]{2,30}:$/; // "Causes:" inside a topic: labels the bullets under it
-const FACT_LABEL = /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact)\s*:/i;
+const FACT_LABEL =
+  /^(immediate cause|causes?|reasons?|results?|consequences?|effects?|impact|raw materials?|(?:main |other )?(?:centres|centers|states|places)|products?|(?:location )?factors)\s*:/i;
 const PAGE_NUMBER = /^page\s+\d+$/i;
 
 /**
@@ -36,12 +37,12 @@ export function parseSheet(lines) {
       closeBullet();
       current = {
         name: heading[1].trim(),
-        display: titleCase(heading[1].trim()),
+        display: sentenceCase(heading[1].trim()),
         descriptor: heading[2].trim(),
         page: line.page,
         y: line.y,
         bullets: [],
-        type: isPerson(heading[1], heading[2]) ? 'person' : 'place',
+        type: isIndustry(heading[1], heading[2]) ? 'industry' : isPerson(heading[1], heading[2]) ? 'person' : 'place',
       };
       entities.push(current);
       continue;
@@ -111,7 +112,7 @@ export function parseSheet(lines) {
       facts: e.bullets.flatMap((b, i) =>
         splitFacts(b, e.display, `${slug(e.display)}-${i + 1}`).map((f) => ({
           ...f,
-          label: labelFor(f.text.match(FACT_LABEL)?.[1] || '') || b.label || e.label || null,
+          label: bulletLabel(f.text.match(FACT_LABEL)?.[1] || '') || b.label || e.label || null,
         })),
       ),
     }));
@@ -156,11 +157,28 @@ const PERSON_WORDS =
 const LIFE_YEARS = /\(\s*(?:c\.\s*)?\d{3,4}\s*[–—-]\s*\d{3,4}\s*\)/;
 const TITLES = /^(RAJA|RANI|SWAMI|MAHATMA|SIR|LORD|DR|BEGUM|MAHARAJA|MAHARANI|SANT|GURU|EMPEROR|QUEEN|KING)\b/;
 
+/** "COTTON TEXTILE INDUSTRY – Agro-based industry" */
+export function isIndustry(name, descriptor) {
+  return /\bINDUSTR(Y|IES)\b/.test(name) || /^\s*(agro|mineral|forest|marine)-based\b/i.test(descriptor);
+}
+
+/** What a bullet's own label says it is: "Raw material:", "Main centres:", "Products:", "Cause:"… */
+export function bulletLabel(prefix) {
+  const t = prefix.toLowerCase();
+  if (!t) return null;
+  if (/raw material/.test(t)) return 'raw';
+  if (/centres|centers|states|places/.test(t)) return 'where';
+  if (/product/.test(t)) return 'product';
+  if (/factor/.test(t)) return 'factor';
+  return labelFor(t);
+}
+
 export function isPerson(name, descriptor) {
   return PERSON_WORDS.test(descriptor) || LIFE_YEARS.test(descriptor) || TITLES.test(name);
 }
 
 const KIND_WORDS = {
+  industries: 'industry',
   reformers: 'reformer',
   personalities: 'person',
   cities: 'city',

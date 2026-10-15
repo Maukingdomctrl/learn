@@ -4,6 +4,9 @@
 import {
   ageCards,
   ASK_BY_LABEL,
+  flowOf,
+  sortCard,
+  whereCard,
   lifelineCard,
   listCard,
   matchCard,
@@ -37,6 +40,9 @@ export function buildDecks(sheet) {
   const decks = sheet.entities.map((e) => {
     if (e.type === 'aspect') return topicDeck(e, lowerText);
     const person = e.type === 'person';
+    const industry = e.type === 'industry';
+    // An industry is best recognised by what it needs: the riddle is its raw-material line.
+    const rawFact = industry ? e.facts.find((f) => f.label === 'raw') : null;
     // A riddle about a person must hide every part of their name ("Roy", "Ram Mohan Roy").
     const hidden = person ? [...names, ...nameParts(e.display)] : names;
     const ask = person ? 'Who am I?' : who;
@@ -44,12 +50,12 @@ export function buildDecks(sheet) {
       id: `${slugOf(e.display)}-hook`,
       entity: e.display,
       kind: 'hook',
-      clue: hideNames(e.descriptor, hidden),
+      clue: hideNames(rawFact ? rawFact.text.replace(/[.\s]+$/, '') : e.descriptor, hidden),
       ask,
       answer: e.display,
-      exact: e.descriptor,
+      exact: rawFact ? rawFact.text : e.descriptor,
       page: e.page,
-      symbol: pickSymbol(e.descriptor) || (person ? 'person' : null),
+      symbol: pickSymbol(rawFact ? rawFact.text : e.descriptor) || (person ? 'person' : industry ? 'factory' : null),
       star: false,
     };
 
@@ -58,10 +64,15 @@ export function buildDecks(sheet) {
       const score = key ? count(lowerText, key.toLowerCase()) : 0;
       // For people, the question that matters is what problem they took on.
       const purpose = person ? purposeOf(f.text) : null;
+      const why = whyCard(f, e.display);
       let front;
       if (key) {
         const aboutProblem = purpose && purpose.answer.includes(key);
-        front = { kind: 'cloze', clue: clozeClue(f.text, key), ask: aboutProblem ? PURPOSE_ASK : '', answer: key };
+        // A bold word inside the sentence's own reason: the card asks the reason's question ("Why here?").
+        const ask = aboutProblem ? PURPOSE_ASK : why?.answer.includes(key) ? why.ask : ASK_BY_LABEL[f.label] || '';
+        front = { kind: 'cloze', clue: clozeClue(f.text, key), ask, answer: key };
+      } else if (why) {
+        front = { ...why };
       } else if (purpose) {
         front = { ...purposeCard(f, e.display) };
       } else {
@@ -73,7 +84,7 @@ export function buildDecks(sheet) {
         ...front,
         exact: f.text,
         page: f.page,
-        symbol: pickSymbol(f.text, key || ''),
+        symbol: pickSymbol(f.text, key || '') || (f.label === 'where' ? 'pin' : null),
         star: score >= 3,
         order: i,
         score,
@@ -88,6 +99,8 @@ export function buildDecks(sheet) {
       kind: 'portrait',
       clue: '',
       ask: person ? 'Who am I?' : sheet.kindWord ? `Name the ${sheet.kindWord}!` : 'Name me!',
+      // An industry's final picture is its chain: what goes in, a question mark, what comes out.
+      flow: industry ? flowOf(e) : null,
       answer: e.display,
       exact: sheet.summaries.get(e.display) || e.descriptor,
       page: e.page,
@@ -187,13 +200,18 @@ export function buildDecks(sheet) {
     .filter((d) => sheet.summaries.has(d.entity))
     .map((d) => sheet.summaries.get(d.entity).replace(/\s*\([^)]*\)\s*$/, ''));
   const people = sheet.entities.some((e) => e.type === 'person');
+  const industries = sheet.entities.some((e) => e.type === 'industry');
   if (jobs.length >= 2) {
     const group = sheet.kindPlural ? `All ${sheet.kindPlural}` : 'All together';
     const compare = {
       id: 'compare',
       entity: group,
       kind: 'compare',
-      clue: people ? `Every ${sheet.kindWord || 'one'} had their own cause.` : `Every ${sheet.kindWord || 'one'} had its own job.`,
+      clue: people
+        ? `Every ${sheet.kindWord || 'one'} had their own cause.`
+        : industries
+          ? 'Each industry turns its own raw material into its own product.'
+          : `Every ${sheet.kindWord || 'one'} had its own job.`,
       ask: sheet.kindWord ? `Which ${sheet.kindWord} did what?` : 'Who did what?',
       answer: people ? 'Each one’s cause' : 'Each one’s job',
       exact: '',
@@ -204,6 +222,9 @@ export function buildDecks(sheet) {
       star: false,
     };
     decks.push({ entity: group, cards: [compare], compare: true });
+  }
+  for (const card of [sortCard(sheet.entities), whereCard(sheet.entities)].filter(Boolean)) {
+    decks.push({ entity: card.entity, cards: [card], compare: true });
   }
   const lifeline = lifelineCard(sheet.entities);
   if (lifeline) decks.push({ entity: lifeline.entity, cards: [lifeline], compare: true });

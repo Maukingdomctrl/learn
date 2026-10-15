@@ -9,7 +9,13 @@ const MAX_WORDS = 14;
 export const ASK_BY_LABEL = {
   cause: 'Why did it happen?',
   result: 'What changed after?',
+  raw: 'What does it need?',
+  where: 'Where?',
+  product: 'What does it make?',
 };
+
+// A reason about a location ("grew in Mumbai because…", "Plants are near … because…") asks "Why here?".
+const ABOUT_PLACE = /\b(near|located|set up|grew in|grew at|situated|centred|centered|found in)\b/i;
 
 const BECAUSE = /\s(because|due to|as a result of)\s/;
 const LED_TO = /\s(led to|resulted in|so that)\s/;
@@ -29,12 +35,13 @@ export function whyCard(fact, entity) {
   const lead = before.split(' ');
   const shown = lead.length > 8 ? `… ${lead.slice(-8).join(' ')}` : before;
   const isWhy = BECAUSE.test(fact.text);
+  const whyAsk = ABOUT_PLACE.test(before) ? 'Why here?' : 'Why?';
   return {
     id: fact.id,
     entity,
     kind: 'why',
     clue: `${shown} ${m[1]} ${BLANK}`,
-    ask: isWhy ? 'Why?' : 'What happened next?',
+    ask: isWhy ? whyAsk : 'What happened next?',
     answer,
     exact: fact.text,
     page: fact.page,
@@ -286,4 +293,68 @@ export function ageCards(entity) {
       page: x.fact.page,
       symbol: 'calendar',
     }));
+}
+
+// ---------- industries ----------
+
+/** The first bold name in an industry's raw-material and product bullets: what goes in, what comes out. */
+export function flowOf(entity) {
+  const raw = entity.facts.find((f) => f.label === 'raw' && f.keys[0]);
+  const product = entity.facts.find((f) => f.label === 'product' && f.keys[0]);
+  return raw && product ? { raw: raw.keys[0], product: product.keys[0] } : null;
+}
+
+/** "Which group?": industries sorted by the kind their heading gives ("Agro-based industry"). */
+export function sortCard(entities) {
+  const groups = new Map();
+  for (const e of entities.filter((x) => x.type === 'industry' && x.descriptor)) {
+    if (!groups.has(e.descriptor)) groups.set(e.descriptor, []);
+    groups.get(e.descriptor).push(e.display);
+  }
+  if (groups.size < 2) return null;
+  const names = [...groups.values()].flat();
+  return {
+    id: 'sort',
+    entity: 'Which group?',
+    kind: 'sort',
+    clue: 'Sort them into groups.',
+    ask: [...groups.keys()].join(' or ') + '?',
+    answer: 'Groups',
+    exact: '',
+    frontLines: [...names].sort((a, b) => a.localeCompare(b)),
+    lines: [...groups].map(([g, list]) => `${g} … ${list.join(' · ')}`),
+    page: 1,
+    symbol: 'factory',
+  };
+}
+
+/** "Where are they?": each industry's first named centre, to match with the industry. */
+export function whereCard(entities) {
+  const rows = entities
+    .filter((e) => e.type === 'industry')
+    .map((e) => ({ e, f: e.facts.find((f) => f.label === 'where' && f.keys[0]) }))
+    .filter((x) => x.f);
+  if (rows.length < 2) return null;
+  return {
+    id: 'where',
+    entity: 'Where are they?',
+    kind: 'match',
+    clue: 'Match each place to its industry.',
+    ask: '',
+    answer: 'Pairs',
+    exact: '',
+    frontLines: [
+      rows
+        .map((x) => x.f.keys[0])
+        .sort((a, b) => a.localeCompare(b))
+        .join(' · '),
+      rows
+        .map((x) => x.e.display)
+        .sort((a, b) => a.localeCompare(b))
+        .join(' · '),
+    ],
+    lines: rows.map((x) => `${x.e.display} … ${x.f.text.replace(/[.\s]+$/, '')}`),
+    page: rows[0].f.page,
+    symbol: 'pin',
+  };
 }

@@ -10,12 +10,12 @@ import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
-import { ageCards, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
+import { ageCards, flowOf, lifelineCard, lifeOf, purposeOf } from '../engine/events.js';
 import { assignPhotos, unitSquare } from '../engine/photos.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
-import { backHtml, esc, frontHtml, lifelineSvg } from '../engine/render.js';
-import { dropRunningHeaders, isPerson, parseSheet, splitFacts } from '../engine/structure.js';
+import { backHtml, esc, flowSvg, frontHtml, lifelineSvg } from '../engine/render.js';
+import { bulletLabel, dropRunningHeaders, isIndustry, isPerson, parseSheet, splitFacts } from '../engine/structure.js';
 import { nameTip, thingFact } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
 
@@ -743,4 +743,93 @@ test('every card about a person carries their summary line as a reminder', async
   assert.match(backHtml(built.decks[0].cards[1]), /Remember: Raja Ram Mohan Roy = Brahmo Samaj/);
   built.decks[0].cards[1].identity = 'Raja Ram Mohan Roy = inventor of the telephone';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /reminder line is not from the sheet/);
+});
+
+// ---------- industries ----------
+
+async function industries() {
+  const data = new Uint8Array(readFileSync(here('../sample/industries-sheet.pdf')));
+  return makeDecks(pdfjs, data, { standardFontDataUrl: FONTS });
+}
+
+test('industries sample: headings are industries, bullets keep their labels; all checks pass', async () => {
+  const { sheet, built, check } = await industries();
+  assert.equal(check.ok, true, check.problems.join('\n'));
+  assert.deepEqual(
+    sheet.entities.map((e) => [e.display, e.type]),
+    [
+      ['Cotton Textile Industry', 'industry'],
+      ['Iron and Steel Industry', 'industry'],
+      ['Sugar Industry', 'industry'],
+    ],
+  );
+  assert.deepEqual(
+    sheet.entities[0].facts.map((f) => f.label),
+    ['raw', 'where', null, 'product', null],
+  );
+  for (const e of sheet.entities) {
+    const ids = built.decks.find((d) => d.entity === e.display).cards.map((c) => c.id);
+    for (const f of e.facts) assert.ok(ids.includes(f.id), `no card for ${f.id}`);
+  }
+});
+
+test('industry headings and bullet labels are recognised', () => {
+  assert.ok(isIndustry('SUGAR INDUSTRY', 'anything'));
+  assert.ok(isIndustry('JUTE', 'Agro-based industry'));
+  assert.ok(!isIndustry('BELFAST', 'Capital of Northern Ireland'));
+  assert.equal(bulletLabel('Raw materials'), 'raw');
+  assert.equal(bulletLabel('Main centres'), 'where');
+  assert.equal(bulletLabel('Products'), 'product');
+});
+
+test('the riddle is the raw material; cards ask what it needs, where, what it makes and why here', async () => {
+  const { built } = await industries();
+  const sugar = built.decks[2].cards;
+  assert.equal(sugar[0].clue, 'Raw material: sugarcane');
+  assert.equal(sugar[0].ask, 'Which industry?');
+  const ask = (answer) => sugar.find((c) => c.answer === answer).ask;
+  assert.equal(ask('sugarcane'), 'What does it need?');
+  assert.equal(ask('Uttar Pradesh'), 'Where?');
+  assert.equal(ask('sugar'), 'What does it make?');
+  const why = sugar.find((c) => c.kind === 'why');
+  assert.equal(why.ask, 'Why here?');
+  assert.equal(why.answer, 'sugarcane dries quickly and must be crushed soon after cutting');
+  const cotton = built.decks[0].cards.find((c) => c.answer === 'humid climate');
+  assert.equal(cotton.ask, 'Why here?', 'a bold word inside the reason asks the reason\'s question');
+});
+
+test('the final card is the chain: raw material, a question mark, the product', async () => {
+  const { sheet, built } = await industries();
+  assert.deepEqual(flowOf(sheet.entities[0]), { raw: 'raw cotton', product: 'cloth' });
+  const final = built.decks[0].cards.at(-1);
+  assert.equal(final.ask, 'Name the industry!');
+  const pic = frontHtml(final);
+  assert.ok(pic.includes('>raw cotton<') && pic.includes('>?<') && pic.includes('>cloth<'));
+  assert.ok(!flowSvg({ raw: '<b>', product: 'x' }).includes('<b>'), 'chain words are escaped');
+});
+
+test('"Which group?" sorts industries by the kind their headings give', async () => {
+  const { built } = await industries();
+  const sort = built.decks.find((d) => d.entity === 'Which group?').cards[0];
+  assert.deepEqual(sort.lines, [
+    'Agro-based industry … Cotton Textile Industry · Sugar Industry',
+    'Mineral-based industry … Iron and Steel Industry',
+  ]);
+  assert.equal(sort.ask, 'Agro-based industry or Mineral-based industry?');
+});
+
+test('"Where are they?" matches each industry\'s first centre, with the places scrambled', async () => {
+  const { built } = await industries();
+  const where = built.decks.find((d) => d.entity === 'Where are they?').cards[0];
+  assert.equal(where.frontLines[0], 'Bhilai · Mumbai · Uttar Pradesh');
+  assert.equal(where.lines[1], 'Iron and Steel Industry … Other centres: Bhilai, Rourkela and Bokaro');
+});
+
+test('check fails when the chain or a group line shows words that are not in the sheet', async () => {
+  const { sheet, built } = await industries();
+  built.decks[0].cards.at(-1).flow = { raw: 'raw cotton', product: 'paper' };
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /chain shows "paper"/);
+  const again = await industries();
+  again.built.decks.find((d) => d.entity === 'Which group?').cards[0].lines[0] += ' · Paper Industry';
+  assert.match(checkDecks(again.sheet, again.built).problems.join('\n'), /not word-for-word from the sheet: "Paper Industry"/);
 });

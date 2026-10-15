@@ -3,7 +3,8 @@
 - sample-sheet.pdf: places (two cities);
 - history-sheet.pdf: an event (the 1857 uprising) with causes, course, leaders and results;
 - people-sheet.pdf: three social reformers, each with life years, a summary line and a placeholder
-  portrait beside the heading (a drawn silhouette, not a real photo).
+  portrait beside the heading (a drawn silhouette, not a real photo);
+- industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are.
 
 
 Words wrapped in **double stars** are printed bold, the way a teacher marks the key words.
@@ -109,6 +110,37 @@ PEOPLE = [
 ]
 
 
+INDUSTRIES = [
+    [
+        ("title", "MAJOR INDUSTRIES OF INDIA"),
+        ("sub", "Class 8 Geography | Sample notes"),
+        ("heading", "1. COTTON TEXTILE INDUSTRY – Agro-based industry"),
+        ("bullet", "Raw material: **raw cotton**."),
+        ("bullet", "Main centres: **Mumbai**, **Ahmedabad** and **Coimbatore**."),
+        ("bullet", "It grew in Mumbai because of the **humid climate**, a port for importing machinery and"),
+        ("wrap", "a large supply of workers."),
+        ("bullet", "Products: **cloth**, yarn and garments."),
+        ("bullet", "Ahmedabad is called the **Manchester of India**."),
+        ("heading", "2. IRON AND STEEL INDUSTRY – Mineral-based industry"),
+        ("bullet", "Raw materials: **iron ore**, coking coal and limestone."),
+        ("bullet", "The Tata Iron and Steel Company was set up at **Jamshedpur** in 1907."),
+        ("bullet", "Plants are near the **Chota Nagpur Plateau** because iron ore and coal are found there."),
+        ("bullet", "Other centres: **Bhilai**, **Rourkela** and **Bokaro**."),
+        ("bullet", "Products: **steel** for machines, rails and bridges."),
+        ("heading", "3. SUGAR INDUSTRY – Agro-based industry"),
+        ("bullet", "Raw material: **sugarcane**."),
+        ("bullet", "Mills are near the fields because sugarcane dries quickly and must be crushed soon after"),
+        ("wrap", "cutting."),
+        ("bullet", "Main states: **Uttar Pradesh** and **Maharashtra**."),
+        ("bullet", "Products: **sugar**, with molasses as a by-product."),
+        ("section", "QUICK COMPARISON"),
+        ("bullet", "Cotton Textile Industry = cotton to cloth (Mumbai, Ahmedabad)"),
+        ("bullet", "Iron and Steel Industry = ore and coal to steel (Jamshedpur)"),
+        ("bullet", "Sugar Industry = cane to sugar (near the fields)"),
+    ],
+]
+
+
 def runs(text):
     """Splits '**bold**' markup into (text, bold) runs."""
     parts = re.split(r"(\*\*.+?\*\*)", text)
@@ -182,6 +214,7 @@ def main():
     build(PAGES, SAMPLES / "sample-sheet.pdf", "Grade 8 Social Studies | Sample sheet")
     build(HISTORY, SAMPLES / "history-sheet.pdf", "Class 8 History | Sample sheet")
     build(PEOPLE, SAMPLES / "people-sheet.pdf", "Class 8 History | Reformers sample", portraits=True)
+    build(INDUSTRIES, SAMPLES / "industries-sheet.pdf", "Class 8 Geography | Industries sample")
 
 
 if __name__ == "__main__":

@@ -267,6 +267,12 @@ export const ART = Object.fromEntries(
 
 // Words that point to each picture. Earlier pictures win ties; the generic ones at the end count for less.
 const KEYWORDS = [
+  ['metal', ['iron', 'steel', 'metal', 'metals', 'ore', 'aluminium', 'copper']],
+  ['sweet', ['sugar', 'jaggery', 'molasses']],
+  ['crop', ['sugarcane', 'crops', 'crop', 'farm', 'farms', 'fields', 'agro-based', 'agriculture', 'jute', 'tea', 'plantation', 'plantations']],
+  ['cloth', ['cloth', 'garments', 'yarn', 'clothes']],
+  ['water', ['humid', 'climate', 'rain', 'rainfall', 'water', 'irrigation']],
+  ['transport', ['transport', 'roads', 'lorries', 'trucks']],
   ['rifle', ['rifle', 'rifles', 'cartridge', 'cartridges', 'gun', 'guns', 'musket']],
   ['scroll', ['act', 'proclamation', 'treaty', 'constitution', 'doctrine', 'policy', 'annexed', 'promised']],
   ['sword', ['revolt', 'uprising', 'rebellion', 'rebels', 'mutiny', 'war', 'battle', 'fight', 'fought', 'attacked', 'sepoys', 'soldiers', 'army']],

@@ -95,6 +95,22 @@ Across the sheet, people with life years also get a **lifeline card**: a drawn t
 
 `sample/people-sheet.pdf` (three 19th-century reformers) is a synthetic example. Not yet tried on a real school sheet.
 
+## Industries
+
+A heading is an **industry** when its name says INDUSTRY ("SUGAR INDUSTRY") or its description starts with agro-, mineral-, forest- or marine-based. Bullets keep their own labels: "Raw material(s):", "Main/Other centres:" or "Main states:", "Products:". An industry's deck gets:
+
+- **The riddle is the raw material:** "Raw material: sugarcane — Which industry?"
+- **Fill-ins that ask by label:** "What does it need?" (raw material), "Where?" (centres), "What does it make?" (products).
+- **"Why here?":** a *because* sentence about a location ("Mills are near the fields because _____") asks "Why here?". So does a bold word inside such a reason.
+- **The final card is the chain:** *raw material → ? → product*, drawn from the sheet's bold words, with "Name the industry!" on the front and the summary line on the back.
+
+Across the sheet:
+- **"Which group?":** sorts the industries by the kind their headings give (agro-based or mineral-based).
+- **"Where are they?":** matches each industry's first centre (places scrambled) to the industry.
+- The comparison card reads "Each industry turns its own raw material into its own product."
+
+`sample/industries-sheet.pdf` (cotton textiles, iron and steel, sugar) is a synthetic example. Not yet tried on a real school sheet.
+
 ## Photos from the sheet
 
 If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.

@@ -3,7 +3,7 @@
 import { BLANK, nameParts } from './cards.js';
 
 // Cards about a whole topic or sheet: their front is a fixed prompt, their sheet words are in lines/frontLines.
-const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list', 'lifeline']);
+const DECK_CARDS = new Set(['compare', 'timeline', 'match', 'list', 'lifeline', 'sort']);
 
 const pieces = (line) =>
   line
@@ -47,7 +47,7 @@ export function checkDecks(sheet, built) {
   for (const c of allCards) {
     // Exactness: the back is the sheet's own words.
     for (const line of c.lines || [c.exact]) {
-      for (const piece of pieces(line)) {
+      for (const piece of pieces(line).flatMap((p) => p.split(' · '))) {
         if (!source.includes(norm(piece))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${piece}".`);
       }
     }
@@ -71,6 +71,10 @@ export function checkDecks(sheet, built) {
       if (c.answer !== `about ${year - born}` || !c.exact.includes(String(year)) || !source.includes(String(born))) {
         problems.push(`${c.entity}: the age "${c.answer}" does not follow from the sheet's years.`);
       }
+    }
+    // An industry's chain shows two of the sheet's own bold names.
+    for (const term of c.flow ? [c.flow.raw, c.flow.product] : []) {
+      if (!source.includes(norm(term))) problems.push(`${c.entity}: the chain shows "${term}", which is not in the sheet.`);
     }
     // The summary line repeated on each back is the sheet's own.
     if (c.identity && !source.includes(norm(c.identity))) {
