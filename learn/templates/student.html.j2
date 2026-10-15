@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ lesson.title }}</title>
+<style>
+  @page { size: 297mm 210mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+  body { font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif; font-size: 11pt; line-height: 1.3; }
+  .page { width: 297mm; height: 210mm; padding: {{ margin }}mm; overflow: hidden; display: flex;
+          flex-direction: column; page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #000;
+            padding-bottom: 1.5mm; margin-bottom: 3mm; flex: 0 0 auto; }
+  .title { font-size: 15pt; font-weight: bold; }
+  #page2 .header { padding-bottom: 1mm; margin-bottom: 2mm; }
+  #page2 .title { font-size: 12pt; }
+  .scope { font-size: 11pt; }
+  .namebox { font-size: 11pt; white-space: nowrap; }
+  .cols { display: flex; gap: 8mm; flex: 1 1 auto; min-height: 0; }
+  .col { flex: 1 1 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .stage-head { font-weight: bold; font-size: 12pt; border-bottom: 1px solid #000; margin: 0 0 1.5mm 0; }
+  .instruction { font-weight: bold; margin: 1mm 0; }
+  p { margin: 1mm 0; }
+  .hook { font-style: italic; }
+  .item { margin: 1.2mm 0; }
+  .num { font-weight: bold; }
+  .worked { border: 1px solid #000; padding: 1.5mm 2.5mm; margin: 1.5mm 0; }
+  .worked div { margin: 0.5mm 0; }
+  .ex { color: #555; border: 1px dashed #777; padding: 1mm 2mm; margin: 1.5mm 0; }
+  .ex-label { font-weight: bold; }
+  table.visual { border-collapse: collapse; margin: 1.5mm 0; }
+  table.visual th, table.visual td { border: 1px solid #000; padding: 0.8mm 2mm; text-align: left; }
+  .caption { font-weight: bold; }
+  .targets span { display: inline-block; border: 1px solid #000; padding: 0.5mm 2mm; margin: 1mm 4mm 1mm 0; }
+  .choices div { margin: 0.6mm 0 0.6mm 5mm; }
+  .bank { border: 1px solid #000; padding: 1mm 2mm; margin: 1.5mm 0; }
+  .blank { display: inline-block; width: 30mm; border-bottom: 1px solid #000; }
+  .num-blank { display: inline-block; width: 30mm; border-bottom: 1px solid #000; }
+  .write-line { height: 8mm; border-bottom: 1px solid #555; }
+  .stem-line { height: 8mm; border-bottom: 1px solid #555; display: flex; align-items: flex-end; }
+  .workspace { height: 36mm; border: 1px dashed #777; margin: 1mm 0; }
+  .sketch-frame { height: 45mm; border: 1.5px solid #000; margin: 1mm 0; }
+  .match { display: flex; justify-content: space-between; gap: 10mm; }
+  .match .a div, .match .b div { margin: 1.2mm 0; }
+  .dot { display: inline-block; width: 2.5mm; height: 2.5mm; border-radius: 50%; background: #000; margin: 0 2mm; vertical-align: middle; }
+  .ex-line { display: inline-block; width: 18mm; border-bottom: 1.5px dashed #555; vertical-align: middle; }
+  .peer div { margin: 0.5mm 0 0.5mm 4mm; }
+  .hint { font-style: italic; margin-top: 1mm; }
+  .spacer { flex: 1 1 auto; }
+  .recall { border: 2px solid #000; padding: 1.5mm 3mm; margin-top: 1.5mm; }
+  .recall-banner { font-weight: bold; text-align: center; border-bottom: 1px solid #000; padding-bottom: 1mm; margin-bottom: 1mm; }
+</style>
+</head>
+<body>
+{%- macro lines(n) -%}{% for _ in range(n) %}<div class="write-line"></div>{% endfor %}{%- endmacro -%}
+
+{%- macro item_block(stage, item) -%}
+<div class="item" data-item="{{ item.number }}" data-type="{{ stage.activity_type }}" data-required-lines="{{ req_lines[item.number] }}">
+  {%- set t = stage.activity_type -%}
+  {%- if t == "MATCH" -%}
+  {# rendered by the stage-level match table #}
+  {%- elif t == "SORT" -%}
+  <div><span class="num">{{ item.number }}.</span> <span class="blank sort-blank" style="width:12mm"></span> {{ item.prompt }}</div>
+  {%- elif t == "FILL_IN" or t == "COMPLETE_STEPS" -%}
+  <div><span class="num">{{ item.number }}.</span> {{ item.prompt | e | replace_blanks(blank_mm[item.number]) }}{% if not item.prompt is has_blank %} <span class="blank" style="width:{{ blank_mm[item.number] }}mm"></span>{% endif %}{% if item.unit %} {{ item.unit }}{% endif %}</div>
+  {%- else -%}
+  <div><span class="num">{{ item.number }}.</span> {{ item.prompt }}</div>
+  {%- endif -%}
+
+  {%- if t == "ANNOTATE" -%}
+  <div class="targets">{% for o in item.options %}<span>{{ o }}</span>{% endfor %}</div>
+  {%- elif t == "CHOOSE" -%}
+  <div class="choices">{% for o in item.options %}<div>{{ letters[loop.index0] }}. {{ o }}</div>{% endfor %}</div>
+  {%- elif t == "SPOT_MISTAKE" and item.peer_work -%}
+  <div class="peer"><div>{{ item.peer_work.intro }}</div>{% for s in item.peer_work.steps %}<div>Step {{ loop.index }}: {{ s }}</div>{% endfor %}</div>
+  {{ lines(req_lines[item.number]) }}
+  {%- elif t == "SOLVE" -%}
+  <div class="workspace"></div>
+  <div>Answer: <span class="num-blank"></span>{% if item.unit %} {{ item.unit }}{% endif %}</div>
+  {%- elif t == "SHORT_ANSWER" -%}
+  {% if item.keywords %}<div>Use: {% for k in item.keywords %}&#9744; {{ k }}&nbsp;&nbsp;{% endfor %}</div>{% endif %}
+  {% if item.sentence_stem %}<div class="stem-line">{{ item.sentence_stem }}</div>{{ lines(req_lines[item.number] - 1) }}{% else %}{{ lines(req_lines[item.number]) }}{% endif %}
+  {%- elif t == "SKETCH" -%}
+  {% if item.sketch_criteria %}<div>{{ item.sketch_criteria }}</div>{% endif %}
+  <div class="sketch-frame"></div>
+  {%- endif -%}
+</div>
+{%- endmacro -%}
+
+{%- macro example_block(stage) -%}
+{%- if stage.example -%}
+<div class="ex"><span class="ex-label">Ex &mdash; done for you:</span>
+  {%- if stage.activity_type == "MATCH" %} {{ stage.example.prompt }} <span class="dot"></span><span class="ex-line"></span><span class="dot"></span> {{ stage.example.answer }}
+  {%- elif stage.activity_type == "SORT" %} {{ group_letter(stage, stage.example.answer) }} &nbsp; {{ stage.example.prompt }}
+  {%- elif stage.activity_type == "FILL_IN" or stage.activity_type == "COMPLETE_STEPS" %} {{ stage.example.prompt | e | fill_blank(stage.example.answer) }}
+  {%- else %} {{ stage.example.prompt }} &rarr; {{ stage.example.answer }}{% endif %}
+</div>
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro stage_block(stage, step) -%}
+<section class="stage" data-stage="{{ stage.stage }}">
+  <div class="stage-head">Step {{ step }} &middot; {{ stage_titles[stage.stage] }}</div>
+  {%- if stage.stage == "Discover" -%}
+    {% if stage.hook %}<p class="hook">{{ stage.hook }}</p>{% endif %}
+    <p class="instruction">{{ stage.instruction }}</p>
+    {% if stage.items %}{{ item_block(stage, stage.items[0]) }}{% endif %}
+    {% if stage.body_text %}<p>{{ stage.body_text }}</p>{% endif %}
+    {% if stage.worked_example %}<div class="worked"><div><b>Worked example</b></div>{% for l in stage.worked_example %}<div>{{ l }}</div>{% endfor %}</div>{% endif %}
+    {% for v in stage.visuals %}{{ table(v) }}{% endfor %}
+    {% for item in stage.items[1:] %}{{ item_block(stage, item) }}{% endfor %}
+  {%- else -%}
+    <p class="instruction">{{ stage.instruction }}</p>
+    {% if stage.body_text %}<p>{{ stage.body_text }}</p>{% endif %}
+    {% for v in stage.visuals %}{{ table(v) }}{% endfor %}
+    {% if stage.word_bank %}<div class="bank"><b>Word bank:</b> {{ stage.word_bank | join("  ·  ") }}</div>{% endif %}
+    {% if stage.groups %}<div class="bank">{% for g in stage.groups %}<b>{{ letters[loop.index0] }}</b> = {{ g }}&nbsp;&nbsp;&nbsp;{% endfor %}</div>{% endif %}
+    {{ example_block(stage) }}
+    {% if stage.activity_type == "MATCH" %}
+    <div class="match">
+      <div class="a">{% for item in stage.items %}<div class="item" data-item="{{ item.number }}" data-type="MATCH" data-required-lines="0"><span class="num">{{ item.number }}.</span> {{ item.prompt }} <span class="dot"></span></div>{% endfor %}</div>
+      <div class="b">{% for o in stage.options %}<div><span class="dot"></span> {{ letters[loop.index0] }}. {{ o }}</div>{% endfor %}</div>
+    </div>
+    {% else %}
+    {% for item in stage.items %}{{ item_block(stage, item) }}{% endfor %}
+    {% endif %}
+    {% if stage.hint_pointer %}<div class="hint" data-hint="{{ stage.stage }}">{{ stage.hint_pointer }}</div>{% endif %}
+  {%- endif -%}
+</section>
+{%- endmacro -%}
+
+{%- macro table(v) -%}
+<table class="visual">{% if v.caption %}<caption class="caption">{{ v.caption }}</caption>{% endif %}
+  {% if v.headers %}<tr>{% for h in v.headers %}<th>{{ h }}</th>{% endfor %}</tr>{% endif %}
+  {% for r in v.rows %}<tr>{% for c in r %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}
+</table>
+{%- endmacro -%}
+
+<div class="page" id="page1">
+  <div class="header">
+    <div><div class="title">{{ lesson.title }}</div><div class="scope">{{ lesson.scope_line }}</div></div>
+    <div class="namebox">Name: ____________ &nbsp; Date: ________</div>
+  </div>
+  <div class="cols">
+    <div class="col" data-zone="page1-left">{{ stage_block(stages.Discover, 1) }}</div>
+    <div class="col" data-zone="page1-right">{{ stage_block(stages.Reinforce, 2) }}</div>
+  </div>
+</div>
+
+<div class="page" id="page2">
+  <div class="header">
+    <div class="title">{{ lesson.title }} &mdash; Page 2</div>
+  </div>
+  <div class="cols">
+    <div class="col" data-zone="page2-left">{{ stage_block(stages.Vary, 3) }}</div>
+    <div class="col" data-zone="page2-right">
+      {{ stage_block(stages.Apply, 4) }}
+      <div class="spacer"></div>
+      <div class="recall" id="recall-box">
+        <div class="recall-banner" id="recall-banner">{{ recall_banner }}</div>
+        {{ stage_block(stages.Recall, 5) }}
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

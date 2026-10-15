@@ -122,7 +122,7 @@ Given a suitable curriculum PDF and a selected grade level, Learn should reliabl
 
 
 
-The project is in the methodology refinement and prototype-planning stage. Several versions of the core teaching methodology are maintained in the repository.
+The methodology is finalised in `methodology/CORE_TEACHING_METHODOLOGY_FINAL.md`, and a V1 prototype of the end-to-end workflow lives in `learn/` (see `README.md`). The prototype has not yet been run against real curriculum PDFs with the live model, and has not been tested with children.
 
 
 

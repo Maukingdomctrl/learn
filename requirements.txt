@@ -1,0 +1,10 @@
+# Runtime
+anthropic==1.14.0
+fastapi==0.143.1
+Jinja2==3.1.6
+playwright==1.64.0
+pydantic==2.14.1
+pymupdf==1.28.2
+pypdf==6.20.1
+python-multipart==0.0.32
+uvicorn==0.54.0

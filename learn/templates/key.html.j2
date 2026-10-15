@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Answer key: {{ lesson.title }}</title>
+<style>
+  @page { size: 297mm 210mm; margin: {{ margin }}mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+  body { font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif; font-size: 10.5pt; line-height: 1.25; }
+  h1 { font-size: 14pt; margin: 0 0 1mm 0; }
+  .meta { margin-bottom: 2mm; }
+  .box { border: 1px solid #000; padding: 1.5mm 3mm; margin: 2mm 0; }
+  ul { margin: 0.5mm 0; padding-left: 6mm; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #000; padding: 0.8mm 1.5mm; vertical-align: top; text-align: left; }
+  th { background: #eee; }
+  tr { page-break-inside: avoid; break-inside: avoid; }
+  .n { width: 8mm; } .ans { width: 55mm; } .alt { width: 55mm; } .src { width: 22mm; }
+  .note { font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Parent answer key &mdash; {{ lesson.title }}</h1>
+<div class="meta">Standard {{ lesson.standard }} &middot; Concept: {{ concepts }} &middot; Source pages used: {{ source_pages }} &middot; Estimated time: about {{ minutes }} minutes</div>
+{% if lesson.answer_key.shortened_lesson_note %}<div class="box note">{{ lesson.answer_key.shortened_lesson_note }}</div>{% endif %}
+<div class="box"><b>Before you start</b>
+<ul>
+  <li>Print the two student pages single-sided, so Page 1 can be turned face down before the last box.</li>
+  <li>Let your child work alone with a pencil for about {{ minutes }} minutes. They need no screen.</li>
+  <li>Before the box at the bottom right of Page 2, your child turns Page 1 face down.</li>
+  <li>Check the answers together afterwards using this key.</li>
+</ul></div>
+<table>
+  <tr><th class="n">#</th><th class="ans">Answer</th><th class="alt">Also accept</th><th>Why it is correct</th><th class="src">Source</th></tr>
+  {% for row in rows %}
+  <tr><td>{{ row.number }}</td><td>{{ row.answer }}</td><td>{{ row.alternatives }}</td><td>{{ row.reason }}</td><td>{{ row.source }}</td></tr>
+  {% endfor %}
+</table>
+<div class="box"><b>Scope and limitations</b>
+<ul>
+  <li>Covered: {{ lesson.answer_key.scope_covered }}</li>
+  {% if lesson.answer_key.not_covered %}<li>Not covered in this lesson: {{ lesson.answer_key.not_covered }}</li>{% endif %}
+  {% for issue in lesson.answer_key.source_issues %}<li>Possible source issue (left out of the lesson): {{ issue }}</li>{% endfor %}
+  {% for w in warnings %}<li>{{ w }}</li>{% endfor %}
+</ul></div>
+<p>One lesson builds a first understanding of the topic. It does not guarantee mastery or exam readiness.</p>
+</body>
+</html>
