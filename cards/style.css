@@ -323,6 +323,11 @@ h3 {
   font-size: 7cqh;
   letter-spacing: 0.05em;
 }
+.cardface .link {
+  font-size: 5.8cqh;
+  line-height: 1.15;
+  color: var(--ink-soft);
+}
 .cardface .hint {
   font-family: var(--type);
   font-size: 5.6cqh;

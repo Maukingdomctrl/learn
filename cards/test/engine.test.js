@@ -14,7 +14,7 @@ import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
 import { backHtml, esc, frontHtml } from '../engine/render.js';
 import { dropRunningHeaders, parseSheet, splitFacts } from '../engine/structure.js';
-import { nameTip } from '../engine/nametips.js';
+import { nameTip, thingFact } from '../engine/nametips.js';
 import { ART, pickSymbol, portraitSvg, svg } from '../engine/symbols.js';
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -378,4 +378,31 @@ test('check fails when a hint does not match its answer', () => {
   const { sheet, built } = cityDecks();
   built.decks[0].cards.find((c) => c.answer === 'River Lagan').hint = 'R____ T_____';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /does not match/);
+});
+
+// ---------- links and thing fun facts ----------
+
+test('the museum card links to the Titanic fact on the same sheet and gets the iceberg fun fact', async () => {
+  const { built, check } = await sample();
+  assert.ok(check.ok, check.problems.join('\n'));
+  const museum = built.decks[0].cards.find((c) => c.answer === 'Titanic Belfast');
+  assert.equal(museum.link, '… shipyard built the RMS Titanic');
+  assert.match(frontHtml(museum), /Think: … shipyard built the RMS Titanic/);
+  assert.match(museum.tip, /iceberg/);
+  assert.doesNotMatch(frontHtml(museum), /iceberg/);
+});
+
+test('thing fun facts match whole words only', () => {
+  assert.match(thingFact('RMS Titanic'), /iceberg/);
+  assert.equal(thingFact('Titanica'), null);
+  assert.equal(thingFact('River Lagan'), null);
+});
+
+test('check fails when a link is not from the sheet or gives the answer away', () => {
+  const { sheet, built } = cityDecks();
+  const card = built.decks[0].cards.find((c) => c.kind === 'cloze');
+  card.link = 'a famous ship that sank';
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /link text not found/);
+  card.link = `Situated on the ${card.answer}`;
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /link gives the answer away/);
 });

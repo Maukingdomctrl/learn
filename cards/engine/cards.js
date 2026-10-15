@@ -1,7 +1,7 @@
 // Facts -> cards. Fixed rules only. Every word on a card back is copied from the sheet;
 // a card front is a piece of the same sentence with one part hidden, plus a fixed prompt.
 
-import { nameTip } from './nametips.js';
+import { nameTip, thingFact } from './nametips.js';
 import { pickSymbol } from './symbols.js';
 
 const MAX_CLUE_WORDS = 10;
@@ -66,6 +66,15 @@ export function buildDecks(sheet) {
       symbols: [], // filled in below, once every deck is known
       star: false,
     };
+    // Link a hard answer to another fact about the same place that shares a name with it:
+    // "Titanic Belfast" museum -> "… shipyard built the RMS Titanic". Both come from the sheet.
+    for (const c of body) {
+      if (c.kind !== 'cloze') continue;
+      const link = linkFor(c, e);
+      if (link) c.link = link;
+      const fact = thingFact(c.answer);
+      if (fact) c.tip = fact;
+    }
     const cards = [hook, ...body.map(({ order, score, ...c }) => c), portrait];
     // A name tip goes on backs whose answer is the place name itself, where the child is learning that name.
     const tip = nameTip(e.display);
@@ -253,4 +262,30 @@ export function letterHint(answer) {
     })
     .join(' ');
   return hint === text ? null : hint;
+}
+
+const LINK_WORDS = 5;
+
+/** A few words from another fact about the same place that mention a name inside this card's answer. */
+export function linkFor(card, entity) {
+  // Words in the place's own heading ("Northern Ireland", "Scotland") are on every card about it: no link.
+  const heading = `${entity.display} ${entity.descriptor}`.toLowerCase();
+  const names = (card.answer.match(/\b[A-Z][a-zA-Z’'-]{3,}\b/g) || []).filter((w) => !heading.includes(w.toLowerCase()));
+  for (const name of names) {
+    for (const f of entity.facts) {
+      if (f.id === card.id || f.text.includes(card.answer)) continue;
+      const words = f.text.split(' ');
+      const at = words.findIndex((w) => w.replace(/[^A-Za-z’'-]/g, '') === name);
+      if (at === -1) continue;
+      // The word must end a name there ("RMS Titanic"), not start one ("Bank of Scotland"): a cut name confuses.
+      const nextWord = words[at + 1] || '';
+      if (/^(of|and|&)$/i.test(nextWord) || (/^[A-Z]/.test(nextWord) && !/[,;:.)–—]$/.test(words[at]))) continue;
+      const piece = words
+        .slice(Math.max(0, at - (LINK_WORDS - 1)), at + 1)
+        .join(' ')
+        .replace(/[,;:.]+$/, '');
+      return (at >= LINK_WORDS ? '… ' : '') + piece;
+    }
+  }
+  return null;
 }

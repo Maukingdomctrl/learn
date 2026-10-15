@@ -14,3 +14,17 @@ export const NAME_TIPS = {
 export function nameTip(name) {
   return NAME_TIPS[String(name).trim().toLowerCase()] || null;
 }
+
+// Fun facts about famous things a sheet mentions, chosen because children already know them
+// (the Titanic: the ship, the iceberg, the film). Same rules as name tips: back footer only, never tested,
+// only well-established facts, exact terms only.
+export const THING_FACTS = {
+  titanic: 'The Titanic is the famous ship that hit an iceberg and sank on its first voyage, in 1912.',
+};
+
+/** A fun fact for the first listed term that appears as a whole word in the answer. */
+export function thingFact(answer) {
+  const words = String(answer).toLowerCase().match(/[a-z]+/g) || [];
+  for (const w of words) if (THING_FACTS[w]) return THING_FACTS[w];
+  return null;
+}

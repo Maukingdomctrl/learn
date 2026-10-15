@@ -45,6 +45,12 @@ export function checkDecks(sheet, built) {
     for (const piece of c.clue.split(new RegExp(`${BLANK}|…`)).map((p) => p.trim())) {
       if (piece && !source.includes(norm(piece))) problems.push(`${c.entity}: clue text not found in the sheet: "${piece}".`);
     }
+    // A link is the sheet's own words and must not hold the answer.
+    if (c.link) {
+      const piece = c.link.replace(/…/g, '').trim();
+      if (!source.includes(norm(piece))) problems.push(`${c.entity}: link text not found in the sheet: "${c.link}".`);
+      if (norm(c.link).includes(norm(c.answer))) problems.push(`${c.entity}: the link gives the answer away: "${c.link}".`);
+    }
     // A hint is the answer's own shape: same length, and every letter it shows is the answer's letter there.
     if (c.hint && !hintFits(c.hint, c.answer)) problems.push(`${c.entity}: the hint "${c.hint}" does not match "${c.answer}".`);
     // A 'which place?' clue must not contain the answer.

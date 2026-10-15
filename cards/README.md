@@ -26,6 +26,8 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
 
    Cards whose answer the sheet repeats most come first and get a ★.
 
+   A fill-in answer that shares a name with another fact about the same place gets a **"Think:" link** made of that fact's own words. For example, the museum card shows "Think: … shipyard built the RMS Titanic". The linking word can't come from the place's heading, and it must end a name in the other fact, so "Bank" in "Bank of Scotland" doesn't count.
+
    Every card except the final picture has a small **hint** under the clue: the answer's shape with only first letters showing ("R____ L____", "2__,___"). Short joining words (of, and, the) stay, and answers too short to hint at get no hint. A check confirms each hint matches its answer letter by letter.
 4. **Picks a sketch** for each card from about 25 drawings, by words in the fact (river, ship, crown, factory, bank…). If nothing fits, the card shows a "draw it!" box instead of a wrong picture.
 5. **Checks every card before showing or printing it.** If any check fails, nothing is shown and the page lists the problems:
@@ -63,6 +65,7 @@ Some card backs carry a small footer such as **Fun fact:** "-ham" is an old Engl
 - **Never:** on a card front, as an answer, or in any test of the child. A tip is extra, not from the sheet.
 - **Source:** only exact names listed in `engine/nametips.js`. There is no rule like "every -ham means home", because Durham and Oldham would come out wrong.
 - **Left out:** names with uncertain or disputed origins (London, Lagan, for now).
+- **Famous things:** the same file also lists fun facts about well-known things a child already knows, such as the Titanic and its iceberg. They appear on the back of a card whose answer names that thing, under the same rules.
 - **Status:** the four entries (Belfast, Birmingham, Cardiff, Edinburgh) were drafted from standard place-name explanations. A person should confirm them before wide use.
 
 ## What it does not do yet
