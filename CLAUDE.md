@@ -11,6 +11,7 @@ Learn turns one curriculum PDF into a printable ~15-minute lesson for Standard 7
 ## Commands
 ```bash
 pip install -r requirements-dev.txt && playwright install chromium   # setup
+pre-commit install             # ruff check --fix + ruff format on each commit (.pre-commit-config.yaml)
 pytest -q                      # all tests (~20 s, includes real Chromium rendering)
 ruff check .                   # lint (config in ruff.toml)
 ruff format .                  # format; CI runs pytest, ruff check and ruff format --check on every PR
@@ -51,6 +52,8 @@ extract → select + sufficiency → generate → timing → render → checks �
 - **The A2 blind solver gets only the student-PDF text.** Never the key, never the source.
 - **Model calls go through `LLM.json(task, system, prompt)`.** This keeps every call replaceable by the scripted fake in `tests/conftest.py`.
 - **Errors become reports.** Missing credentials and unexpected exceptions produce a stopped `Report`, never a crash.
+
+Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requirements-dev.txt`, which CI uses.
 
 ## Tests
 - Tests must not need an API key or network. Use `ScriptedLLM` and the synthetic fixtures in `tests/fixtures.py`.

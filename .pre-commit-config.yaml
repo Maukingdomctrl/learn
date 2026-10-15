@@ -1,0 +1,9 @@
+# Install once with: pre-commit install
+# Keep `rev` in step with the ruff version pinned in requirements-dev.txt (CI uses that one).
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format

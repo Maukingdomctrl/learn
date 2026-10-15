@@ -27,6 +27,7 @@ source .venv/bin/activate
 pip install -r requirements-dev.txt        # or requirements.txt without the test tools
 playwright install chromium                # headless browser used to print the PDFs
 cp .env.example .env                       # then put your key in .env
+pre-commit install                         # optional: run ruff on every commit
 ```
 
 Set `ANTHROPIC_API_KEY` in `.env` or your shell. Without a key Learn still runs, but every request stops with a limitation report saying the model is not configured.
