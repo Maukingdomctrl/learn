@@ -6,30 +6,132 @@
   <title>Learn · Teaching Engine</title>
   <style>
     :root { color-scheme: light; font-family: system-ui, sans-serif; color: #23302b; background: #f6f5ef; }
-    body { max-width: 700px; margin: 8vh auto; padding: 0 20px; }
-    main { background: white; border: 1px solid #e1e3da; border-radius: 18px; padding: clamp(24px, 6vw, 48px); box-shadow: 0 12px 36px #283a2c0d; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: minmax(340px, 440px) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .controls, .preview { background: white; border: 1px solid #e1e3da; border-radius: 18px; padding: clamp(20px, 4vw, 36px); box-shadow: 0 12px 36px #283a2c0d; }
     h1 { margin: 0 0 10px; font-size: clamp(2rem, 7vw, 3.2rem); letter-spacing: -.04em; }
     p { line-height: 1.6; }
     .intro { color: #58655d; }
     label { display: block; margin: 24px 0 8px; font-weight: 650; }
-    input { display: block; width: 100%; margin-top: 8px; font: inherit; }
+    input, select { display: block; width: 100%; margin-top: 8px; font: inherit; padding: 9px; border: 1px solid #cbd2c9; border-radius: 8px; }
     button { margin-top: 24px; border: 0; border-radius: 9px; padding: 12px 20px; background: #27664d; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+    button:disabled { opacity: .65; cursor: wait; }
     .note { color: #647067; font-size: .9rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button.secondary { background: #e9eee9; color: #23302b; }
+    .library-link { display: inline-block; margin-top: 14px; color: #27664d; font-weight: 650; }
+    .preview { position: sticky; top: 16px; min-height: 76vh; }
+    .preview h2 { margin-top: 0; }
+    .preview-help { color: #647067; font-size: .9rem; }
+    .preview-frame { width: 100%; height: min(78vh, 950px); min-height: 520px; border: 1px solid #d9ded5; border-radius: 10px; background: #f4f5f2; }
+    .preview-state { padding: 18px; color: #647067; }
+    .download-preview { display: none; margin-top: 12px; font-weight: 650; color: #27664d; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } .preview { position: static; min-height: auto; } .preview-frame { height: 70vh; min-height: 420px; } }
+    @media (max-width: 480px) { body { padding: 10px; } .actions button { width: 100%; } }
   </style>
 </head>
 <body>
 <main>
+<section class="controls">
   <p>LEARN · TEACHING ENGINE</p>
   <h1>Make ideas easier to remember.</h1>
-  <p class="intro">Upload a curriculum PDF to create a source-linked teaching plan with drawing prompts and recall activities. Your facts stay tied to the exact source text and page.</p>
+  <p class="intro">Choose a Detective mystery or a Superhero mission. Both turn the source facts and its own pictures into double-sided game cards with page clues.</p>
   <form action="/generate" method="post" enctype="multipart/form-data">
     <label for="pdf">Choose a curriculum PDF</label>
     <input id="pdf" type="file" name="pdf" accept="application/pdf" required>
     <label for="pages">Pages to use <span class="note">(optional)</span></label>
     <input id="pages" type="text" name="pages" maxlength="50" placeholder="e.g. 3-5 or 2, 4">
-    <button type="submit">Create printable lesson</button>
+    <label for="standard">ICSE Standard</label>
+    <select id="standard" name="standard">
+      <option value="7">Standard 7</option>
+      <option value="8" selected>Standard 8</option>
+      <option value="9">Standard 9</option>
+    </select>
+    <label for="preview-output">Preview format</label>
+    <select id="preview-output">
+      <option value="detective">Detective game cards</option>
+      <option value="superhero">Superhero game cards</option>
+      <option value="lesson">Lesson PDF</option>
+    </select>
+    <button id="preview-button" type="button">Preview in side window</button>
+    <div class="actions">
+      <button type="submit" name="output" value="detective">Play Detective</button>
+      <button class="secondary" type="submit" name="output" value="superhero">Play Superhero</button>
+      <button class="secondary" type="submit" name="output" value="lesson">Create lesson PDF</button>
+    </div>
   </form>
+  <a class="library-link" href="/library">Browse the Study Visual Library</a>
   <p class="note">No account, API key, or paid AI call. Maximum upload: 30 MB. Text-based PDFs work best; scanned pages may need OCR. Review any flagged claims before teaching.</p>
+</section>
+<aside class="preview" aria-label="Output preview">
+  <h2>Print preview</h2>
+  <p id="preview-status" class="preview-help" aria-live="polite">Choose a PDF and preview format, then select “Preview in side window.” The preview includes the selected pages' source images where available.</p>
+  <iframe id="preview-frame" class="preview-frame" title="Preview of generated learning PDF" src="about:blank"></iframe>
+  <a id="download-preview" class="download-preview" href="#">Download this preview PDF</a>
+</aside>
 </main>
+<script>
+  const form = document.querySelector("form");
+  const previewButton = document.getElementById("preview-button");
+  const previewFormat = document.getElementById("preview-output");
+  const previewFrame = document.getElementById("preview-frame");
+  const previewStatus = document.getElementById("preview-status");
+  const downloadPreview = document.getElementById("download-preview");
+  let previewUrl = null;
+
+  function clearPreview(message) {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    previewFrame.src = "about:blank";
+    downloadPreview.style.display = "none";
+    previewStatus.textContent = message;
+  }
+
+  form.addEventListener("input", () => {
+    if (previewUrl) clearPreview("Your choices changed. Preview again to see the updated PDF.");
+  });
+  previewFormat.addEventListener("change", () => {
+    if (previewUrl) clearPreview("Your preview format changed. Preview again to see the updated PDF.");
+  });
+
+  previewButton.addEventListener("click", async () => {
+    const fileInput = document.getElementById("pdf");
+    if (!fileInput.files.length) {
+      previewStatus.textContent = "Choose a PDF first.";
+      fileInput.focus();
+      return;
+    }
+
+    previewButton.disabled = true;
+    previewButton.textContent = "Preparing preview…";
+    previewStatus.textContent = "Building the same print-ready PDF used for download. This may take a little while for a large document.";
+    downloadPreview.style.display = "none";
+    const data = new FormData(form);
+    data.set("output", previewFormat.value);
+
+    try {
+      const response = await fetch("/preview", { method: "POST", body: data });
+      const type = response.headers.get("content-type") || "";
+      if (!response.ok || !type.includes("application/pdf")) {
+        const html = await response.text();
+        const message = new DOMParser().parseFromString(html, "text/html").body.textContent.trim();
+        throw new Error(message || "The preview could not be created. Check the PDF and page range.");
+      }
+      const pdf = await response.blob();
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(pdf);
+      previewFrame.src = previewUrl;
+      downloadPreview.href = previewUrl;
+      downloadPreview.download = previewFormat.value === "lesson" ? "learn_teaching_plan.pdf" : `learn_${previewFormat.value}_game.pdf`;
+      downloadPreview.style.display = "inline-block";
+      previewStatus.textContent = "Preview ready. This is the PDF produced from your selected input and settings.";
+    } catch (error) {
+      clearPreview(error.message || "The preview could not be created. Please try again.");
+    } finally {
+      previewButton.disabled = false;
+      previewButton.textContent = "Preview in side window";
+    }
+  });
+</script>
 </body>
 </html>

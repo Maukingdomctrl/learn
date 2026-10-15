@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learn Visual Library</title>
+  <style>
+    :root { color-scheme: light; --ink: #23332c; --green: #315f4a; --paper: #f5f4ed; --line: #d9ded5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 1100px; margin: auto; padding: 28px 18px 56px; }
+    a { color: var(--green); }
+    .back { display: inline-block; margin-bottom: 16px; }
+    h1 { margin: 0; font-size: clamp(2rem, 6vw, 3rem); }
+    .intro { max-width: 720px; }
+    nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+    nav a { background: white; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; text-decoration: none; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    article { overflow: hidden; background: white; border: 1px solid var(--line); border-radius: 14px; }
+    article img { display: block; width: 100%; height: 210px; object-fit: contain; background: #ecece5; }
+    .copy { padding: 14px; }
+    h2 { font-size: 1.1rem; line-height: 1.25; margin: 0 0 5px; }
+    .topic, .region, small { color: #526259; }
+    .region { font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    .credits { margin-top: 12px; font-size: .85rem; }
+    .note { background: #fff8e6; border-left: 4px solid #c68b35; padding: 12px 14px; margin: 22px 0; }
+  </style>
+</head>
+<body>
+<main>
+  <a class="back" href="/">← Back to games</a>
+  <h1>Study Visual Library</h1>
+  <p class="intro">A growing set of history, civics, and geography visuals for Standards 7–9, with Standard 8 as the starting focus. These are visual prompts—not textbook pages or replacements for source evidence.</p>
+  <div class="note">Images load directly from Wikimedia Commons when you open this page. Learn does not copy or store them. Check the linked file page for the current license and attribution before reusing or printing an image. Topic tags are suggestions, not a claim that every school follows the same book or syllabus.</div>
+  <nav aria-label="Filter image library">
+    <a href="/library">All topics</a>
+    <a href="/library?region=Indian%20Studies">Indian Studies</a>
+    <a href="/library?region=UK%20comparison">UK comparison</a>
+  </nav>
+  <section class="grid" aria-label="Visuals">
+    {% for visual in visuals %}
+    <article>
+      <a href="{{ visual.source_url }}" target="_blank" rel="noopener noreferrer" aria-label="View source page for {{ visual.title }}">
+        <img src="{{ visual.image_url }}" alt="{{ visual.title }}" loading="lazy" referrerpolicy="no-referrer">
+      </a>
+      <div class="copy">
+        <div class="region">{{ visual.region }}</div>
+        <h2>{{ visual.title }}</h2>
+        <div class="topic">{{ visual.topic }}</div>
+        <p>{{ visual.description }}</p>
+        <div class="credits">Image: {{ visual.author }} · <a href="{{ visual.license_url }}" target="_blank" rel="noopener noreferrer">{{ visual.license_name }}</a><br><a href="{{ visual.source_url }}" target="_blank" rel="noopener noreferrer">Source and image details on Wikimedia Commons</a></div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</main>
+</body>
+</html>

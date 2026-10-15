@@ -1,4 +1,4 @@
-"""Standalone, offline web app for the Teaching Engine."""
+"""Standalone Teaching Engine web app; its optional Commons gallery loads external images."""
 
 from pathlib import Path
 
@@ -8,15 +8,14 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .extraction import ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
-from .teaching_engine import create_teaching_lesson, extract_facts, render_teaching_pdf
+from .teaching_engine import create_teaching_lesson, extract_facts, render_printable_cards_pdf, render_teaching_pdf
+from .teaching_engine.visual_library import list_visuals
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
 )
-
-
 def _page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(_env.get_template(name).render(**ctx))
 
@@ -31,8 +30,41 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/generate", response_class=HTMLResponse)
-def generate(pdf: UploadFile = File(...), pages: str = Form("")):
+@app.get("/library", response_class=HTMLResponse)
+def visual_library(region: str = "all"):
+    if region not in {"all", "Indian Studies", "UK comparison"}:
+        region = "all"
+    return _page("visual_library.html.j2", visuals=list_visuals(region))
+
+
+def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[bytes, str]:
+    page_range = parse_page_range(pages.strip()[:50], pdf_page_count(data))
+    ocr, ocr_name = choose_ocr("auto", None)
+    source = extract(data, ocr, ocr_name, page_range)
+
+    if not source.units:
+        raise ValueError("No readable text was found in the selected pages. Scanned PDFs need OCR before they can be used.")
+
+    inventory = extract_facts(source.units)
+    if output == "lesson":
+        lesson = create_teaching_lesson(inventory)
+        pdf_bytes = render_teaching_pdf(lesson, source.warnings)
+        filename = "learn_teaching_plan.pdf"
+    else:
+        if output not in {"detective", "superhero"}:
+            raise ValueError("Choose Detective, Superhero, or lesson PDF.")
+        try:
+            pdf_bytes = render_printable_cards_pdf(
+                inventory, source_pdf=data, game_mode=output, pages=page_range, standard=standard
+            )
+        except ValueError:
+            raise
+        filename = f"learn_{output}_game.pdf"
+
+    return pdf_bytes, filename
+
+
+def _process_upload(pdf: UploadFile, pages: str, output: str, standard: int, inline: bool) -> Response:
     data = pdf.file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, "PDF is larger than 30 MB")
@@ -40,20 +72,32 @@ def generate(pdf: UploadFile = File(...), pages: str = Form("")):
         return _page("teaching_result.html.j2", job=None, error="That file does not appear to be a PDF.", warnings=[])
 
     try:
-        page_range = parse_page_range(pages.strip()[:50], pdf_page_count(data))
-        ocr, ocr_name = choose_ocr("auto", None)
-        source = extract(data, ocr, ocr_name, page_range)
-    except (InputError, ExtractionError) as error:
+        pdf_bytes, filename = _build_pdf(data, pages, output, standard)
+    except (InputError, ExtractionError, ValueError) as error:
         return _page("teaching_result.html.j2", job=None, error=str(error), warnings=[])
 
-    if not source.units:
-        message = "No readable text was found in the selected pages. Scanned PDFs need OCR before they can be used."
-        return _page("teaching_result.html.j2", job=None, error=message, warnings=source.warnings)
-
-    lesson = create_teaching_lesson(extract_facts(source.units))
-    pdf_bytes = render_teaching_pdf(lesson, source.warnings)
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": 'attachment; filename="learn_teaching_plan.pdf"'},
+        headers={"Content-Disposition": f'{"inline" if inline else "attachment"}; filename="{filename}"'},
     )
+
+
+@app.post("/generate", response_class=HTMLResponse)
+def generate(
+    pdf: UploadFile = File(...),
+    pages: str = Form(""),
+    output: str = Form("detective"),
+    standard: int = Form(8),
+):
+    return _process_upload(pdf, pages, output, standard, inline=False)
+
+
+@app.post("/preview", response_class=HTMLResponse)
+def preview(
+    pdf: UploadFile = File(...),
+    pages: str = Form(""),
+    output: str = Form("detective"),
+    standard: int = Form(8),
+):
+    return _process_upload(pdf, pages, output, standard, inline=True)
