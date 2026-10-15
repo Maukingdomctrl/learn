@@ -21,6 +21,7 @@ import {
   purposeOf,
 } from '../engine/events.js';
 import { assignPhotos, unitSquare } from '../engine/photos.js';
+import { findTables } from '../engine/tables.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
 import { backHtml, esc, flowSvg, frontHtml, lifelineSvg } from '../engine/render.js';
@@ -1018,4 +1019,61 @@ test('check fails when an item is added to a group that the sheet does not list'
   const { sheet, built } = await resources();
   built.decks[0].cards.find((c) => c.kind === 'sort').lines[0] += ' · nuclear energy';
   assert.match(checkDecks(sheet, built).problems.join('\n'), /not word-for-word from the sheet: "nuclear energy"/);
+});
+
+// ---------- comparison tables ----------
+
+test('a comparison table becomes one match card per row; wrapped cells and labels stay whole', async () => {
+  const { built, check } = await industries();
+  assert.ok(check.ok, check.problems.join('\n'));
+  const table = built.decks.find((d) => d.entity === 'From the table').cards;
+  assert.deepEqual(
+    table.map((c) => c.clue),
+    [
+      'Type: match each to its industry.',
+      'Main raw material: match each to its industry.',
+      'Product: match each to its industry.',
+    ],
+  );
+  const raw = table[1];
+  assert.ok(raw.lines.includes('Iron and Steel Industry … Iron ore, coking coal, limestone'));
+  assert.equal(raw.frontLines[0], 'Iron ore, coking coal, limestone · Raw cotton · Sugarcane');
+  assert.ok(raw.sheetPieces.includes('Iron ore, coking') && raw.sheetPieces.includes('coal, limestone'));
+});
+
+test('findTables: header row names the topics; cells go to the nearest column; a wide line ends the table', () => {
+  const it = (text, x, y, width = 40) => ({ page: 1, x, y, width, text, font: 'R', size: 9 });
+  const entities = ['Alpha', 'Beta', 'Gamma'].map((display) => ({ display }));
+  const items = [
+    it('Feature', 40, 700),
+    it('Alpha', 150, 700),
+    it('Beta', 250, 700),
+    it('Gamma', 350, 700),
+    it('River', 40, 680),
+    it('One', 150, 680),
+    it('Two', 250, 680),
+    it('—', 360, 680, 8),
+    it('Long', 40, 660),
+    it('label', 40, 650),
+    it('first part', 150, 660),
+    it('second part', 150, 650),
+    it('x', 250, 660),
+    it('y', 350, 660),
+    it('A sentence right across the page after the table', 40, 630, 400),
+    it('Not', 150, 620),
+  ];
+  const [t] = findTables(items, entities);
+  assert.deepEqual(t.columns, ['Alpha', 'Beta', 'Gamma']);
+  assert.deepEqual(
+    t.rows.map((r) => r.label),
+    ['River', 'Long label'],
+  );
+  assert.deepEqual(t.rows[1].cells.get('Alpha'), ['first part', 'second part']);
+  assert.ok(!t.rows.some((r) => [...r.cells.values()].flat().includes('Not')), 'the table ended');
+});
+
+test('check fails when a table card shows text that is not in the sheet', async () => {
+  const { sheet, built } = await industries();
+  built.decks.find((d) => d.entity === 'From the table').cards[2].sheetPieces.push('Paper');
+  assert.match(checkDecks(sheet, built).problems.join('\n'), /table text not found in the sheet: "Paper"/);
 });

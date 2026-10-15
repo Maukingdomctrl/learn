@@ -46,7 +46,11 @@ export function checkDecks(sheet, built) {
 
   for (const c of allCards) {
     // Exactness: the back is the sheet's own words.
-    for (const line of c.lines || [c.exact]) {
+    // Table cards: a cell that wraps is several pieces in the PDF, so each piece is checked on its own.
+    for (const piece of c.sheetPieces || []) {
+      if (!source.includes(norm(piece))) problems.push(`${c.entity}: table text not found in the sheet: "${piece}".`);
+    }
+    for (const line of c.sheetPieces ? [] : c.lines || [c.exact]) {
       // labelWords are the card's own fixed headings ("Causes", "Effects"); everything else is the sheet's.
       for (const piece of pieces(line)
         .flatMap((p) => p.split(' · '))
@@ -54,7 +58,7 @@ export function checkDecks(sheet, built) {
         if (!source.includes(norm(piece))) problems.push(`${c.entity}: card back is not word-for-word from the sheet: "${piece}".`);
       }
     }
-    for (const line of c.frontLines || []) {
+    for (const line of c.sheetPieces ? [] : c.frontLines || []) {
       for (const piece of pieces(line).flatMap((p) => p.split(' · '))) {
         if (!source.includes(norm(piece))) problems.push(`${c.entity}: card front is not from the sheet: "${piece}".`);
       }
@@ -127,7 +131,7 @@ export function checkDecks(sheet, built) {
   const untaught = sheet.other.filter((t) => /[a-z]/.test(t)).length;
   if (untaught) {
     notes.push(
-      `${untaught} lines (tables, questions, tips) are not on cards yet. This version only makes cards from headed bullet lists.`,
+      `${untaught} lines (practice questions, tips and other text) are not on cards. Cards come from headed bullet lists and comparison tables.`,
     );
   }
   const noPicture = allCards.filter((c) => !c.symbol && !c.symbols?.length).length;

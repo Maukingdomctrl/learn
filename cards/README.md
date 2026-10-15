@@ -149,6 +149,15 @@ Sections about conservation or saving ask *What should be done?*
 
 `sample/resources-sheet.pdf` is a synthetic example. Not yet tried on a real school sheet.
 
+## Comparison tables
+
+A table whose header row names three or more of the sheet's topics ("Feature | London | Birmingham | Belfast …") is read cell by cell from the PDF positions:
+- Each cell goes to the nearest column.
+- A cell or row label that wraps onto a second line is joined.
+- The table ends at a big gap, a numbered heading, or a line wider than a column.
+
+Each row with two or more filled cells becomes a **match card** in a "From the table" deck: "River: match each to its city." The front has the row's values scrambled, and the back gives each topic with its value. Empty cells ("—") are left out. A wrapped cell is several pieces of text in the PDF, so each piece is checked against the sheet on its own.
+
 ## Photos from the sheet
 
 If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.
@@ -171,7 +180,7 @@ Some card backs carry a small footer such as **Fun fact:** "-ham" is an old Engl
 
 ## What it does not do yet
 
-- Tables, practice questions and memory tips are not turned into cards.
+- Practice questions and memory tips are not turned into cards. Tables are, but only comparison tables whose header row names the topics.
 - Scanned pages or phone photos are not read (no OCR).
 - It has no memory tricks, no "my trick" box, no supporting clues for hard names, no games beyond flip-and-mix, and no progress tracking.
 - It can't catch a mistake in the sheet itself. Cards are only as correct as the PDF.
@@ -214,6 +223,7 @@ Passing tests show the rules work as designed. They say nothing about whether ch
 | `engine/icons.js` | Generated: the Tabler icons the cards use, with their licence. Rebuild with `node scripts/build-icons.mjs` |
 | `engine/checks.js` | The checks above |
 | `engine/render.js` | Card → HTML, shared by the screen and the print sheets; escapes all sheet text |
+| `engine/tables.js` | Comparison tables: finds them, reads them cell by cell, makes one match card per row |
 | `engine/photos.js` | Finds images printed in the PDF and gives each to the heading it sits beside |
 | `engine/index.js` | `makeDecks(pdfjs, bytes)` → `{sheet, built, check}` |
 | `app.js`, `index.html`, `style.css` | The page |

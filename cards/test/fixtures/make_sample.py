@@ -4,7 +4,8 @@
 - history-sheet.pdf: an event (the 1857 uprising) with causes, course, leaders and results;
 - people-sheet.pdf: three social reformers, each with life years, a summary line and a placeholder
   portrait beside the heading (a drawn silhouette, not a real photo);
-- industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are;
+- industries-sheet.pdf: three Indian industries with raw materials, centres, products and why they are where they are,
+  plus a comparison table (one cell and one row label wrap onto a second line);
 - civics-sheet.pdf: four Union institutions (two Houses, the President, the Supreme Court) with terms, ages and jobs;
 - processes-sheet.pdf: migration, urbanisation and earthquakes with definitions, causes, effects and what to do;
 - resources-sheet.pdf: kinds of resources as groups with lists, and ways to conserve them.
@@ -140,6 +141,18 @@ INDUSTRIES = [
         ("bullet", "Cotton Textile Industry = cotton to cloth (Mumbai, Ahmedabad)"),
         ("bullet", "Iron and Steel Industry = ore and coal to steel (Jamshedpur)"),
         ("bullet", "Sugar Industry = cane to sugar (near the fields)"),
+    ],
+    [
+        ("section", "COMPARATIVE TABLE"),
+        (
+            "table",
+            [
+                (["Feature"], [["Cotton Textile Industry"], ["Iron and Steel Industry"], ["Sugar Industry"]]),
+                (["Type"], [["Agro-based"], ["Mineral-based"], ["Agro-based"]]),
+                (["Main raw", "material"], [["Raw cotton"], ["Iron ore, coking", "coal, limestone"], ["Sugarcane"]]),
+                (["Product"], [["Cloth"], ["Steel"], ["Sugar"]]),
+            ],
+        ),
     ],
 ]
 
@@ -286,6 +299,16 @@ def build(pages, out, header, portraits=False):
             elif kind == "wrap":
                 write_line(page, 70, y - 1, text, BODY)
                 y += 15
+            elif kind == "table":
+                y += 6
+                for label, cells in text:
+                    height = max(len(label), *(len(c) for c in cells))
+                    for i, part in enumerate(label):
+                        write_line(page, 50, y + i * 11, part, BODY, bold_all=True)
+                    for col, cell in enumerate(cells):
+                        for i, part in enumerate(cell):
+                            write_line(page, 170 + col * 130, y + i * 11, part, BODY, bold_all=(label == ["Feature"]))
+                    y += 11 * height + 8
             elif kind == "note":
                 y += 10
                 write_line(page, 50, y, text, BODY)

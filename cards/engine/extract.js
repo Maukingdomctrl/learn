@@ -30,7 +30,7 @@ export async function linesFromDocument(doc) {
       });
     }
   }
-  return { pages: doc.numPages, lines: groupLines(raw) };
+  return { pages: doc.numPages, lines: groupLines(raw), items: raw };
 }
 
 /** Groups positioned text items into reading-order lines and marks emphasised runs. */
