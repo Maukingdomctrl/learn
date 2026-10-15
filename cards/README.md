@@ -9,7 +9,7 @@ A web page that turns a study-sheet PDF into picture cards. Children flip them o
 > **Status — read this first.**
 > - This is a first prototype. It has **not** been tested with children.
 > - It has been tried on one machine-made sheet (UK cities) and on the synthetic sample in `sample/`. Other sheet layouts will often produce no cards. The page then says so.
-> - The pictures are simple icons, not illustrations, and there are no photos yet.
+> - The pictures are simple icons, not illustrations. Photos appear only when the PDF itself contains them.
 
 ## What it does
 
@@ -88,6 +88,15 @@ Across the sheet, people with life years get a **"Who came first?"** card: names
 
 `sample/people-sheet.pdf` (three 19th-century reformers) is a synthetic example. Not yet tried on a real school sheet.
 
+## Photos from the sheet
+
+If the PDF itself prints a photo (a portrait beside a person's heading, a picture of a city), the riddle card and the final card for that person or place show it instead of an icon, in black and white.
+
+- **Which photo:** the largest image between the heading (with a little room above it) and the next heading on the same page. Images smaller than half an inch (bullets, logos) are ignored. Each photo is used once. Topic sections such as "Causes" get none.
+- **Source:** photos come only from the uploaded PDF, so they can't show the wrong person, and nothing is downloaded. Photos from the internet (e.g. Wikimedia) are not used. They would need a checked list of exact files, and this sandbox can't reach Wikimedia to check any.
+- **On the page:** the photo is drawn in the browser at most 600 pixels wide. A photo that can't be decoded is left out and the icon is used instead.
+- **Sample:** the portraits in `sample/people-sheet.pdf` are drawn grey silhouettes, not real photos.
+
 ## Name fun facts
 
 Some card backs carry a small footer such as **Fun fact:** "-ham" is an old English word for home (Birmingham). Names are among the hardest things to remember, and knowing what a name means makes it stick.
@@ -144,5 +153,6 @@ Passing tests show the rules work as designed. They say nothing about whether ch
 | `engine/icons.js` | Generated: the Tabler icons the cards use, with their licence. Rebuild with `node scripts/build-icons.mjs` |
 | `engine/checks.js` | The checks above |
 | `engine/render.js` | Card → HTML, shared by the screen and the print sheets; escapes all sheet text |
+| `engine/photos.js` | Finds images printed in the PDF and gives each to the heading it sits beside |
 | `engine/index.js` | `makeDecks(pdfjs, bytes)` → `{sheet, built, check}` |
 | `app.js`, `index.html`, `style.css` | The page |

@@ -74,6 +74,7 @@ A separate browser-only tool: study-sheet PDF → picture flashcards, no AI. It 
 - Card backs must stay word-for-word from the sheet. Clue fronts may add only fixed prompts. `engine/checks.js` enforces both, and a failed check blocks showing and printing.
 - When you change a check, add a passing case and a targeted failing mutation in `cards/test/engine.test.js`.
 - Pictures are Tabler icons copied into `engine/icons.js` by `scripts/build-icons.mjs` (keep the MIT notice), or drawn in `engine/symbols.js`. Nothing is fetched at run time. No match means a "draw it!" box, not a guess.
+- Photos come only from images printed in the uploaded PDF (`engine/photos.js`), and only `data:image/` URLs reach a card.
 - The pdf.js version is pinned in both `cards/package.json` and `cards/app.js`. Change them together.
 - All sheet text goes through `esc()` before it reaches the page.
 - Name fun facts (`engine/nametips.js`, shown as "Fun fact") are the one thing not from the sheet: back-footer only, never an answer, exact names only (no suffix rules), uncertain origins left out.

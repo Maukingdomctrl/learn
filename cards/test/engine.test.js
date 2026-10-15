@@ -11,6 +11,7 @@ import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { BLANK, GENERIC_SYMBOLS, buildDecks, chooseKey, clozeClue, hideNames, letterHint, nameParts } from '../engine/cards.js';
 import { checkDecks } from '../engine/checks.js';
 import { purposeOf } from '../engine/events.js';
+import { assignPhotos, unitSquare } from '../engine/photos.js';
 import { groupLines } from '../engine/extract.js';
 import { makeDecks } from '../engine/index.js';
 import { backHtml, esc, frontHtml } from '../engine/render.js';
@@ -616,4 +617,56 @@ test('an unnumbered all-capitals heading ends the bullet above it', async () => 
   const { sheet } = await people();
   const phule = sheet.entities.find((e) => e.display === 'Jyotirao Phule');
   assert.equal(phule.facts.at(-1).text, 'Founded the Satyashodhak Samaj in 1873.');
+});
+
+// ---------- photos printed in the sheet ----------
+
+test('each person gets the portrait printed beside their heading; the riddle and final card show it', async () => {
+  const { built, check } = await people();
+  assert.ok(check.ok, check.problems.join('\n'));
+  const ids = new Set();
+  for (const d of built.decks.slice(0, 3)) {
+    const withPhoto = d.cards.filter((c) => c.photo);
+    assert.deepEqual(
+      withPhoto.map((c) => c.kind),
+      ['hook', 'portrait'],
+      d.entity,
+    );
+    ids.add(withPhoto[0].photo.id);
+  }
+  assert.equal(ids.size, 3, 'three different photos');
+  assert.match(check.notes.join('\n'), /3 photos taken from the sheet/);
+  const img = await built.decks[0].cards[0].photo.load();
+  assert.ok(img.width > 0 && img.height > 0);
+});
+
+test('sheets without photos get none', async () => {
+  const { built } = await sample();
+  assert.ok(built.decks.flatMap((d) => d.cards).every((c) => !c.photo));
+});
+
+test('a photo belongs to the heading above it on the same page, never to a topic section', () => {
+  const entities = [
+    { display: 'A', type: 'person', page: 1, y: 700 },
+    { display: 'B', type: 'person', page: 1, y: 500 },
+    { display: 'Causes', type: 'aspect', page: 1, y: 300 },
+  ];
+  const img = (id, page, y, h = 70, w = 60) => ({ id, page, x: 450, y, w, h });
+  const photos = assignPhotos(entities, [img('a', 1, 640), img('b', 1, 440), img('c', 1, 240), img('d', 2, 640)]);
+  assert.equal(photos.get('A').id, 'a');
+  assert.equal(photos.get('B').id, 'b');
+  assert.equal(photos.has('Causes'), false);
+  assert.equal([...photos.values()].some((p) => p.id === 'd'), false, 'another page');
+});
+
+test('image boxes follow the drawing matrix', () => {
+  assert.deepEqual(unitSquare([60, 0, 0, 75, 470, 700]), { x: 470, y: 700, w: 60, h: 75 });
+  assert.deepEqual(unitSquare([60, 0, 0, -75, 470, 775]), { x: 470, y: 700, w: 60, h: 75 });
+});
+
+test('only data: image URLs are ever put on a card', () => {
+  const card = { kind: 'hook', clue: 'x', ask: 'Who am I?', symbol: 'person', star: false };
+  assert.match(frontHtml({ ...card, photoUrl: 'data:image/jpeg;base64,AAAA' }), /<img class="photo" src="data:image\/jpeg/);
+  assert.doesNotMatch(frontHtml({ ...card, photoUrl: 'https://example.com/x.jpg' }), /<img/);
+  assert.doesNotMatch(frontHtml({ ...card, photoUrl: 'javascript:alert(1)' }), /<img/);
 });

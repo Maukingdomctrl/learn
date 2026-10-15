@@ -55,6 +55,7 @@ async function loadFile(file) {
 async function run(data, name) {
   try {
     const result = await makeDecks(pdfjs, data, { standardFontDataUrl: `${PDFJS}standard_fonts/` });
+    await drawPhotos(result.built.decks);
     state.result = result;
     state.done.clear();
     setStatus('');
@@ -63,6 +64,68 @@ async function run(data, name) {
     console.error(err);
     setStatus(`Could not read this PDF. It may be damaged or password-protected. (${err.message})`, true);
   }
+}
+
+const PHOTO_MAX = 600; // pixels on the longest side: plenty for a 85 × 55 mm card
+
+/** Turns each photo found in the sheet into an image the cards can show. A photo that fails is left out. */
+async function drawPhotos(decks) {
+  const urls = new Map();
+  for (const card of decks.flatMap((d) => d.cards)) {
+    if (!card.photo) continue;
+    if (!urls.has(card.photo.id)) {
+      try {
+        urls.set(card.photo.id, imageToDataUrl(await card.photo.load()));
+      } catch (err) {
+        console.warn('Photo skipped', err);
+        urls.set(card.photo.id, null);
+      }
+    }
+    const url = urls.get(card.photo.id);
+    if (url) card.photoUrl = url;
+  }
+}
+
+function imageToDataUrl(img) {
+  const width = img.bitmap?.width || img.width;
+  const height = img.bitmap?.height || img.height;
+  const scale = Math.min(1, PHOTO_MAX / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
+  const ctx = canvas.getContext('2d');
+  if (img.bitmap) {
+    ctx.drawImage(img.bitmap, 0, 0, canvas.width, canvas.height);
+  } else {
+    const full = document.createElement('canvas');
+    full.width = width;
+    full.height = height;
+    full.getContext('2d').putImageData(toImageData(img), 0, 0);
+    ctx.drawImage(full, 0, 0, canvas.width, canvas.height);
+  }
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+/** pdf.js raw pixels (grey 1-bit, RGB or RGBA) -> ImageData. */
+function toImageData(img) {
+  const { width, height, data, kind } = img;
+  const out = new ImageData(width, height);
+  if (kind === 3 || data.length === width * height * 4) {
+    out.data.set(data);
+  } else if (kind === 2 || data.length === width * height * 3) {
+    for (let i = 0, j = 0; i < width * height; i++, j += 3) {
+      out.data.set([data[j], data[j + 1], data[j + 2], 255], i * 4);
+    }
+  } else {
+    const rowBytes = Math.ceil(width / 8);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const on = (data[y * rowBytes + (x >> 3)] >> (7 - (x & 7))) & 1;
+        out.data.set(on ? [255, 255, 255, 255] : [0, 0, 0, 255], (y * width + x) * 4);
+      }
+    }
+  }
+  return out;
 }
 
 function setStatus(text, error = false) {

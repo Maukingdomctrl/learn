@@ -39,6 +39,7 @@ export function parseSheet(lines) {
         display: titleCase(heading[1].trim()),
         descriptor: heading[2].trim(),
         page: line.page,
+        y: line.y,
         bullets: [],
         type: isPerson(heading[1], heading[2]) ? 'person' : 'place',
       };
@@ -50,7 +51,16 @@ export function parseSheet(lines) {
       // Sections with no bullets of their own (notes headers, tables, questions) are dropped below.
       closeBullet();
       const name = text.replace(/^\d+[.)]\s+/, '').trim();
-      current = { name, heading: text, display: sentenceCase(name), descriptor: '', page: line.page, bullets: [], type: 'aspect' };
+      current = {
+        name,
+        heading: text,
+        display: sentenceCase(name),
+        descriptor: '',
+        page: line.page,
+        y: line.y,
+        bullets: [],
+        type: 'aspect',
+      };
       current.label = labelFor(name);
       entities.push(current);
       continue;
@@ -95,6 +105,7 @@ export function parseSheet(lines) {
       display: e.display,
       descriptor: e.descriptor,
       page: e.page,
+      y: e.y,
       type: e.type,
       label: e.label || null,
       facts: e.bullets.flatMap((b, i) =>
