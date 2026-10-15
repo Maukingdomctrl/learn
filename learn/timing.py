@@ -52,7 +52,7 @@ def item_written_words(lesson: Lesson, stage: Stage, item_number: int) -> int:
 def stage_timing(lesson: Lesson, stage: Stage) -> StageTiming:
     printed = sum(count_words(c.text) for c in stage_sequence(stage) if c.kind != "mark")
     t_read = printed / C.READING_WPM * 60
-    visuals = len(stage.visuals)
+    visuals = len(stage.visuals) + sum(1 for i in stage.items if i.visual is not None)
     t_visual = visuals * C.VISUAL_S
     n_items = len(stage.items)
     sketches = n_items if stage.activity_type == "SKETCH" else 0

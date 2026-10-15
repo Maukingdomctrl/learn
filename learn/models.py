@@ -47,6 +47,8 @@ class Item(_Base):
     keywords: list[str] = Field(default_factory=list)
     peer_work: Optional[PeerWork] = None
     sketch_criteria: Optional[str] = None
+    visual: Optional[Visual] = None  # practice diagram (Reinforce/Vary/Apply) with some labels hidden
+    hidden: list[str] = Field(default_factory=list)  # label slots printed as blanks (see visuals/practice.py)
 
 
 class Stage(_Base):

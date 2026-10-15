@@ -35,7 +35,7 @@ def test_citations_outside_the_focus_fail_d2(sample_pdf, tmp_path, scripted):
     rep = run(sample_pdf, 7, llm, str(tmp_path))
     d2 = next(c for c in rep.checks if c["id"] == "D2")
     assert rep.status == "stopped" and d2["status"] == "failed"
-    assert any("unselected" in p and "SRC-P2-U1" in p for p in d2["problems"])
+    assert any("unselected" in p and "SRC-P2-" in p for p in d2["problems"])
 
 
 def test_report_carries_model_call_log_and_error(sample_pdf, tmp_path, scripted):

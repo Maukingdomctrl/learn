@@ -27,6 +27,7 @@ from .llm import LLM, LLMError
 from .rendering import RenderError, render
 from .timing import lesson_timing
 from .validation import CheckResult, ai_checks, deterministic_checks, not_run_ai
+from .visuals.practice import fill_visual_answers
 
 
 @dataclass
@@ -201,6 +202,7 @@ def _run(
     except GenerationError as e:
         return _stop(report, "generate", f"Learn could not produce a valid lesson: {e}", _model_actions(e), e)
     lesson.standard = standard
+    report.log += fill_visual_answers(lesson)  # hidden-label answers come from the diagram spec, not the model
 
     # Steps 6-9: timing, render, validate, repair
     checks: list[CheckResult] = []
@@ -243,6 +245,7 @@ def _run(
         try:
             lesson = repair_lesson(llm, focus, lesson, failures, timing.to_dict(), plan)
             lesson.standard = standard
+            report.log += fill_visual_answers(lesson)
         except GenerationError as e:
             report.log.append(f"Repair {round_no + 1} failed: {e}")
             report.error = f"{type(e).__name__}: {e}"

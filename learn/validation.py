@@ -18,6 +18,7 @@ from .sequence import stage_sequence
 from .textutil import count_words, has_blank, sentences
 from .timing import LessonTiming
 from .visuals.checks import check_visual
+from .visuals.practice import check_progression
 
 
 @dataclass
@@ -92,6 +93,9 @@ def d2_citations(lesson: Lesson, index: SourceIndex) -> CheckResult:
     for s in lesson.stages:
         for v in s.visuals:
             check(f"{s.stage} {v.kind} visual '{v.caption[:40]}'", v.source_unit_ids)
+        for i in s.items:
+            if i.visual is not None:
+                check(f"item {i.number} {i.visual.kind} diagram", i.visual.source_unit_ids)
     return _result("D2", "Citations", "deterministic", p)
 
 
@@ -123,7 +127,7 @@ def d3_activities(lesson: Lesson) -> CheckResult:
                 p.append(f"{s.stage} word bank has {len(s.word_bank)} words for {n} blanks; need at least {n + 1}")
         if t in ("FILL_IN", "COMPLETE_STEPS"):
             for i in s.items:
-                if not has_blank(i.prompt):
+                if not has_blank(i.prompt) and i.visual is None:  # a practice diagram carries its own blanks
                     p.append(f"item {i.number} ({t}) has no blank '____' in its prompt")
         if t == "SORT":
             if not 2 <= len(s.groups) <= 3:
@@ -417,11 +421,24 @@ def d8_visuals(lesson: Lesson, index: SourceIndex, plan=None) -> CheckResult:
             p += [
                 f"{s.stage}: {msg}" for msg in check_visual(v, source_text, stage_text, f"{source_text} {vocab_extra}")
             ]
+        for item in s.items:
+            if item.visual is None:
+                continue
+            source_text = index.texts(item.visual.source_unit_ids)
+            msgs = check_visual(item.visual, source_text, stage_text, f"{source_text} {vocab_extra}", item.hidden)
+            p += [f"{s.stage} item {item.number}: {msg}" for msg in msgs]
     if plan is not None and plan.visual_type != "none":
         disc = lesson.stage("Discover")
         if disc is not None and not any(v.kind == plan.visual_type for v in disc.visuals):
             p.append(f"the teaching plan chose a {plan.visual_type} visual, but Discover has none")
     return _result("D8", "Visuals", "deterministic", p)
+
+
+# ---------------------------------------------------------------- D9 progressive visual practice
+def d9_progression(lesson: Lesson) -> CheckResult:
+    """Practice diagrams: hidden labels exist, answers come from the spec and are teachable from the student pages,
+    and support decreases from the labelled demonstration (Discover) through Reinforce, Vary and Apply to Recall."""
+    return _result("D9", "Visual progression", "deterministic", check_progression(lesson))
 
 
 def deterministic_checks(
@@ -436,6 +453,7 @@ def deterministic_checks(
         d6_layout(lesson, render),
         d7_key(lesson, index),
         d8_visuals(lesson, index, plan),
+        d9_progression(lesson),
     ]
 
 
@@ -495,7 +513,8 @@ copying from Page 2; tone is neutral and respectful.
 If a teaching plan is given: the lesson builds understanding through the plan's learning steps in order (it
 teaches, rather than summarising the source), uses the plan's worked example, and at least one Vary or Apply
 item addresses the plan's misconception. Each visual serves its stated purpose and the explanation uses it
-(a decorative or unused picture fails).
+(a decorative or unused picture fails). Practice diagrams ("visual" on an item) give less help from stage to
+stage, and each blank can be completed from what the student pages teach.
 
 Teaching plan:
 {plan}

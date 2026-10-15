@@ -128,7 +128,21 @@ SAMPLE_LESSON = {
                 {"number": 3, "prompt": "The ____ meets the base at a right angle."},
                 {"number": 4, "prompt": "To find the area, we take ____ of base × height."},
                 {"number": 5, "prompt": "Any side of a triangle can be used as its ____."},
-                {"number": 6, "prompt": "The base and the height must be in the same ____."},
+                {
+                    "number": 6,
+                    "prompt": "This triangle has area 24 cm² and base 6 cm. Write its height on the diagram.",
+                    "visual": {
+                        "kind": "shape",
+                        "caption": "",
+                        "purpose": "Use the rule backwards to complete a partly labelled triangle.",
+                        "shape": "triangle",
+                        "base": 6,
+                        "height": 8,
+                        "unit": "cm",
+                        "source_unit_ids": ["SRC-P1-U5"],
+                    },
+                    "hidden": ["height"],
+                },
             ],
         },
         {
@@ -233,9 +247,10 @@ SAMPLE_LESSON = {
             },
             {
                 "item_number": 6,
-                "answer": "unit",
-                "reason": "The source says base and height must be in the same unit.",
-                "source_unit_ids": ["SRC-P2-U1"],
+                "answer": "8",
+                "reason": "24 = 1/2 × 6 × height = 3 × height, so height = 8 cm.",
+                "calculation": "24/(0.5*6)",
+                "source_unit_ids": ["SRC-P1-U5"],
             },
             {
                 "item_number": 7,

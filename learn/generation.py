@@ -132,6 +132,20 @@ VISUALS (code draws them from your numbers and words; you never draw):
   a label (steps, bar/part labels, point labels, table cells) must come from the cited source units or the
   lesson's terms. The picture must show exactly what the explanation says; never decorate.
 
+VISUAL PRACTICE (support fades: labelled demonstration -> partly completed -> independent -> recall):
+- A Reinforce, Vary or Apply item (FILL_IN or SOLVE) may carry "visual": a diagram of a kind Discover already
+  showed fully labelled, plus "hidden": the label slots printed as blanks for the child to complete.
+  Slots: shape "base","height" (triangle, parallelogram) / "length","width" / "radius"; number_line "point0",
+  "jump0"...; bar_model "bar0.part1", "bar0.total"; flow_sequence "step0", "step1"...; table "cell0.1"
+  (row.column).
+- Reinforce leaves at least one label visible; the share of hidden labels never goes down from Reinforce to Vary
+  to Apply. Recall has no diagram (use SKETCH or SHORT_ANSWER from memory). Leave practice-diagram captions empty;
+  the item prompt is the instruction.
+- Code writes the answer key for hidden labels from the diagram itself; give a reason, and for a hidden number
+  that is not stated on the page, a "calculation" that produces it.
+- A hidden word must appear in Discover (text or diagram) or in the stage's word bank; a hidden number must be
+  stated in the item or stage text, or follow from the key calculation. Each diagram counts as viewing time.
+
 Timing (computed by code, seconds): {C.ORIENTATION_S} orientation + per stage: printed words/{C.READING_WPM} wpm x 60
 + tables x {C.VISUAL_S} + items x weight (Discover 15, Reinforce 25, Vary 35, Apply 55, Recall 45; SKETCH +20)
 + written words/{C.WRITING_WPM} wpm x 60. Lesson total must be {C.T_MIN_S}-{C.T_MAX_S} s (target {C.T_TARGET_S}).
@@ -304,7 +318,9 @@ PLAN_GUIDE = """FOLLOW THE TEACHING PLAN (it was checked against the source):
   misconception (for example a SPOT_MISTAKE whose peer makes that mistake, or a CHOOSE with it as a distractor).
   Apply uses the last learning step in a new context. Recall retrieves the main rule or idea.
 - Visual: Discover includes one visual of the plan's visual_type that serves its visual_purpose (none if the
-  plan says "none"). Use the worked example's numbers and the source's own words. Never invent a picture."""
+  plan says "none"). Use the worked example's numbers and the source's own words. Never invent a picture.
+- Where it helps, practise with the same kind of diagram: partly completed in Reinforce, fewer labels in Vary,
+  unlabelled or a new instance in Apply (see VISUAL PRACTICE)."""
 
 GENERATE_PROMPT = """Write the lesson.
 
