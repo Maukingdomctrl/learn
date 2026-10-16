@@ -165,6 +165,23 @@ def test_cards_carry_no_source_codes_game_rules_or_raw_review_flags():
     assert "Check first: the sheet says" in pages[-1] and "invented" in pages[-1]
 
 
+def test_non_person_topic_facts_become_specific_recall_cards_not_topic_riddles():
+    cards = _cards(
+        [
+            (1, "THE WATER CYCLE"),
+            (1, "• The Sun warms water in oceans, lakes and rivers."),
+            (1, "• This change is evaporation."),
+            (1, "• Rain, snow and hail are precipitation."),
+            (1, "• Some rainwater flows over land."),
+        ]
+    )
+
+    assert all(card.question != "What is this about?" for card in cards)
+    assert all(card.answer != "THE WATER CYCLE" for card in cards)
+    assert any(card.clue == "This change is ______." and card.answer == "evaporation" for card in cards)
+    assert any(card.kind == "finish" for card in cards)
+
+
 def test_uk_sheet_cards_drop_list_numbers_titles_footers_and_table_fragments():
     cards = _cards(UK_SHEET)
     shown = [text for card in cards for text in (card.clue, card.answer, card.about)]

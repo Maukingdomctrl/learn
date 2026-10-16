@@ -32,6 +32,12 @@ _THEMES = {
     "detective": {"title": "DETECTIVE CASE FILE", "colour": (0.13, 0.36, 0.27), "tint": (0.91, 0.95, 0.92)},
     "superhero": {"title": "SUPERHERO POWER-UP GAME", "colour": (0.32, 0.25, 0.62), "tint": (0.93, 0.92, 0.98)},
 }
+_ABSTRACT_TOPIC = re.compile(
+    r"\b(?:cycle|process|system|stage|stages|step|steps|change|changes|evaporation|condensation|"
+    r"precipitation|transpiration|rainfall|photosynthesis|respiration|reproduction|circulation|"
+    r"movement|energy|matter|force|weather|climate)\b",
+    re.I,
+)
 # Plain questions for Standards 7, 8 and 9.
 _QUESTIONS = {
     "who": ("Who is this?", "Who is this?", "Identify this person."),
@@ -356,6 +362,15 @@ def _finish(text: str) -> tuple[str, str] | None:
     return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
 
 
+def _key_cloze(text: str) -> tuple[str, str] | None:
+    match = re.search(
+        r"\b(?:is|are|was|were)\s+(?P<answer>[A-Za-z][A-Za-z'’-]{2,})(?P<end>[.!?]?)$", text
+    )
+    if match is None:
+        return None
+    return f"{text[:match.start('answer')]}{GAP}{match['end']}", match["answer"]
+
+
 def _checks(text: str) -> tuple[str, ...]:
     notes = []
     cues = list(dict.fromkeys(match.group().casefold() for match in REVIEW_CUES.finditer(text)))
@@ -536,10 +551,15 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
             cards.append(_card("gap", _ask(kind, standard), clue, answer, item, about, source=piece))
             continue
         if heading is not None and not _MATH.search(piece):
-            hidden = _hide_name(piece, heading.name)
-            if len(hidden.replace(GAP, "").split()) >= 3:
-                question = _ask("who_about" if heading.person else "what_about", standard)
-                cards.append(_card("riddle", question, hidden, heading.name, item, source=piece))
+            if heading.person or not _ABSTRACT_TOPIC.search(heading.name):
+                hidden = _hide_name(piece, heading.name)
+                if len(hidden.replace(GAP, "").split()) >= 3:
+                    question = _ask("who_about" if heading.person else "what_about", standard)
+                    cards.append(_card("riddle", question, hidden, heading.name, item, source=piece))
+                continue
+            cloze = _key_cloze(piece)
+            if cloze is not None:
+                cards.append(_card("gap", _ask("word", standard), cloze[0], cloze[1], item, about, source=piece))
                 continue
         finished = _finish(piece)
         if finished is not None:
