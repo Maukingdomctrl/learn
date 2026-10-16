@@ -1,6 +1,6 @@
-from fastapi.testclient import TestClient
 import pymupdf
 import pytest
+from fastapi.testclient import TestClient
 
 import learn.teaching_web as web
 
