@@ -190,11 +190,19 @@ def test_non_person_topic_facts_become_specific_recall_cards_not_topic_riddles()
     assert all(card.question != "What is this about?" for card in cards)
     assert all(card.answer != "THE WATER CYCLE" for card in cards)
     assert any(card.clue == "Some liquid water changes into water vapour and rises." and card.answer == "evaporation" for card in cards)
-    recall = {card.clue: card.answer for card in cards if card.kind == "recall"}
-    assert recall["What does the Sun warm?"] == "The Sun warms water in oceans, lakes and rivers."
-    assert recall["What do plants release from their leaves?"] == "Plants also release water vapour from their leaves."
-    assert recall["What happens as moist air rises?"] == "As moist air rises, it cools."
-    assert any(card.clue == "Rain, snow and hail are forms of ______." for card in cards)
+    learning = {card.question: card.answer for card in cards if card.kind == "learn"}
+    assert learning["Imagine a puddle in sunshine. What happens to its water?"] == (
+        "Heat from the Sun changes liquid water into water vapour."
+    )
+    assert any(
+        card.kind == "learn" and card.question == "How do plants add water vapour to the water cycle?"
+        for card in cards
+    )
+    assert any(card.kind == "recall" and card.answer == "As moist air rises, it cools." for card in cards)
+    assert any(
+        card.kind == "learn" and card.answer == "The sheet names rain, snow and hail as forms of precipitation."
+        for card in cards
+    )
 
 
 def test_named_process_cards_keep_the_explanation_with_the_name():
@@ -225,6 +233,34 @@ def test_named_process_cards_keep_the_explanation_with_the_name():
     assert all("What is this" in card.question for card in process_cards)
 
 
+def test_water_cycle_cards_prompt_prediction_cause_and_connection():
+    cards = _cards(
+        [
+            (1, "THE WATER CYCLE"),
+            (1, "• The Sun warms water in oceans, lakes and rivers."),
+            (1, "• Some liquid water changes into water vapour and rises."),
+            (1, "• This change is evaporation."),
+            (1, "• As moist air rises, it cools."),
+            (1, "• Water vapour cools and forms tiny droplets in clouds."),
+            (1, "• Rain, snow and hail are forms of precipitation."),
+            (1, "• Some rainwater flows over land."),
+            (1, "• Rivers carry water back towards the oceans."),
+        ]
+    )
+    learning = [card for card in cards if card.kind == "learn"]
+
+    assert [card.question for card in learning] == [
+        "Imagine a puddle in sunshine. What happens to its water?",
+            "Why do tiny water droplets form as moist air rises and cools?",
+        "What can fall from clouds as precipitation? Name the forms in your sheet.",
+        "After rain falls on land, where can the water go next?",
+    ]
+    assert learning[0].answer == "Heat from the Sun changes liquid water into water vapour."
+    assert "tiny droplets" in learning[1].answer
+    assert learning[2].answer == "The sheet names rain, snow and hail as forms of precipitation."
+    assert learning[3].answer == "Rainwater flows over land, and rivers carry water back towards the oceans."
+
+
 def test_source_supported_water_cycle_printout_adds_a_diagram_page():
     cards = _cards(
         [
@@ -249,6 +285,31 @@ def test_source_supported_water_cycle_printout_adds_a_diagram_page():
     assert "CONDENSATION" in pages[-1]
     assert "PRECIPITATION" in pages[-1]
     assert "COLLECTION" in pages[-1]
+
+
+def test_four_weak_water_cycle_cards_become_explain_and_connect_prompts():
+    cards = _cards(
+        [
+            (1, "Water moves continuously between Earth's surface and atmosphere."),
+            (1, "This movement is called the water cycle."),
+            (1, "Some liquid water changes into water vapour and rises."),
+            (1, "This change is evaporation."),
+            (1, "The Sun warms water in oceans, lakes and rivers."),
+            (1, "As moist air rises, it cools."),
+            (1, "Water vapour changes into tiny liquid droplets around particles in the air."),
+            (1, "This change is condensation."),
+            (1, "Rain, snow and hail are forms of precipitation."),
+            (1, "Some rainwater flows over land."),
+            (1, "Rivers carry water back towards the oceans."),
+        ]
+    )
+
+    assert cards[2].question == "Imagine a puddle in sunshine. What happens to its water?"
+    assert cards[3].question == "Why do tiny water droplets form as moist air rises and cools?"
+    assert cards[5].question == "What can fall from clouds as precipitation? Name the forms in your sheet."
+    assert cards[6].question == "After rain falls on land, where can the water go next?"
+    assert "tiny liquid droplets" in cards[3].answer
+    assert "carry water back" in cards[6].answer
 
 
 def test_abstract_topic_titles_and_unreadable_process_lines_are_not_printed_as_cards():

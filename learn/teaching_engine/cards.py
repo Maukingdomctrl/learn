@@ -454,6 +454,26 @@ def _paired_process_card(explanation: Item, naming: Item) -> Card | None:
     )
 
 
+def _paired_cooling_card(explanation: Item, outcome: Item) -> Card | None:
+    first = re.sub(r"\W+", " ", explanation.text.casefold())
+    second = re.sub(r"\W+", " ", outcome.text.casefold())
+    if not re.search(r"\bmoist air rises it cools\b", first):
+        return None
+    if not re.search(r"\bwater vapour\b", second) or not re.search(r"\b(?:droplets|clouds)\b", second):
+        return None
+    source = f"{explanation.text} {outcome.text}"
+    return Card(
+        "learn",
+        "Why do tiny water droplets form as moist air rises and cools?",
+        source,
+        source,
+        explanation.page,
+        tuple(dict.fromkeys((*explanation.unit_ids, *outcome.unit_ids))),
+        "Connect cause and result",
+        _checks(source),
+    )
+
+
 def _joined_process_card(item: Item) -> Card | None:
     sentences = split_sentences(item.text.replace("\ufffd", " "))
     if len(sentences) < 2:
@@ -471,6 +491,48 @@ def _joined_process_card(item: Item) -> Card | None:
         "process": "What is this process called?",
     }[kind]
     return _card("teach", question, explanation, name, item, "Use the full explanation", item.text)
+
+
+def _water_learning_card(item: Item, piece: str) -> Card | None:
+    normalized = re.sub(r"\W+", " ", piece.casefold()).strip()
+    prompts = (
+        (
+            ("sun warms water", "sun heats water", "heat from the sun"),
+            "Imagine a puddle in sunshine. What happens to its water?",
+            "Heat from the Sun changes liquid water into water vapour.",
+            "The Sun warms water in oceans lakes and rivers",
+        ),
+        (
+            ("water vapour cools and forms tiny droplets",),
+            "When moist air rises and cools, what happens to the water vapour?",
+            "As moist air rises, it cools. Water vapour cools and forms tiny droplets around particles in the air.",
+            "water vapour cools and forms tiny droplets",
+        ),
+        (
+            ("plants also release water vapour from their leaves", "plants release water vapour from their leaves"),
+            "How do plants add water vapour to the water cycle?",
+            "Plants also release water vapour from their leaves.",
+            "plants also release water vapour from their leaves",
+        ),
+        (
+            ("rain snow and hail are forms of precipitation", "water falls as rain snow"),
+            "What can fall from clouds as precipitation? Name the forms in your sheet.",
+            "The sheet names rain, snow and hail as forms of precipitation.",
+            "rain snow and hail are forms of precipitation",
+        ),
+        (
+            ("rivers carry water back towards the oceans",),
+            "After rain falls on land, where can the water go next?",
+            "Rainwater flows over land, and rivers carry water back towards the oceans.",
+            "rivers carry water back towards the oceans",
+        ),
+    )
+    for matches, question, answer, key in prompts:
+        if any(match in normalized for match in matches):
+            if "rivers carry water back" in key and "rivers carry water back" not in normalized:
+                return _card("learn", question, piece, piece, item, "Think, then explain", piece)
+            return _card("learn", question, piece, answer, item, "Think, then explain", piece)
+    return None
 
 
 def _checks(text: str) -> tuple[str, ...]:
@@ -653,6 +715,12 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
                 _card("term", _ask("term", standard), _hide_name(text, label), label, item, about, source=piece)
             )
             continue
+        learning = _water_learning_card(item, piece)
+        if learning is not None:
+            cards.append(learning)
+            continue
+        if re.search(r"\brainwater flows over land\b", piece, re.I):
+            continue
         gap = _gap(piece)
         if gap is not None:
             kind, answer, clue = gap
@@ -716,10 +784,19 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             cards.append(_card("question", question, task, solution, item, "Worked example", solution))
         elif item.kind == "point" and not _NO_CARDS.match(item.context):
             if index + 1 < len(items) and items[index + 1].kind == "point" and items[index + 1].topic == item.topic:
-                paired = _paired_process_card(item, items[index + 1])
+                paired = _paired_process_card(item, items[index + 1]) or _paired_cooling_card(item, items[index + 1])
                 if paired is not None:
                     cards.append(paired)
                     consumed.add(index + 1)
+                    if (
+                        paired.kind == "learn"
+                        and index + 2 < len(items)
+                        and items[index + 2].kind == "point"
+                        and items[index + 2].topic == item.topic
+                        and (named := _paired_process_card(items[index + 1], items[index + 2])) is not None
+                    ):
+                        cards.append(named)
+                        consumed.add(index + 2)
                     continue
             heading = headings.get(item.topic)
             # "Term: meaning" lines listed together, with no named topic above them, are vocabulary to learn.
@@ -966,6 +1043,8 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
     new_page(True)
     for number, card in enumerate(cards, start=1):
         answer = card.answer or "The sheet gives no answer for this question. Answer it from your notes."
+        if card.kind == "learn":
+            answer = f"Explain: {answer}"
         size, lines = 10.0, kind.wrap(kind.printable(answer, True), 10, width - 70, True)
         checks = [line for check in card.checks for line in kind.wrap(kind.printable(check), 8, width - 70)]
         height = len(lines) * 12.2 + len(checks) * 9.8 + 8
