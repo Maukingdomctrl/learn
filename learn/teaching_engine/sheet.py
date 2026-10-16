@@ -1,0 +1,719 @@
+"""Read a study sheet into ordered, source-cited items for the card game.
+
+The PDF reader works from printed lines, not text blocks. Many PDFs store every printed line as its own block, so
+one sentence, bullet or table cell can be spread over several blocks. Line positions, sizes and bullet marks (typed
+or drawn) show where each heading, bullet, table row and question starts. Without a PDF, or on a page with no text
+layer, the reader falls back to the fact inventory.
+
+Items hold only the sheet's own words: wrapped lines are joined, list markers are kept apart from the text, and
+nothing is reworded.
+"""
+
+import re
+from dataclasses import dataclass, field
+from hashlib import sha256
+from itertools import pairwise
+from statistics import median
+
+import pymupdf
+
+from ..extraction import MIN_PAGE_CHARS, text_block_units
+from .facts import BULLETS, FactInventory
+
+# "1.", "2)", "Q3.", "Question 4:", "(a)", "(iv)" or a section letter "B." before a word.
+_MARKER = re.compile(
+    r"^(?P<marker>"
+    r"Q(?:uestion)?\s?\.?\s?\d{1,2}\s?[.):]?"
+    r"|\d{1,2}\s?[.)]"
+    r"|\((?:[a-z]|[ivx]{1,4}|\d{1,2})\)"
+    r"|[A-H][.)](?=\s+[A-Z][a-z])"
+    r")\s+(?=\S)"
+)
+_SUB_MARKER = re.compile(r"^(?:\d{1,2}\)|\((?:[a-z]|[ivx]{1,4}|\d{1,2})\))\s")
+_TIP = re.compile(
+    r"^(?:memory\s+tip|study\s+tip|exam\s+tip|quick\s+tip|tip|think|remember|mnemonic|trick)\b\s*[:\-–—]\s*", re.I
+)
+_INLINE_ANSWER = re.compile(r"\s*[—–-]{1,2}\s*Ans(?:wer)?\s*[:.\-–—]\s*|\s+Ans(?:wer)?\s*:\s*")
+_LEADING_ANSWER = re.compile(r"^(?:[—–-]{1,2}\s*)?Ans(?:wer)?\s*[:.\-–—]\s*")
+_SUMMARY = re.compile(r"^(?P<name>[^=]{2,80}?)\s+=\s+(?P<rest>\S.*)$")
+_SENTENCE_END = re.compile(r"[.!?][\"'”’)\]]*$")
+_CONTINUES_AFTER = re.compile(
+    r"(?:\b(?:a|an|the|of|in|on|at|to|for|from|by|with|and|or|nor|but|as|its|his|her|their|that|which|who|whose|"
+    r"into|onto|than|via|between|under|over|after|before|during|about)|[,(\-–—/&+])$",
+    re.I,
+)
+_PAGE_NUMBER = re.compile(r"(?:page|pg\.?|p\.)\s*\d+(?:\s*(?:of|/)\s*\d+)?|\d+\s*(?:of|/)\s*\d+", re.I)
+# A running footer, alone or glued to the end of the text above it: "Grade 8 Social Studies | … Page 2".
+_FOOTER = re.compile(r"^(?:Page\s+\d+\b.*\|.*|.*\|.*\bPage\s+\d+)$", re.I)
+_FOOTER_TAIL = re.compile(
+    r"\s+(?:Grade|Class|Standard|Std\.?)\s+\d{1,2}\b[^.!?]{0,80}?\|[^.!?]{0,80}?\bPage\s+\d+\s*$", re.I
+)
+# An upper-case section heading run into the text after it, as text extraction can leave a table heading.
+_LEADING_HEADING = re.compile(r"^(?:\d{1,2}\.\s+)?[A-Z][A-Z0-9&'’()\-–—:,/ ]{3,}?[A-Z)](?=\s+[A-Z][a-z])")
+_SECTION_KINDS = (
+    ("qa", re.compile(r"\bQUESTIONS?\b.*\b(?:ANSWERS?|ANSWER\s*KEY)\b|\bQ\s?&\s?A\b", re.I)),
+    ("answers", re.compile(r"\bANSWER\s*KEY\b|\bANSWERS\b|\bSOLUTIONS\b", re.I)),
+    (
+        "questions",
+        re.compile(
+            r"\bQUESTIONS?\b|\bPRACTICE\b|\bEXERCISES?\b|\bWORKSHEET\b|\bQUIZ\b|\bFILL IN THE BLANKS\b|\bQUICK CHECK\b"
+            r"|\bCHECK YOUR(?:SELF| UNDERSTANDING)\b|\bEXIT TICKET\b|\bTRY TH(?:IS|ESE)\b|\bYOUR TURN\b|\bHOMEWORK\b"
+            r"|\bTEST YOURSELF\b",
+            re.I,
+        ),
+    ),
+    ("table", re.compile(r"\bTABLE\b|\bCOMPARATIVE\b|\bCOMPARISON\b|\bAT A GLANCE\b", re.I)),
+    ("tips", re.compile(r"\bTIPS?\b|\bMNEMONICS?\b", re.I)),
+    (
+        "notes",
+        re.compile(r"\bNOTES\b|\bREVISION\b|\bSUMMARY\b|\bKEY (?:POINTS|IDEAS|FACTS|TERMS)\b|\bOVERVIEW\b", re.I),
+    ),
+)
+# Headings that label a kind of content ("Remember", "Key idea", "Four main stages") rather than name a topic.
+GENERIC_HEADING = re.compile(
+    r"^(?:remember|note|notes|example|examples|key ideas?|key points?|summary|introduction|conclusion|activit(?:y|ies)|"
+    r"exercises?|quick check|check|think|did you know|fun facts?|important|learning (?:goals|objectives)|objectives?|"
+    r"goals?|vocabulary|glossary|key ?words|key terms|definitions?|answers?|questions?|compare|contrast|review|recap|"
+    r"tips?|hints?|warning|caution|overview|background|discussion|explanation|steps|procedure|method|materials|"
+    r"results?|observations?|aim|practice|homework|exit ticket|common mistakes?|common errors|common traps|"
+    r"interpretation|analysis|evaluation|variables|safety|data|calculations?|worked|experiment|investigation|"
+    r"theory|hypothesis|apparatus|reasoning|evidence|applications?|uses|advantages|disadvantages)\b",
+    re.I,
+)
+_QUESTION_START = re.compile(
+    r"^(?:Q(?:uestion)?\s*\d*\s*[:.]|(?:What|Why|How|When|Where|Which|Who|Whom|Whose|Is|Are|Do|Does|Did|Can|Could|"
+    r"Would|Should|Will|If)\b|(?:Explain|Describe|State|Name|Give|List|Define|Compare|Mention|Write|Find|Calculate|"
+    r"Solve|Identify|Discuss)\b)"
+)
+_INLINE_MARKER = re.compile(r"(?<=\s)(?:Q\s?)?(\d{1,2})[.)]\s+(?=\S)")
+_YEAR_LABEL = re.compile(r"(?:c\.\s*)?\d{3,4}(?:\s*(?:BCE|BC|CE|AD))?|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}")
+# A boxed call-out label run into its text: "BIG IDEA • Change is caused by several connected factors."
+_CALLOUT = re.compile(r"^(?P<label>[A-Z][A-Z0-9 &'’/-]{1,40}?)\s*•\s+(?=\S)")
+# A task set by the sheet: "Practice: Predict what could happen if …"
+_TASK = re.compile(
+    r"^(?:practice|exam practice|task|exercise|activity|challenge|try this|your turn|extended response|homework)"
+    r"\s*[\d.]*\s*:\s*",
+    re.I,
+)
+
+
+@dataclass(frozen=True)
+class Table:
+    header: tuple[str, ...]
+    rows: tuple[tuple[str, ...], ...]
+    kind: str = "grid"  # grid | panels (bullet lists side by side) | timeline (years with the events beside them)
+
+
+@dataclass(frozen=True)
+class Item:
+    """One piece of the sheet, in reading order, in the sheet's own words."""
+
+    kind: str  # title | section | heading | group | topic | point | summary | question | answer | tip | table
+    text: str  # without the list marker; a question's own answer is moved to ``answer``
+    page: int
+    unit_ids: tuple[str, ...]
+    marker: str = ""
+    section: str = ""  # the kind of section the item sits in: notes | table | questions | answers | qa | tips
+    group: str = ""  # section letter that question and answer numbers belong to ("A", "B")
+    topic: str = ""  # text of the topic heading a point belongs to
+    context: str = ""  # the sub-heading above an item, such as "Four main stages"
+    answer: str = ""
+    table: Table | None = None
+    top: float = 0.0  # position on the page, when read from the PDF layout
+    bottom: float = 0.0
+
+    @property
+    def number(self) -> str:
+        found = re.search(r"\d+", self.marker)
+        return found.group() if found else ""
+
+
+@dataclass(frozen=True)
+class Picture:
+    page: int
+    rect: tuple[float, float, float, float]
+    image: bytes
+
+
+@dataclass(frozen=True)
+class Sheet:
+    items: tuple[Item, ...]
+    pictures: tuple[Picture, ...] = ()
+
+
+@dataclass
+class _Line:
+    text: str
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+    size: float
+    units: tuple[str, ...]
+    bullet: bool = False
+
+
+@dataclass
+class _Paragraph:
+    text: str
+    page: int
+    units: list[str]
+    bullet: bool = False
+    size: float = 0.0
+    top: float = 0.0
+    bottom: float = 0.0
+    table: Table | None = None
+    lines: list[_Line] = field(default_factory=list)
+
+
+def join_lines(first: str, second: str) -> str:
+    """Join a wrapped line to the next one: "Non-" + "Cooperation" stays "Non-Cooperation"."""
+    first, second = first.rstrip(), second.lstrip()
+    if not first:
+        return second
+    if first[-1] in "-–—/" and len(first) > 1 and not first[-2].isspace():
+        return first + second
+    return f"{first} {second}"
+
+
+def _ends_sentence(text: str) -> bool:
+    return bool(_SENTENCE_END.search(text.rstrip()))
+
+
+def split_marker(text: str) -> tuple[str, str]:
+    match = _MARKER.match(text)
+    if not match:
+        return "", text
+    return match["marker"].strip(), text[match.end() :]
+
+
+def _upper_ratio(text: str) -> float:
+    letters = [char for char in text if char.isalpha()]
+    return sum(char.isupper() for char in letters) / len(letters) if len(letters) >= 4 else 0.0
+
+
+def _section_kind(text: str) -> str:
+    return next((kind for kind, pattern in _SECTION_KINDS if pattern.search(text)), "")
+
+
+def _title_case(text: str) -> bool:
+    words = [word for word in re.findall(r"[A-Za-z][\w'’-]*", text) if len(word) > 3]
+    return bool(words) and len(text.split()) <= 9 and all(word[0].isupper() for word in words)
+
+
+# ---------------------------------------------------------------- PDF layout
+
+
+def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
+    units = [(rect + (-1, -1, 1, 1), unit_id) for rect, unit_id in text_block_units(page, pno)]
+    lines: list[_Line] = []
+    lone_bullets: list[pymupdf.Rect] = []
+    for block in page.get_text("dict", sort=True)["blocks"]:
+        if block.get("type") != 0:
+            continue
+        for raw in block["lines"]:
+            spans = [span for span in raw["spans"] if span["text"].strip()]
+            if not spans:
+                continue
+            # A dingbat font at the start of a line draws its bullet; inside the text it stands in for a letter the
+            # main font lacked (some PDF makers print a box instead of "₃" or "₹"), so that letter is lost.
+            chunks, dingbat_bullet = [], False
+            for index, span in enumerate(raw["spans"]):
+                chunk = span["text"]
+                if "dingbat" in span["font"].casefold() and chunk.strip():
+                    after = next((later for later in raw["spans"][index + 1 :] if later["text"].strip()), None)
+                    spaced = (
+                        after is None
+                        or after["text"][:1].isspace()
+                        or (after["bbox"][0] - span["bbox"][2] >= 0.25 * span["size"])
+                    )
+                    if not "".join(chunks).strip() and spaced:  # "■ Text": a bullet; "■600": a lost "₹"
+                        dingbat_bullet = True
+                        continue
+                    chunk = "".join(char if char.isspace() else "\ufffd" for char in chunk)
+                chunks.append(chunk)
+            text = " ".join("".join(chunks).split())
+            box = pymupdf.Rect(spans[0]["bbox"])
+            for span in spans[1:]:
+                box |= span["bbox"]
+            if not text or all(char in BULLETS for char in text.replace(" ", "")):
+                lone_bullets.append(box)
+                continue
+            sizes: dict[float, int] = {}
+            for span in spans:
+                sizes[round(span["size"], 1)] = sizes.get(round(span["size"], 1), 0) + len(span["text"].strip())
+            centre = pymupdf.Point((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2)
+            unit = next((unit_id for rect, unit_id in units if centre in rect), "")
+            line = _Line(text, box.x0, box.y0, box.x1, box.y1, max(sizes, key=sizes.get), (unit,) if unit else ())
+            line.bullet = dingbat_bullet
+            if text[0] in BULLETS:
+                line.text = text.lstrip(BULLETS + " ")
+                line.bullet = True
+            lines.append(line)
+    dots = lone_bullets + [
+        drawing["rect"]
+        for drawing in page.get_drawings()
+        if drawing.get("fill") is not None
+        and 1.5 <= drawing["rect"].width <= 7
+        and 1.5 <= drawing["rect"].height <= 7
+        and abs(drawing["rect"].width - drawing["rect"].height) <= 1.5
+    ]
+    for dot in dots:
+        middle = (dot.y0 + dot.y1) / 2
+        for line in lines:
+            if line.y0 - 1 <= middle <= line.y1 + 1 and 0 <= line.x0 - dot.x1 <= 18:
+                line.bullet = True
+                break
+    lines.sort(key=lambda line: (round(line.y0, 0), line.x0))
+    return lines
+
+
+def _is_furniture(line: _Line, height: float) -> bool:
+    text = line.text.strip()
+    in_margin = line.y0 >= height * 0.94 or line.y1 <= height * 0.045
+    if _PAGE_NUMBER.fullmatch(text):
+        return True
+    if (line.y0 >= height * 0.9 or line.y1 <= height * 0.08) and re.fullmatch(r"\d{1,3}", text):
+        return True
+    return in_margin and len(text) <= 120
+
+
+def _bands(lines: list[_Line]) -> list[list[_Line]]:
+    """Lines printed on the same baseline, top to bottom."""
+    bands: list[list[_Line]] = []
+    for line in sorted(lines, key=lambda line: (line.y0, line.x0)):
+        if bands and line.y0 < max(other.y1 for other in bands[-1]) - 0.5 * (line.y1 - line.y0):
+            bands[-1].append(line)
+        else:
+            bands.append([line])
+    return [sorted(band, key=lambda line: line.x0) for band in bands]
+
+
+def _column(line: _Line, starts: list[float], ends: list[float]) -> int | None:
+    """The table column a line starts in and stays inside, if any."""
+    for index, start in enumerate(starts):
+        if abs(line.x0 - start) <= 2.5 and line.x1 <= ends[index] + 3:
+            return index
+    return None
+
+
+def _find_table(lines: list[_Line], right: float) -> tuple[Table, list[_Line]] | None:
+    """A grid under a header row of three or more columns, or bullet lists side by side under short headings."""
+    for band in _bands(lines):
+        if len(band) < 2 or any(line.bullet for line in band):
+            continue
+        if any(len(line.text) > 60 for line in band) or any(b.x0 - a.x1 < 6 for a, b in pairwise(band)):
+            continue
+        narrow = any(len(line.text) > 30 or len(line.text.split()) > 4 for line in band)
+        if len(band) == 2 and (narrow or band[1].x0 - band[0].x1 < 40):
+            continue
+        starts = [line.x0 for line in band]
+        ends = [*starts[1:], right + 40]
+        top = band[0].y0
+        members: list[tuple[_Line, int]] = []
+        for line in sorted((line for line in lines if line.y0 >= top - 1), key=lambda line: (line.y0, line.x0)):
+            index = _column(line, starts, ends)
+            if index is None:
+                break
+            members.append((line, index))
+        heights = sorted(line.y1 - line.y0 for line, _ in members)
+        gap = 0.35 * heights[len(heights) // 2] if heights else 3.0
+        rows: list[list[tuple[_Line, int]]] = []
+        bottom = -1e9
+        for line, index in members:
+            # A new bullet in a column that already has text in this row starts the next row of the panels.
+            bulleted = line.bullet and rows and any(other == index for _, other in rows[-1])
+            if not rows or line.y0 > bottom + gap or bulleted:
+                rows.append([])
+                bottom = line.y1
+            rows[-1].append((line, index))
+            bottom = max(bottom, line.y1)
+        panels = any(line.bullet for line, _ in members)
+        first_column = [line.text for line, index in members if index == 0]
+        if len(rows) < 3 or (len(starts) == 2 and not panels and max(map(len, first_column)) > 40):
+            continue  # two columns of long lines are running text, not a table
+        cells = []
+        for row in rows:
+            texts = [""] * len(starts)
+            for line, index in sorted(row, key=lambda pair: (pair[0].y0, pair[0].x0)):
+                texts[index] = join_lines(texts[index], line.text)
+            cells.append(tuple(texts))
+        body = [row for row in cells[1:] if sum(bool(cell) for cell in row) >= (1 if panels else 2)]
+        if len(body) < 2:
+            continue
+        kind = "panels" if panels else "grid"
+        return Table(header=cells[0], rows=tuple(body), kind=kind), [line for line, _ in members]
+    return None
+
+
+def _find_timeline(lines: list[_Line]) -> tuple[Table, list[_Line]] | None:
+    """Three or more years printed in a row, each with a short label centred above or below it."""
+    bands = _bands(lines)
+    for index, band in enumerate(bands):
+        if len(band) < 3 or not all(_YEAR_LABEL.fullmatch(line.text) for line in band):
+            continue
+        height = max(line.y1 - line.y0 for line in band)
+        near = [other for other in bands[max(0, index - 1) : index + 2] if other is not band]
+        for labels in near:
+            if len(labels) != len(band) or abs(labels[0].y0 - band[0].y0) > 4 * height:
+                continue
+            spacing = min(b.x0 - a.x0 for a, b in pairwise(band))
+            centres = [(line.x0 + line.x1) / 2 for line in labels]
+            pairs = []
+            for year in band:
+                middle = (year.x0 + year.x1) / 2
+                nearest = min(range(len(labels)), key=lambda i: abs(centres[i] - middle))
+                if abs(centres[nearest] - middle) > 0.35 * spacing or len(labels[nearest].text.split()) > 5:
+                    break
+                pairs.append((year.text, labels[nearest].text))
+            if len(pairs) == len(band) and len({label for _, label in pairs}) == len(pairs):
+                return Table(header=("Year", "Event"), rows=tuple(pairs), kind="timeline"), [*band, *labels]
+    return None
+
+
+def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list[_Paragraph]:
+    height = page.rect.height
+    content = [line for line in lines if not _is_furniture(line, height)]
+    if not content:
+        return []
+    right = sorted(line.x1 for line in content)[int(0.9 * (len(content) - 1))]
+    left = sorted(line.x0 for line in content)[int(0.1 * (len(content) - 1))]
+    tables: list[tuple[Table, list[_Line]]] = []
+    remaining = content
+    while (found := _find_timeline(remaining) or _find_table(remaining, right)) is not None:
+        tables.append(found)
+        used = {id(line) for line in found[1]}
+        remaining = [line for line in remaining if id(line) not in used]
+
+    gaps = [
+        b.y0 - a.y1
+        for a, b in pairwise(remaining)
+        if abs(a.size - b.size) <= 0.3 and abs(a.x0 - b.x0) <= 3 and -1 <= b.y0 - a.y1 <= 10
+    ]
+    typical = median(gaps) if gaps else 3.0
+    heights = [line.y1 - line.y0 for line in remaining] or [10.0]
+    gap_limit = typical + max(2.0, 0.25 * median(heights))
+
+    paragraphs: list[_Paragraph] = []
+    current: _Paragraph | None = None
+    early = right - max(80.0, 0.18 * (right - left))
+    for line in remaining:
+        if current is not None and _continues(current, line, gap_limit, right, early):
+            current.text = join_lines(current.text, line.text)
+            current.lines.append(line)
+            current.bottom = max(current.bottom, line.y1)
+            current.units.extend(unit for unit in line.units if unit not in current.units)
+            continue
+        current = _Paragraph(line.text, pno, list(line.units), line.bullet, line.size, line.y0, line.y1, lines=[line])
+        paragraphs.append(current)
+    paragraphs = [part for paragraph in paragraphs for part in _split_inline(paragraph)]
+    for table, members in tables:
+        units: list[str] = []
+        for line in members:
+            units.extend(unit for unit in line.units if unit not in units)
+        top, bottom = min(line.y0 for line in members), max(line.y1 for line in members)
+        paragraphs.append(_Paragraph("", pno, units, top=top, bottom=bottom, table=table))
+    paragraphs.sort(key=lambda paragraph: paragraph.top)
+    return paragraphs
+
+
+def _continues(paragraph: _Paragraph, line: _Line, gap_limit: float, right: float, early: float) -> bool:
+    last, first = paragraph.lines[-1], paragraph.lines[0]
+    if line.bullet or _MARKER.match(line.text) or _TIP.match(line.text) or abs(line.size - paragraph.size) > 0.75:
+        return False
+    if line.y0 < last.y1 - 2 or line.y0 - last.y1 > gap_limit:
+        return False
+    if line.x0 < first.x0 - 3:
+        indented_first = (
+            len(paragraph.lines) == 1
+            and not first.bullet
+            and not _MARKER.match(first.text)
+            and first.x0 - line.x0 <= 40  # a first-line indent, not a centred line
+        )
+        if not (indented_first and not _ends_sentence(last.text)):
+            return False
+    if line.x0 > first.x0 + 40:
+        return False
+    # A line that stops well short of the margin was ended on purpose: a formula, a list line, a heading.
+    if last.x1 < early and not _CONTINUES_AFTER.search(last.text):
+        return False
+    # A short line that ends a sentence closes its paragraph.
+    return not (_ends_sentence(last.text) and last.x1 < right - 40 and line.text[:1].isupper())
+
+
+def _split_inline(paragraph: _Paragraph) -> list[_Paragraph]:
+    """Items numbered on one line ("1. What causes evaporation?  2. How do clouds form?") become one item each.
+
+    A label in front of the list ("Exercise 9.1: 1. Find …") becomes an item of its own.
+    """
+    first = _MARKER.match(paragraph.text)
+    number = re.search(r"\d+", first["marker"]) if first else None
+    cuts: list[int] = []
+    if number is None:
+        start = re.search(r"(?<=:)\s+(?:Q\s?)?1[.)]\s+(?=\S)", paragraph.text)
+        if start is None:
+            return [paragraph]
+        cuts.append(start.start() + 1)
+        number = re.search(r"1", start.group())
+    expected = int(number.group()) + 1
+    for match in _INLINE_MARKER.finditer(paragraph.text):
+        if cuts and match.start() < cuts[0]:
+            continue
+        if int(match.group(1)) == expected and _ends_sentence(paragraph.text[: match.start()]):
+            cuts.append(match.start())
+            expected += 1
+    if not cuts:
+        return [paragraph]
+    parts = []
+    for start, end in pairwise([0, *cuts, len(paragraph.text)]):
+        part = _Paragraph(paragraph.text[start:end].strip(), paragraph.page, list(paragraph.units), paragraph.bullet)
+        part.size, part.top, part.bottom, part.lines = paragraph.size, paragraph.top, paragraph.bottom, paragraph.lines
+        parts.append(part)
+    return parts
+
+
+def _page_pictures(document: pymupdf.Document, page: pymupdf.Page, pno: int) -> list[Picture]:
+    pictures: list[Picture] = []
+    seen: set[str] = set()
+    for info in page.get_images(full=True):
+        xref = info[0]
+        placements = [rect for rect in page.get_image_rects(xref) if rect.width >= 24 and rect.height >= 24]
+        if xref <= 0 or not placements:
+            continue
+        rect = max(placements, key=lambda rect: rect.width * rect.height)
+        try:
+            image = page.get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=rect, alpha=False).tobytes("png")
+        except Exception:
+            continue
+        digest = sha256(image).hexdigest()
+        if digest not in seen:
+            seen.add(digest)
+            pictures.append(Picture(pno, tuple(rect), image))
+    return pictures
+
+
+# ---------------------------------------------------------------- fact inventory
+
+
+def _inventory_paragraphs(inventory: FactInventory, pages: set[int] | None) -> list[_Paragraph]:
+    paragraphs: list[_Paragraph] = []
+    for fact in inventory.facts:
+        if pages is not None and fact.page not in pages:
+            continue
+        text = _FOOTER_TAIL.sub("", fact.statement)
+        if _FOOTER.match(text):
+            continue
+        heading = _LEADING_HEADING.match(text)
+        if heading and _section_kind(heading.group()) and len(heading.group().split()) >= 2:
+            paragraphs.append(_Paragraph(heading.group(), fact.page, [fact.source_unit_id]))
+            text = text[heading.end() :].strip()
+        previous = paragraphs[-1] if paragraphs else None
+        joins = (
+            previous is not None
+            and previous.page == fact.page
+            and not previous.table
+            and not _ends_sentence(previous.text)
+            and text[:1] not in BULLETS
+            and not _MARKER.match(text)
+            and (text[:1].islower() or text[:1] in ")]," or bool(_CONTINUES_AFTER.search(previous.text)))
+        )
+        if joins:
+            previous.text = join_lines(previous.text, text)
+            if fact.source_unit_id not in previous.units:
+                previous.units.append(fact.source_unit_id)
+            continue
+        bullet = text[:1] in BULLETS
+        paragraphs.append(
+            _Paragraph(text.lstrip(BULLETS + " ") if bullet else text, fact.page, [fact.source_unit_id], bullet)
+        )
+    return paragraphs
+
+
+# ---------------------------------------------------------------- structure
+
+
+def summary_parts(text: str) -> tuple[str, str] | None:
+    """ "Belfast = Shipbuilding & Titanic" → ("Belfast", "Shipbuilding & Titanic"); equations are not summaries."""
+    match = _SUMMARY.match(text)
+    if not match:
+        return None
+    name, rest = match["name"].strip(), match["rest"].strip()
+    if len(name.split()) > 6 or not name[:1].isalpha() or re.search(r"[\d+×÷*/^<>:;=]", name):
+        return None
+    if rest[:1].isdigit() or re.search(r"[=×÷−^√²³]|\d\s*[/+]\s*\d", rest):
+        return None  # "base = 8 cm" and "speed = frequency × wavelength" are measurements and formulas
+    return name, rest
+
+
+def names_topic(text: str) -> bool:
+    """Whether a heading names a thing ("LONDON", "Dadabhai Naoroji – …") rather than a kind of content."""
+    marker, body = split_marker(text)
+    del marker
+    if GENERIC_HEADING.match(body):
+        return False
+    name = re.split(r"\s+[–—-]\s+|:\s+|\s*\(", body, maxsplit=1)[0]
+    return _upper_ratio(name) >= 0.75 or _title_case(name) or bool(re.match(r"[A-Z]\w*$", name))
+
+
+def _heading_like(text: str) -> bool:
+    formula = re.search(r"[=×÷√]", text)
+    return len(text) <= 160 and not _ends_sentence(text) and summary_parts(text) is None and not formula
+
+
+def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
+    items: list[Item] = []
+    section = group = topic = context = ""
+    started = False
+    weights: dict[float, int] = {}
+    for paragraph in paragraphs:
+        if paragraph.size and paragraph.table is None:
+            weights[paragraph.size] = weights.get(paragraph.size, 0) + len(paragraph.text)
+    body_size = max(weights, key=weights.get) if weights else 0.0
+
+    def add(kind: str, paragraph: _Paragraph, text: str, marker: str = "", note: str = "", **extra) -> None:
+        items.append(
+            Item(
+                kind,
+                text.strip(),
+                paragraph.page,
+                tuple(paragraph.units),
+                marker=marker,
+                section=section,
+                group=group,
+                topic=topic if kind in {"point", "summary"} else "",
+                context=(note or context) if kind in {"point", "summary", "question"} else "",
+                top=paragraph.top,
+                bottom=paragraph.bottom,
+                **extra,
+            )
+        )
+
+    for index, paragraph in enumerate(paragraphs):
+        if paragraph.table is not None:
+            started, topic = True, ""
+            add("table", paragraph, "", table=paragraph.table)
+            continue
+        marker, body = split_marker(paragraph.text)
+        following = next((other for other in paragraphs[index + 1 :] if other.table is None), None)
+        if not started:
+            # The sheet's title block: up to three unnumbered lines at the top of the first page.
+            subtitle = bool(items) and items[-1].kind == "title" and bool(re.search(r"\s[|•]\s", body))
+            title = (
+                index <= 2
+                and paragraph.page == paragraphs[0].page
+                and not marker
+                and not paragraph.bullet
+                and not _ends_sentence(body)
+                and following is not None
+                and not following.bullet
+                and (subtitle or _heading_like(split_marker(following.text)[1]))
+            )
+            if title:
+                add("title", paragraph, body)
+                continue
+            started = True
+        callout, note = _CALLOUT.match(body), ""
+        if callout and _ends_sentence(body):
+            note, body = callout["label"].strip(), body[callout.end() :]
+        tip = _TIP.match(body)
+        if tip and not marker:
+            add("tip", paragraph, body[tip.end() :], marker=tip.group().strip(" :-–—"))
+            continue
+        task = _TASK.match(body)
+        if task and not marker and section != "answers":
+            question, answer = _split_answer(body[task.end() :])
+            add("question", paragraph, question, answer=answer)
+            continue
+        in_lists = section in {"questions", "answers", "qa"}
+        if in_lists and re.fullmatch(r"[A-H][.)]", marker) and _heading_like(body):
+            group = marker[0]
+            add("group", paragraph, body, marker)
+            continue
+        kind = _section_kind(body)
+        upper = _upper_ratio(body) >= 0.75 and len(body) <= 120 and not paragraph.bullet
+        words = len(body.split())
+        sized = bool(body_size) and paragraph.size >= body_size * 1.12 and words <= 12
+        heading = _heading_like(body) and not paragraph.bullet
+        shaped = heading and (upper or sized or (_title_case(body) and not marker) or (words <= 4 and not marker))
+        if kind and shaped and (not (in_lists and marker) or (upper and kind != section)):
+            section, group, topic, context = kind, "", "", ""
+            add("section", paragraph, body, marker)
+            continue
+        last = items[-1] if items else None
+        # "1)" under a numbered answer is part of that answer, not a new one.
+        sub_item = bool(_SUB_MARKER.match(paragraph.text)) and last is not None and last.marker.endswith(".")
+        if section in {"questions", "qa"}:
+            if marker and not (sub_item and last.kind == "question"):
+                question, answer = _split_answer(body)
+                add("question", paragraph, question, marker, answer=answer)
+            elif last is not None and last.kind == "question" and (_LEADING_ANSWER.match(body) or sub_item):
+                answer = _LEADING_ANSWER.sub("", paragraph.text) if not sub_item else paragraph.text
+                items[-1] = _extend(last, paragraph, answer=join_lines(last.answer, answer))
+            elif _QUESTION_START.match(body) and "?" in body:
+                question, answer = _split_answer(body)
+                add("question", paragraph, question, answer=answer)
+            continue  # instructions such as "Answer the following questions:" make no card
+        if section == "answers":
+            if marker and not sub_item:
+                add("answer", paragraph, body, marker)
+            elif last is not None and last.kind == "answer":
+                items[-1] = _extend(last, paragraph, text=join_lines(last.text, paragraph.text))
+            continue
+        if heading and section in {"", "notes", "tips", "table"}:
+            next_marker = split_marker(following.text)[0] if following is not None else ""
+            followed_by_point = following is not None and (
+                following.bullet
+                or (bool(marker) and not next_marker and not _heading_like(following.text))
+                or (sized and not _heading_like(following.text))
+            )
+            if followed_by_point and names_topic(paragraph.text) and ";" not in body and words <= 14:
+                section = "notes" if section == "table" else section  # notes can resume after a table
+                topic, context = body, ""
+                add("topic", paragraph, body, marker)
+                continue
+            if followed_by_point or upper or sized:
+                # A sub-heading such as "Four main stages": it labels what follows but names no answer.
+                section = "notes" if section == "table" else section
+                topic, context = "", body
+                add("heading", paragraph, body, marker)
+                continue
+        if summary_parts(body) is not None:
+            add("summary", paragraph, body, marker, note)
+        elif re.match(r"Q(?:uestion)?\b", marker, re.I) or (_QUESTION_START.match(body) and "?" in body):
+            add("question", paragraph, body, marker, note)
+        elif section != "table":  # loose text around a table is usually a stray cell
+            add("point", paragraph, body, marker, note)
+    return items
+
+
+def _split_answer(text: str) -> tuple[str, str]:
+    parts = _INLINE_ANSWER.split(text, maxsplit=1)
+    if len(parts) == 2 and parts[1].strip():
+        return parts[0].strip(), parts[1].strip()
+    return text.strip(), ""
+
+
+def _extend(item: Item, paragraph: _Paragraph, **changes) -> Item:
+    units = tuple(dict.fromkeys([*item.unit_ids, *paragraph.units]))
+    values = {**item.__dict__, "unit_ids": units, "bottom": max(item.bottom, paragraph.bottom), **changes}
+    return Item(**values)
+
+
+def read_sheet(inventory: FactInventory, source_pdf: bytes | None = None, pages: set[int] | None = None) -> Sheet:
+    """Read the sheet from the PDF's printed layout, using the inventory for pages without a text layer."""
+    if not source_pdf:
+        return Sheet(tuple(_classify(_inventory_paragraphs(inventory, pages))))
+    paragraphs: list[_Paragraph] = []
+    pictures: list[Picture] = []
+    with pymupdf.open(stream=source_pdf, filetype="pdf") as document:
+        for page in document:
+            pno = page.number + 1
+            if pages is not None and pno not in pages:
+                continue
+            lines = _page_lines(page, pno)
+            found = (
+                _layout_paragraphs(page, pno, lines) if sum(len(line.text) for line in lines) >= MIN_PAGE_CHARS else []
+            )
+            paragraphs.extend(found or _inventory_paragraphs(inventory, {pno}))
+            pictures.extend(_page_pictures(document, page, pno))
+    return Sheet(tuple(_classify(paragraphs)), tuple(pictures))

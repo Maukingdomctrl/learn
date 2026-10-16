@@ -69,23 +69,41 @@ def _clean(text: str) -> str:
 
 
 def _merge_blocks(texts: list[str]) -> list[str]:
-    out: list[str] = []
-    carry = ""
-    for t in texts:
+    return [text for text, _ in _merge_block_sources(texts)]
+
+
+def _merge_block_sources(texts: list[str]) -> list[tuple[str, list[int]]]:
+    """Merge short heading blocks into the next block; also return which input blocks each unit came from."""
+    out: list[tuple[str, list[int]]] = []
+    carry, carried = "", []
+    for index, t in enumerate(texts):
         t = _clean(t)
         if not t:
             continue
         if len(t) < HEADING_CHARS and not t.endswith((".", "?", "!")):
             carry = f"{carry} {t}".strip()
+            carried.append(index)
             continue
-        out.append(f"{carry} {t}".strip() if carry else t)
-        carry = ""
+        out.append((f"{carry} {t}".strip() if carry else t, [*carried, index]))
+        carry, carried = "", []
     if carry:
         if out:
-            out[-1] = f"{out[-1]} {carry}"
+            text, sources = out[-1]
+            out[-1] = (f"{text} {carry}", [*sources, *carried])
         else:
-            out.append(carry)
+            out.append((carry, carried))
     return out
+
+
+def text_block_units(page, pno: int) -> list[tuple[pymupdf.Rect, str]]:
+    """The text blocks of a text-layer page with the unit ID ``extract`` gives each of them."""
+    blocks = [b for b in page.get_text("blocks", sort=True) if b[6] == 0]
+    merged = _merge_block_sources([b[4] for b in blocks])
+    return [
+        (pymupdf.Rect(blocks[index][:4]), f"SRC-P{pno}-U{n}")
+        for n, (_, sources) in enumerate(merged, start=1)
+        for index in sources
+    ]
 
 
 def _paragraphs(ocr_text: str) -> list[str]:

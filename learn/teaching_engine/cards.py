@@ -1,56 +1,122 @@
-"""Render source-grounded, double-sided learning cards as an A4 PDF."""
+"""Turn a study sheet into printable question cards, with the answers on a separate sheet.
+
+Every card asks one plain question about the sheet's own words: name the topic of a heading, say who or what a
+point is about, fill a date or number gap, finish a sentence, answer one of the sheet's practice questions, compare
+a table row, or recall a memory tip. Cards print one-sided, eight to an A4 page, and the answer sheet follows on its
+own pages so it can be kept away from the cards. Clues and answers are runs of the sheet's text with words hidden
+behind a gap; the only added words are the fixed questions and labels.
+"""
 
 import re
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from hashlib import sha256
 
 import pymupdf
 
-from .facts import Fact, FactInventory, Mention
+from .facts import BULLETS, REVIEW_CUES, FactInventory, split_sentences
+from .sheet import GENERIC_HEADING, Item, Sheet, names_topic, read_sheet, summary_parts
 
+GAP = "______"
 _PAGE_WIDTH = 595.28
 _PAGE_HEIGHT = 841.89
-_CARD_WIDTH = 241.0
-_CARD_HEIGHT = 195.0
+_CARD_WIDTH = 241.0  # 85 mm
+_CARD_HEIGHT = 195.0  # 68.8 mm
 _LEFT = (_PAGE_WIDTH - 2 * _CARD_WIDTH) / 2
-_TOP = (_PAGE_HEIGHT - 4 * _CARD_HEIGHT) / 2
-_INK = (0.13, 0.20, 0.17)
-_GREEN = (0.15, 0.36, 0.28)
-_MUTED = (0.39, 0.45, 0.41)
-_PAPER = (0.97, 0.96, 0.91)
-_LINE = (0.83, 0.86, 0.81)
-_ORANGE = (0.70, 0.34, 0.14)
-_HERO = (0.31, 0.27, 0.64)
-_MAX_CARD_SOURCE_CHARS = 160
-_HEADING_CUES = re.compile(
-    r"\b(?:quick revision|key ideas?|contents|chapter|unit|lesson|class|grade|standard|page|table|feature"
-    r"|sample|comparison|question|answers?|model answers?)\b",
-    re.IGNORECASE,
+_TOP = 40.0
+_CARDS_PER_PAGE = 8
+_INK = (0.12, 0.16, 0.14)
+_MUTED = (0.42, 0.46, 0.43)
+_CUT = (0.70, 0.73, 0.71)
+_ORANGE = (0.69, 0.33, 0.10)
+_THEMES = {
+    "detective": {"title": "DETECTIVE CASE FILE", "colour": (0.13, 0.36, 0.27), "tint": (0.91, 0.95, 0.92)},
+    "superhero": {"title": "SUPERHERO POWER-UP GAME", "colour": (0.32, 0.25, 0.62), "tint": (0.93, 0.92, 0.98)},
+}
+# Plain questions for Standards 7, 8 and 9.
+_QUESTIONS = {
+    "who": ("Who is this?", "Who is this?", "Identify this person."),
+    "what": ("What is it?", "What is it?", "Identify it."),
+    "who_about": ("Who is it?", "Who is this about?", "Identify the person described."),
+    "what_about": ("What is it?", "What is this about?", "Identify what is described."),
+    "date": ("Which date goes in the gap?", "Which date fits the gap?", "Supply the missing date."),
+    "year": ("Which year goes in the gap?", "Which year fits the gap?", "Supply the missing year."),
+    "number": ("Which number goes in the gap?", "Which number fits the gap?", "Supply the missing number."),
+    "century": ("Which century goes in the gap?", "Which century fits the gap?", "Supply the missing century."),
+    "finish": ("How does it end?", "Finish the sentence.", "Complete the statement."),
+    "question": ("Answer it.", "Answer it.", "Answer as you would in the exam."),
+    "fill": ("Fill the gap.", "Fill the gap.", "Complete the statement."),
+    "compare": ("What is each one's {}?", "What is each one's {}?", "State the {} of each."),
+    "tip": ("Say the whole tip.", "Say the rest of the tip.", "Recall the complete memory tip."),
+    "term": ("What is it called?", "What is it called?", "Name the term described."),
+    "word": ("Which word goes in the gap?", "Which term fits the gap?", "Supply the missing term."),
+    "equation": ("What goes in the gap?", "What goes in the gap?", "Complete it."),
+    "chain": ("What goes in the gap?", "What comes in the gap?", "Supply the missing step."),
+    "sort": ("Which one is it: {}?", "Which one is it: {}?", "Classify it: {}?"),
+    "which": ("Which {} is it?", "Which {} is it?", "Identify the {}."),
+    "year_of": ("Which year is it?", "Which year goes with it?", "Give its year."),
+    "order": ("Put them in order.", "Put them in time order.", "Arrange them chronologically."),
+}
+_CHAIN = re.compile(r"(\s*(?:→|->|⟶|➜|➝)\s*)")
+_INLINE_SEPARATOR = re.compile(r"\s+[•|]\s+")
+# Sub-headings whose text states goals for the lesson rather than facts to learn.
+_NO_CARDS = re.compile(r"^(?:learning (?:goals|objectives|outcomes)|objectives?|aims?|success criteria)\b", re.I)
+_DEFINED_TERM = re.compile(
+    r"\b(?:is|are|was|were)\s+(?:called|known as|termed|named)\s+(?:the\s+|an?\s+)?"
+    r"(?P<term>[A-Za-z][\w'’-]*(?:\s+[\w'’-]+){0,3}?)(?=\s*[.,;:]|\s*$)"
+    r"|^(?P<lead>[A-Z][\w'’-]*(?:\s+[a-z][\w'’-]*)?)"
+    r"(?=\s+(?:means|refers to|is defined as|are defined as)\s+(?:the|a|an)\b)"
 )
-_PRINT_SUBSTITUTIONS = str.maketrans(
+_LABELLED = re.compile(r"^(?P<label>[A-Za-z][\w'’()/& -]{0,40}?)\s*(?::|\s[—–])\s+(?P<text>\S.*)$")
+_LIST_LABEL = re.compile(r"^(?:vocabulary|glossary|key ?words|key terms|terms|words|definitions)\s*:\s*", re.I)
+_MATH = re.compile(r"[=×÷√²³½¼¾±≤≥]|\d\s*[+*/^]\s*\d|\b\d+\s*:\s*\d+\b")
+_JUNK_WORD = re.compile(r"([^\W\d_])\1{3,}\W*")  # "IIIII", not a "______" blank
+_QUESTION_LABEL = re.compile(r"^(?:Q(?:uestion)?|Explain|Think)\s*\d*\s*:\s*", re.I)
+# A worked example: "Example 1: Find the area … Solution: Area = … = 20 cm²."
+_WORKED = re.compile(
+    r"^Example\s*[\d.]*\s*:\s*(?P<task>.+?)\s+(?:Solution|Answer|Ans)\s*[:.]\s*(?P<solution>.+)$", re.I
+)
+_MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
+_FULL_DATE = re.compile(
+    rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:{_MONTHS})\s+\d{{4}}\b|\b(?:{_MONTHS})\s+\d{{1,2}},?\s+\d{{4}}\b"
+)
+_YEAR = re.compile(r"(?<![\d,.£$₹/:–—-])(?:1[0-9]{3}|20[0-9]{2})(?![\d,]|\s*[–—-]\s*\d)")
+_CENTURY = re.compile(r"\b\d{1,2}(?:st|nd|rd|th)(?=\s+century\b)", re.I)
+_UNITS = (
+    r"%|per\s?cent|km|kilometres?|kilometers?|miles?|metres?|meters?|kg|tonnes?|days?|years?|months?|weeks?|"
+    r"hours?|minutes?|delegates|volunteers|members|people|persons|visitors|jobs|companies|states|seats|million|"
+    r"billion|bn|lakh|crore|cities|times|mills|acres|hectares|feet|ft"
+)
+_QUANTITY = re.compile(
+    rf"(?<![\w.,£$₹-])(?:\d{{1,3}}(?:,\d{{3}})+|\d+(?:\.\d+)?(?=[\s-]?(?:{_UNITS})\b))(?![\d,])", re.I
+)
+_HEADING_SEPARATOR = re.compile(r"\s+[–—-]\s+|:\s+")
+_PERSON_TITLE = re.compile(
+    r"^(?:Dr|Sir|Mahatma|Lokmanya|Raja|Rani|Maharaja|Maharani|Swami|Pandit|Pt|Shri|Sri|Smt|Mr|Mrs|Ms|Lord|Lady|"
+    r"King|Queen|Emperor|Empress|Sultan|Nawab|Begum|Guru|Sant|Saint|Netaji|Sardar|Lala|Acharya|Maulana|Chhatrapati)\b",
+    re.I,
+)
+_LIFE_YEARS = re.compile(r"\((?:c\.\s*|b\.\s*)?(\d{4})\s*[–—-]\s*(\d{2,4})\)")
+_PERSON_WORDS = re.compile(
+    r"\b(?:reformer|leader|scientist|poet|writer|author|king|queen|emperor|ruler|founder|father|mother|"
+    r"educationist|educator|teacher|nationalist|jurist|economist|philosopher|saint|industrialist|pioneer|"
+    r"freedom fighter|statesman|revolutionary|explorer|inventor|artist|musician|barrister)\b",
+    re.I,
+)
+_NOT_PERSON = re.compile(
+    r"\b(?:movement|industry|industries|company|act|revolt|war|mission|satyagraha|march|congress|party|empire|raj|"
+    r"rule|dynasty|era|period|revolution|kingdom|sultanate|republic|struggle|session|committee|treaty|pact|plan|"
+    r"policy|city|river|state|sabha|court|parliament|bank|exchange|services|field|steel|textile|petroleum|"
+    r"engineering|causes|results|course|types|conservation)\b",
+    re.I,
+)
+_NAME_STOPWORDS = frozenset("of the and in on at to for a an da de di van von".split())
+_SUBSTITUTES = str.maketrans(
     {
-        "→": " -> ",
-        "←": " <- ",
-        "↔": " <-> ",
-        "×": " x ",
-        "·": " . ",
-        "≤": "<=",
-        "≥": ">=",
-        "≠": "!=",
-        "−": "-",
-        "–": "-",
-        "—": "-",
-        "’": "'",
-        "‘": "'",
-        "“": '"',
-        "”": '"',
-        "…": "...",
-        "₂": "2",
-        "₃": "3",
-        "₄": "4",
-        "₅": "5",
+        "→": "->", "←": "<-", "↔": "<->", "⇒": "=>", "–": "-", "—": "-", "−": "-", "‘": "'", "’": "'",
+        "“": '"', "”": '"', "…": "...", "•": "-", "≤": "<=", "≥": ">=", "≠": "!=", "₹": "Rs.", "₂": "2",
+        "₃": "3", "₄": "4", "₅": "5", "²": "2", "³": "3",
     }
-)
+)  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -59,375 +125,704 @@ class SourceVisual:
     image: bytes
 
 
-def _split_long_fact(fact: Fact) -> tuple[Fact, ...]:
-    statement = fact.statement
-    if len(statement) <= _MAX_CARD_SOURCE_CHARS or "?" in statement:
-        return (fact,)
+@dataclass(frozen=True)
+class Card:
+    """One printed card and its answer-sheet entry."""
 
-    segments: list[Fact] = []
-    start = 0
-    while start < len(statement):
-        end = min(start + _MAX_CARD_SOURCE_CHARS, len(statement))
-        if end < len(statement):
-            lower_bound = start + _MAX_CARD_SOURCE_CHARS // 2
-            punctuation = max(statement.rfind(mark, lower_bound, end) for mark in (";", "|", "\n"))
-            if punctuation >= lower_bound:
-                end = punctuation + 1
-            else:
-                whitespace = statement.rfind(" ", lower_bound, end)
-                if whitespace > start:
-                    end = whitespace + 1
-        segment_start = fact.start + start
-        segment_end = fact.start + end
-        mentions = tuple(
-            mention for mention in fact.mentions if mention.start >= segment_start and mention.end <= segment_end
+    kind: str  # name riddle gap term equation chain finish question compare row sort timeline order summary tip picture
+    question: str  # the one plain question printed on the card
+    clue: str  # the sheet's words shown on the card; "" for a picture
+    answer: str  # the answer-sheet entry, in the sheet's words
+    page: int
+    unit_ids: tuple[str, ...] = ()
+    about: str = ""  # a short line saying what the card is about; never the answer
+    checks: tuple[str, ...] = ()  # notes for the adult checking answers
+    image: bytes | None = None
+
+
+@dataclass(frozen=True)
+class Heading:
+    name: str
+    after: str  # the rest of the heading as printed, starting right after the name
+    person: bool
+
+
+def parse_heading(text: str) -> Heading:
+    """Split "Dadabhai Naoroji (1825–1917) – "Grand Old Man of India"" into the name and the rest."""
+    depth, quoted, cut = 0, False, len(text)
+    for index, char in enumerate(text):
+        if char in "([":
+            depth += 1
+        elif char in ")]":
+            depth = max(0, depth - 1)
+        elif char == '"':
+            quoted = not quoted
+        elif char in "“”":
+            quoted = char == "“"
+        elif depth == 0 and not quoted and _HEADING_SEPARATOR.match(text, index):
+            cut = index
+            break
+    name = text[:cut].strip()
+    dated = re.search(r"\s*\([^()]*\d[^()]*\)\s*$", name)
+    if dated and dated.start() > 0:
+        name = name[: dated.start()].strip()
+    after = text[len(name) :] if text.startswith(name) else ""
+    life = _LIFE_YEARS.search(text)
+    lived = False
+    if life:
+        born, died = int(life.group(1)), life.group(2)
+        died = int(died) if len(died) == 4 else int(str(born)[:2] + died)
+        lived = 20 <= died - born <= 110
+    person = not _NOT_PERSON.search(name) and bool(_PERSON_TITLE.match(name) or lived or _PERSON_WORDS.search(after))
+    return Heading(name, after, person)
+
+
+def _ask(kind: str, standard: int, *values: str) -> str:
+    return _QUESTIONS[kind][standard - 7].format(*values)
+
+
+def _hide_name(text: str, name: str) -> str:
+    """Hide every capitalised use of the name's words, so a riddle never shows its answer."""
+    words = {
+        word.strip(".").casefold()
+        for word in re.findall(r"[A-Za-z][\w'’.-]*", name)
+        if word.casefold() not in _NAME_STOPWORDS
+        and len(word.strip(".")) >= 3
+        and not re.fullmatch(_MONTHS, word.strip("."), re.I)  # "Salt March" must not blank "12 March"
+    }
+    if not words:
+        return text
+    pattern = re.compile(
+        r"\b(" + "|".join(re.escape(word) for word in sorted(words, key=len, reverse=True)) + r")\b", re.I
+    )
+    hidden = pattern.sub(lambda match: GAP if match.group()[0].isupper() else match.group(), text)
+    return re.sub(rf"{GAP}(?:[\s-]+{GAP})+", GAP, hidden)
+
+
+def _clauses(text: str) -> list[str]:
+    """Long points split at top-level semicolons into clauses that each fit one card."""
+    if len(text) <= 120:
+        return [text]
+    parts, depth, start = [], 0, 0
+    for index, char in enumerate(text):
+        if char in "([":
+            depth += 1
+        elif char in ")]":
+            depth -= 1
+        elif char == ";" and depth <= 0:
+            parts.append(text[start : index + 1])
+            start = index + 1
+    parts.append(text[start:])
+    clauses = [part.strip().rstrip(";").strip() for part in parts]
+    clauses = [clause for clause in clauses if len(clause.split()) >= 4]
+    return clauses or [text]
+
+
+def _gap(text: str) -> tuple[str, str, str] | None:
+    """The most memorable date or number in a clause: (kind, answer, clue with the answer hidden)."""
+
+    def in_brackets(match: re.Match[str]) -> bool:
+        return text[: match.start()].count("(") > text[: match.start()].count(")")
+
+    def in_list(match: re.Match[str]) -> bool:
+        return bool(
+            re.search(r"\d{4}\s*,\s*$", text[: match.start()]) or re.match(r"\s*,\s*\d{4}", text[match.end() :])
         )
-        segments.append(
-            replace(
-                fact,
-                id=f"{fact.id}-C{len(segments) + 1}",
-                statement=statement[start:end],
-                start=segment_start,
-                end=segment_end,
-                mentions=mentions,
+
+    defined = _DEFINED_TERM.search(text)
+    if defined:
+        name = "term" if defined["term"] else "lead"
+        start, end = defined.span(name)
+        return "word", defined[name], f"{text[:start]}{GAP}{text[end:]}"
+    years = [match for match in _YEAR.finditer(text) if not in_list(match)]
+    choices = [
+        ("date", list(_FULL_DATE.finditer(text))),
+        ("year", [match for match in years if not in_brackets(match)]),
+        ("number", list(_QUANTITY.finditer(text))),
+        ("year", years),
+        ("century", list(_CENTURY.finditer(text))),
+    ]
+    for kind, matches in choices:
+        if matches:
+            match = matches[0]
+            return kind, match.group(), f"{text[: match.start()]}{GAP}{text[match.end() :]}"
+    return None
+
+
+def _readable(text: str) -> bool:
+    """False for text the PDF lost: letters its font could not encode, extracted as "IIIII" or as U+FFFD."""
+    return "\ufffd" not in text and not any(_JUNK_WORD.fullmatch(word) for word in text.split())
+
+
+def lost_text_pages(sheet: Sheet) -> list[int]:
+    """Pages where some of the sheet's text could not be read from the PDF, so it is on no card."""
+    pages = set()
+    for item in sheet.items:
+        cells = [cell for row in (item.table.header, *item.table.rows) for cell in row] if item.table else []
+        if not all(_readable(text) for text in (item.text, item.answer, *cells)):
+            pages.add(item.page)
+    return sorted(pages)
+
+
+def _labelled(text: str) -> tuple[str, str] | None:
+    """ "Evaporation: Heat from the Sun …" → ("Evaporation", "Heat from the Sun …")."""
+    match = _LABELLED.match(_LIST_LABEL.sub("", text))
+    if not match:
+        return None
+    label = match["label"].strip()
+    words = label.split()
+    if len(words) > 4 or re.search(r"\d", label) or GENERIC_HEADING.match(label) or GENERIC_HEADING.match(words[-1]):
+        return None
+    return label, match["text"].strip()
+
+
+def _equation(piece: str) -> tuple[str, str] | None:
+    """ "1 km = 1,000 m" → ("1 km = ______", "1,000 m"): the result is the answer, not the first number."""
+    if "=" not in piece or not _MATH.search(piece):
+        return None
+    split = max(piece.rfind("="), piece.rfind("≈"))
+    left, right = piece[:split], piece[split + 1 :]
+    right = right.strip().rstrip(".")
+    if not right or len(right.split()) > 7 or not left.strip():
+        return None
+    measured = re.fullmatch(r"[\d.,]+\s*[A-Za-z/°%·²³]{0,6}", right)
+    given = re.split(r"[=≈,;:]|\b(?:and|so|then)\b", left)[-1]
+    if measured and not re.search(r"[\d¼½¾⅓⅔⅛+\-−×÷*/^√]", given):
+        return None  # "radius = 7 cm" or "x = 6" states a value; "1 km = 1,000 m" and "240 − 15 = 225 mm" teach one
+    if _labelled(piece) is None and re.search(r"\d[a-z]\b|\b[a-z]\s*[+\-−×*/]", left):
+        return None  # "3x + 7 = 25" is an equation to solve, not a fact to recall; "1 m = 100 cm" is a fact
+    return f"{left.rstrip()} {piece[split]} {GAP}", right
+
+
+def _chain(piece: str) -> tuple[str, str] | None:
+    """ "Grass → Grasshopper → Frog → Snake" with a middle step hidden; "CO₂ + H₂O → glucose" with the result hidden."""
+    parts = _CHAIN.split(piece.rstrip("."))
+    steps, arrows = [step.strip() for step in parts[0::2]], parts[1::2]
+    if len(steps) < 2 or any(not step or len(step.split()) > 6 for step in steps):
+        return None
+    hidden = len(steps) // 2 if len(steps) > 2 else 1
+    shown = [GAP if index == hidden else step for index, step in enumerate(steps)]
+    clue = shown[0] + "".join(arrow + step for arrow, step in zip(arrows, shown[1:], strict=True))
+    return clue, steps[hidden]
+
+
+def _finish(text: str) -> tuple[str, str] | None:
+    words = text.split()
+    if len(words) < 6 or _MATH.search(text) or not re.search(r"[.!?][\"'”’)]*$", text):
+        return None  # only whole sentences: a line without a full stop is a heading or a fragment
+    shown = min(max(3, round(len(words) * 0.45)), len(words) - 3)
+    return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
+
+
+def _checks(text: str) -> tuple[str, ...]:
+    notes = []
+    cues = list(dict.fromkeys(match.group().casefold() for match in REVIEW_CUES.finditer(text)))
+    if cues:
+        quoted = ", ".join(f"“{cue}”" for cue in cues)
+        notes.append(f"Check first: the sheet says {quoted}. Confirm it in the textbook before learning it.")
+    return tuple(notes)
+
+
+def _card(kind: str, question: str, clue: str, answer: str, item: Item, about: str = "", source: str = "") -> Card:
+    about = about if _readable(about) else ""
+    return Card(kind, question, clue, answer, item.page, item.unit_ids, about, _checks(source or item.text))
+
+
+def _tip_card(item: Item, standard: int) -> Card | None:
+    body = item.text
+    for separator in re.finditer(r"\s+[—–-]\s+|:\s+", body):
+        lead, rest = body[: separator.start()], body[separator.end() :]
+        if len(lead.split()) >= 3 and len(rest.split()) >= 3:
+            return _card("tip", _ask("tip", standard), f"{lead} …", body, item, about=item.marker or "Memory tip")
+    finished = _finish(body)
+    if finished is None:
+        return None
+    return _card("tip", _ask("tip", standard), finished[0], body, item, about=item.marker or "Memory tip")
+
+
+def _numeric(cell: str) -> bool:
+    """A measurement or calculation ("0.50", "4/8 = 1/2", "90 g") rather than words to learn."""
+    return bool(re.search(r"\d", cell)) and not re.search(r"[A-Za-z]{4,}", cell)
+
+
+def _table_cards(item: Item, standard: int) -> list[Card]:
+    table = item.table
+    header, rows = table.header, table.rows
+    labels = [cell.strip().casefold() for cell in header]
+    if table.kind == "timeline":
+        return _timeline_cards(item, standard)
+    if table.kind == "panels":  # "WEATHER | CLIMATE" lists: sort each line into its list
+        options = [cell.strip() for cell in header if cell.strip()]
+        choice = " or ".join(options) if len(options) == 2 else ", ".join(options[:-1]) + " or " + options[-1]
+        return [
+            _card(
+                "sort",
+                _ask("sort", standard, choice),
+                _hide_name(cell, header[column]),
+                header[column].strip(),
+                item,
+                source=cell,
+            )
+            for row in rows
+            for column, cell in enumerate(row)
+            if cell.strip() and header[column].strip()
+        ]
+    asks = [index for index, label in enumerate(labels) if re.fullmatch(r"questions?|problems?|sums?|tasks?", label)]
+    replies = [index for index, label in enumerate(labels) if re.fullmatch(r"answers?|solutions?|results?", label)]
+    if asks and not replies and len(header) == 2:
+        replies = [1 - asks[0]]  # "Question | Why it matters": the other column answers it
+    if asks and replies:  # a practice table: each row is a question and its answer
+        working = [index for index, label in enumerate(labels) if re.fullmatch(r"working|method|steps?|hints?", label)]
+        cards = []
+        for row in rows:
+            question, answer = row[asks[0]].strip(), row[replies[0]].strip()
+            if question and answer:
+                if working and row[working[0]].strip():
+                    answer = f"{answer}  (working: {row[working[0]].strip()})"
+                cards.append(
+                    _card("question", _ask("question", standard), question, answer, item, "Practice question", answer)
+                )
+        return cards
+    if not header[0].strip() or labels[0] in {"feature", "features", "aspect", "aspects", "basis", "point", "points"}:
+        return _compare_cards(item, standard)
+    return _row_cards(item, standard)
+
+
+def _compare_cards(item: Item, standard: int) -> list[Card]:
+    """A "Feature | A | B | C" table: one card per feature, naming each thing compared."""
+    header, rows = item.table.header, item.table.rows
+    names = list(header[1:])
+    cards = []
+    for row in rows:
+        label, values = row[0].strip(), list(row[1:])
+        pairs = [
+            (name, value) for name, value in zip(names, values, strict=False) if name.strip() and value.strip(" -–—")
+        ]
+        if not label or len(pairs) < 2 or all(_numeric(value) for _, value in pairs):
+            continue
+        for start in range(0, len(pairs), 5):
+            chunk = pairs[start : start + 5]
+            if len(chunk) < 2:
+                chunk = pairs[-2:]
+            clue = "\n".join(name for name, _ in chunk)
+            answer = "\n".join(f"{name}: {value}" for name, value in chunk)
+            claims = " ".join(value for _, value in chunk)  # check the values, not the names in the header
+            question = _ask("compare", standard, label)
+            cards.append(_card("compare", question, clue, answer, item, about="Compare", source=claims))
+    return cards
+
+
+def _row_cards(item: Item, standard: int) -> list[Card]:
+    """A "Concept | Rule | Example" table: each row's description asks which one it describes."""
+    header, rows = item.table.header, item.table.rows
+    words = header[0].split()
+    noun = (
+        " ".join(word if word.isupper() and len(word) > 1 else word.lower() for word in words)
+        if len(words) <= 3
+        else ""
+    )
+    columns = [
+        column
+        for column in range(1, len(header))
+        if sum(len(row[column].split()) >= 2 and not _numeric(row[column]) for row in rows) >= max(2, len(rows) // 2)
+    ][:2]
+    cards = []
+    for row in rows:
+        name = row[0].strip()
+        for column in columns:
+            cell = row[column].strip()
+            if not name or len(cell.split()) < 2 or _numeric(cell):
+                continue
+            question = _ask("which", standard, noun) if noun else _ask("what_about", standard)
+            cards.append(_card("row", question, _hide_name(cell, name), name, item, header[column].strip(), cell))
+    return cards
+
+
+def _timeline_cards(item: Item, standard: int) -> list[Card]:
+    """Each event on a printed timeline asks for its year; one more card asks for the whole order."""
+    pairs = item.table.rows
+    cards = [_card("timeline", _ask("year_of", standard), event, year, item, "Timeline") for year, event in pairs]
+    shuffled = sorted(event for _, event in pairs)  # alphabetical: a fixed order that is not the answer
+    answer = "\n".join(f"{year}: {event}" for year, event in pairs)
+    if shuffled != [event for _, event in pairs]:
+        cards.append(_card("order", _ask("order", standard), "\n".join(shuffled), answer, item, "Timeline", answer))
+    return cards
+
+
+def _pieces(text: str) -> list[str]:
+    """A point as card-sized pieces: its sentences, and long sentences split at semicolons.
+
+    Short facts printed on one line between bullets or bars ("1 km = 1,000 m • 1 m = 100 cm") are separate pieces.
+    """
+    parts = _INLINE_SEPARATOR.split(text)
+    if len(parts) > 1 and all(len(part.split()) <= 8 for part in parts):
+        return [part.strip() for part in parts if part.strip()]
+    sentences = [sentence.lstrip(BULLETS + " ") for sentence in split_sentences(text)]
+    return [clause for sentence in sentences if sentence for clause in _clauses(sentence)]
+
+
+def _vocabulary(pieces: list[str]) -> bool:
+    labelled = [_labelled(piece) for piece in pieces]
+    found = [label for label in labelled if label is not None]
+    return len(found) >= 2 and len(found) >= 0.6 * len(pieces) and len({label for label, _ in found}) == len(found)
+
+
+def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int) -> list[Card]:
+    cards = []
+    about = heading.name if heading else item.context
+    for piece in pieces:
+        labelled = _labelled(piece)
+        equation = _equation(piece)
+        if equation is not None:
+            clue, answer = equation  # "Area of a rectangle: A = ______"
+            cards.append(_card("equation", _ask("equation", standard), clue, answer, item, about, source=piece))
+            continue
+        chain = _chain(piece)
+        if chain is not None:
+            clue, answer = chain
+            cards.append(_card("chain", _ask("chain", standard), clue, answer, item, about, source=piece))
+            continue
+        if labelled and terms:
+            label, text = labelled  # "Producer: makes its own food" under "Remember these terms"
+            cards.append(
+                _card("term", _ask("term", standard), _hide_name(text, label), label, item, about, source=piece)
+            )
+            continue
+        gap = _gap(piece)
+        if gap is not None:
+            kind, answer, clue = gap
+            cards.append(_card("gap", _ask(kind, standard), clue, answer, item, about, source=piece))
+            continue
+        if heading is not None and not _MATH.search(piece):
+            hidden = _hide_name(piece, heading.name)
+            if len(hidden.replace(GAP, "").split()) >= 3:
+                question = _ask("who_about" if heading.person else "what_about", standard)
+                cards.append(_card("riddle", question, hidden, heading.name, item, source=piece))
+                continue
+        finished = _finish(piece)
+        if finished is not None:
+            cards.append(_card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece))
+    return cards
+
+
+def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
+    """One plain question per card, in the order of the sheet."""
+    items = list(sheet.items)
+    headings = {
+        item.text: parse_heading(item.text) for item in items if item.kind == "topic" and names_topic(item.text)
+    }
+    answers: dict[tuple[str, str], str] = {}
+    for item in items:
+        if item.kind == "answer" and item.number:
+            answers.setdefault((item.group, item.number), item.text)
+    answer_groups = {group for group, _ in answers}
+    pieces = {id(item): _pieces(item.text) for item in items if item.kind == "point"}
+    cards: list[Card] = []
+    for index, item in enumerate(items):
+        if item.kind == "topic" and item.text in headings:
+            heading = headings[item.text]
+            if heading.after.strip(" –—-:") and len(heading.name.split()) <= 8:
+                clue = GAP + _hide_name(heading.after, heading.name)
+                cards.append(
+                    _card("name", _ask("who" if heading.person else "what", standard), clue, heading.name, item)
+                )
+        elif item.kind == "point" and (worked := _WORKED.match(item.text)) is not None:
+            task, solution = worked["task"], worked["solution"]
+            question = _ask("question", standard)
+            cards.append(_card("question", question, task, solution, item, "Worked example", solution))
+        elif item.kind == "point" and not _NO_CARDS.match(item.context):
+            heading = headings.get(item.topic)
+            # "Term: meaning" lines listed together, with no named topic above them, are vocabulary to learn.
+            siblings = [
+                piece
+                for other in items[max(0, index - 6) : index + 7]
+                if other.kind == "point" and other.topic == item.topic and other.context == item.context
+                for piece in pieces[id(other)][:1]
+            ]
+            terms = heading is None and (_vocabulary(pieces[id(item)]) or _vocabulary(siblings))
+            cards.extend(_point_cards(item, heading, pieces[id(item)], terms, standard))
+        elif item.kind == "summary":
+            name, rest = summary_parts(item.text)
+            heading = next((h for h in headings.values() if h.name.casefold() == name.casefold()), None)
+            person = heading.person if heading else bool(_PERSON_TITLE.match(name))
+            question = _ask("who_about" if person else "what_about", standard)
+            cards.append(_card("summary", question, _hide_name(rest, name), name, item))
+        elif item.kind == "question":
+            text = _QUESTION_LABEL.sub("", item.text)
+            clue = re.sub(r"_{3,}|\.{5,}|…{2,}", GAP, text)
+            answer = item.answer or answers.get((item.group, item.number), "")
+            if not answer and len(answer_groups) == 1:
+                answer = answers.get((next(iter(answer_groups)), item.number), "")
+            if answer.casefold().startswith(item.text.casefold()):
+                answer = answer[len(item.text) :].strip()
+            question = _ask("fill" if GAP in clue else "question", standard)
+            cards.append(_card("question", question, clue, answer, item, "Practice question", answer or item.text))
+        elif item.kind == "table" and item.table is not None:
+            cards.extend(_table_cards(item, standard))
+        elif item.kind == "tip" and (tip := _tip_card(item, standard)) is not None:
+            cards.append(tip)
+    cards.extend(_picture_cards(sheet, headings, standard))
+    return [card for card in cards if _readable(card.clue) and _readable(card.answer)]
+
+
+def _picture_cards(sheet: Sheet, headings: dict[str, Heading], standard: int) -> list[Card]:
+    """A picture printed beside a topic becomes "Who is this?"; pictures the sheet does not name are left out."""
+    spans: list[tuple[int, float, float, Item]] = []
+    for item in sheet.items:
+        if item.kind == "topic" and item.text in headings:
+            spans.append((item.page, item.top, item.bottom, item))
+        elif (
+            item.kind in {"point", "summary"}
+            and spans
+            and item.topic == spans[-1][3].text
+            and item.page == spans[-1][0]
+        ):
+            page, top, bottom, topic = spans[-1]
+            spans[-1] = (page, top, max(bottom, item.bottom), topic)
+    cards = []
+    for picture in sheet.pictures:
+        _, top, _, bottom = picture.rect
+        overlaps = [
+            (min(bottom, end) - max(top, start), topic) for page, start, end, topic in spans if page == picture.page
+        ]
+        overlap, topic = max(overlaps, key=lambda pair: pair[0], default=(0.0, None))
+        if topic is None or overlap <= 0:
+            continue
+        heading = headings[topic.text]
+        question = _ask("who" if heading.person else "what", standard)
+        cards.append(
+            Card(
+                "picture",
+                question,
+                "",
+                heading.name,
+                picture.page,
+                topic.unit_ids,
+                "Picture from your sheet",
+                (),
+                picture.image,
             )
         )
-        start = end
-    return tuple(segments)
+    return cards
 
 
-def _focus(fact: Fact) -> tuple[Mention, str, str] | None:
-    statement = fact.statement.strip()
-    if "?" in statement or re.match(r"^(?:question|q\.)\s*\d+\b", statement, re.IGNORECASE):
-        return None
-    has_relation = any(mention.kind == "relationship_cue" for mention in fact.mentions)
-    has_definition = re.search(
-        r"\b(?:means|refers to|is defined as|are defined as|is called|are called)\b", statement, re.IGNORECASE
-    )
-    if _HEADING_CUES.search(statement) and not (has_relation or has_definition):
-        return None
-    if not (has_relation or has_definition):
-        return None
-    priority = {
-        "difficult_term": (0, "WORD DETECTIVE", "What does this word mean here?"),
-        "date": (1, "TIME DETECTIVE", "Which date fits? Picture it on a timeline."),
-        "number": (2, "NUMBER DETECTIVE", "Which number fits? Say what it measures."),
-        "place_candidate": (3, "PLACE DETECTIVE", "Which place fits? Say what links it to the idea."),
-    }
-    candidates = []
-    for mention in fact.mentions:
-        if mention.kind not in priority:
-            continue
-        if mention.kind == "difficult_term" and not has_definition:
-            continue
-        prefix = fact.statement[: mention.start - fact.start].strip().casefold()
-        prefix = re.sub(r"^[\W_]+", "", prefix)
-        if mention.kind == "number" and re.search(r"\b(?:class|grade|standard|page|question|q\.)\s*$", prefix):
-            continue
-        candidates.append(mention)
-    if not candidates:
-        return None
-    mention = min(candidates, key=lambda item: (priority[item.kind][0], -(item.end - item.start), item.start))
-    _, label, prompt = priority[mention.kind]
-    return mention, label, prompt
+# ---------------------------------------------------------------- printing
 
 
-def _masked_statement(fact: Fact, focus: Mention | None) -> str:
-    if focus is None:
-        return fact.statement
-    start = focus.start - fact.start
-    end = focus.end - fact.start
-    return f"{fact.statement[:start]}________{fact.statement[end:]}"
+class _Type:
+    """FiraGO when pymupdf-fonts is installed (it covers – — → ₹ and Indian names); built-in Helvetica otherwise."""
 
+    def __init__(self) -> None:
+        try:
+            import pymupdf_fonts  # noqa: F401  (registers FiraGO with PyMuPDF)
 
-def _wrapped(text: str, font: pymupdf.Font, size: float, width: float) -> list[str]:
-    lines: list[str] = []
-    for paragraph in text.splitlines() or [""]:
-        words = paragraph.split()
-        if not words:
-            lines.append("")
-            continue
-        line = words[0]
-        for word in words[1:]:
-            candidate = f"{line} {word}"
-            if font.text_length(candidate, fontsize=size) <= width:
-                line = candidate
+            self.regular, self.bold = pymupdf.Font("figo"), pymupdf.Font("figbo")
+            self.names = {False: "F0", True: "F1"}
+            self.embedded = True
+        except (ImportError, RuntimeError):
+            self.regular, self.bold = pymupdf.Font("helv"), pymupdf.Font("hebo")
+            self.names = {False: "helv", True: "hebo"}
+            self.embedded = False
+        self._advances: dict[tuple[bool, str], float] = {}
+
+    def prepare(self, page: pymupdf.Page) -> None:
+        if self.embedded:
+            page.insert_font(fontname="F0", fontbuffer=self.regular.buffer)
+            page.insert_font(fontname="F1", fontbuffer=self.bold.buffer)
+
+    def printable(self, text: str, bold: bool = False) -> str:
+        font = self.bold if bold else self.regular
+        chars = []
+        for char in text:
+            if char == "\n" or (font.has_glyph(ord(char)) if self.embedded else ord(char) < 256):
+                chars.append(char)
             else:
-                lines.append(line)
-                line = word
-        lines.append(line)
-    return lines
+                swapped = char.translate(_SUBSTITUTES)
+                chars.append(swapped if swapped != char else "?")
+        return "".join(chars)
+
+    def width(self, text: str, size: float, bold: bool = False) -> float:
+        font = self.bold if bold else self.regular
+        total = 0.0
+        for char in text:
+            advance = self._advances.get((bold, char))
+            if advance is None:
+                advance = self._advances[(bold, char)] = font.text_length(char, fontsize=1)
+            total += advance
+        return total * size
+
+    def wrap(self, text: str, size: float, width: float, bold: bool = False) -> list[str]:
+        lines: list[str] = []
+        for paragraph in text.split("\n"):
+            line = ""
+            for word in paragraph.split():
+                while len(word) > 1 and self.width(word, size, bold) > width:  # a word longer than a line is broken
+                    cut = next((i for i in range(len(word) - 1, 0, -1) if self.width(word[:i], size, bold) <= width), 1)
+                    if line:
+                        lines.append(line)
+                        line = ""
+                    lines.append(word[:cut])
+                    word = word[cut:]
+                candidate = f"{line} {word}" if line else word
+                if self.width(candidate, size, bold) <= width:
+                    line = candidate
+                else:
+                    lines.append(line)
+                    line = word
+            lines.append(line)
+        return lines
+
+    def fit(self, text: str, box: pymupdf.Rect, largest: float, smallest: float, bold: bool) -> tuple[float, list[str]]:
+        """The largest size at which the text fits the box; at the smallest size, overflow ends in "…"."""
+        text = self.printable(text, bold)
+        size = largest
+        while True:
+            lines = self.wrap(text, size, box.width, bold)
+            if len(lines) * size * 1.22 <= box.height or size <= smallest:
+                break
+            size = max(smallest, round(size - 0.5, 1))
+        room = max(1, int(box.height // (size * 1.22)))
+        if len(lines) > room:
+            lines = lines[:room]
+            while lines[-1] and self.width(lines[-1] + " …", size, bold) > box.width:
+                lines[-1] = lines[-1].rsplit(" ", 1)[0] if " " in lines[-1] else lines[-1][:-1]
+            lines[-1] = f"{lines[-1]} …"
+        return size, lines
+
+    def draw(
+        self, shape, lines: list[str], size: float, x: float, y: float, bold: bool, colour, align_right: float = 0
+    ):
+        for line in lines:
+            y += size
+            left = align_right - self.width(line, size, bold) if align_right else x
+            shape.insert_text((left, y), line, fontname=self.names[bold], fontsize=size, color=colour)
+            y += size * 0.22
+        return y
 
 
-def _fit_size(text: str, font: pymupdf.Font, max_size: float, max_width: float, max_height: float) -> float:
-    sizes = [size for size in (max_size, 11.0, 9.4, 8.8, 8.2, 7.6, 7.0, 6.4, 5.8) if size <= max_size]
-    for size in dict.fromkeys(sizes):
-        line_count = len(_wrapped(text, font, size, max_width))
-        if line_count * size * 1.25 <= max_height * 0.9:
-            return size
-    raise ValueError("A source fact is too long to fit on a card. Select fewer pages or split that source sentence.")
-
-
-def _draw_text(page, text: str, rect: pymupdf.Rect, fontname: str, max_size: float, color, align=0) -> None:
-    text = text.translate(_PRINT_SUBSTITUTIONS)
-    font = pymupdf.Font(fontname)
-    size = _fit_size(text, font, max_size, rect.width, rect.height)
-    while size >= 4.8:
-        result = page.insert_textbox(
-            rect,
-            text,
-            fontname=fontname,
-            fontsize=size,
-            lineheight=1.25,
-            color=color,
-            align=align,
-        )
-        if result >= 0:
-            return
-        size = round(size - 0.5, 1)
-    raise ValueError("A source fact could not be laid out on the printable cards. Select fewer pages.")
-
-
-def _card_rect(column: int, row: int) -> pymupdf.Rect:
-    x = _LEFT + column * _CARD_WIDTH
-    y = _TOP + row * _CARD_HEIGHT
+def _card_box(position: int) -> pymupdf.Rect:
+    column, row = position % 2, position // 2
+    x, y = _LEFT + column * _CARD_WIDTH, _TOP + row * _CARD_HEIGHT
     return pymupdf.Rect(x, y, x + _CARD_WIDTH, y + _CARD_HEIGHT)
 
 
-def _draw_card_frame(page, rect: pymupdf.Rect, warning: bool = False) -> None:
-    page.draw_rect(rect, color=_LINE, fill=(1, 1, 1), width=0.8)
-    band = _ORANGE if warning else _GREEN
-    page.draw_rect(pymupdf.Rect(rect.x0, rect.y0, rect.x1, rect.y0 + 5), color=None, fill=band)
-
-
-def _detective_prompt(label: str) -> str:
-    prompts = {
-        "WORD DETECTIVE": "What does this word mean here?",
-        "TIME DETECTIVE": "Which date fits? Picture it on a timeline.",
-        "NUMBER DETECTIVE": "Which number fits? Say what it measures.",
-        "PLACE DETECTIVE": "Which place fits? Say what links it to the idea.",
-        "NAME DETECTIVE": "Which name fits? Tell what the source says.",
-        "MEMORY MISSION": "Read the evidence. Cover it, then explain the idea.",
-    }
-    return prompts[label]
-
-
-def _hero_prompt(label: str) -> str:
-    prompts = {
-        "WORD DETECTIVE": "WORD LENS - explain the word as this source uses it.",
-        "TIME DETECTIVE": "TIME JUMP - place the date on an imaginary timeline.",
-        "NUMBER DETECTIVE": "NUMBER SHIELD - recall the value and what it describes.",
-        "PLACE DETECTIVE": "MAP PULSE - recall the place and its source-stated link.",
-        "NAME DETECTIVE": "NAME SPARK - recall the name and its source detail.",
-        "MEMORY MISSION": "MEMORY BEAM - teach one source idea to a teammate.",
-    }
-    return prompts[label]
-
-
-def _mode_prompt(label: str, game_mode: str, standard: int) -> str:
-    if standard == 7:
-        prompts = {
-            "WORD DETECTIVE": "Explain this word to your teammate.",
-            "TIME DETECTIVE": "Find the date. Put it on a timeline.",
-            "NUMBER DETECTIVE": "Find the number. What does it count?",
-            "PLACE DETECTIVE": "Find the place. What is it linked to?",
-            "NAME DETECTIVE": "Find the name. What does the source say?",
-            "MEMORY MISSION": "Read the clue, cover it, then tell it back.",
-        }
-    elif standard == 9:
-        prompts = {
-            "WORD DETECTIVE": "Explain how the source uses this term.",
-            "TIME DETECTIVE": "Place the date in sequence and recall its event.",
-            "NUMBER DETECTIVE": "Recall the value and identify what it measures.",
-            "PLACE DETECTIVE": "Name the place and explain the stated relationship.",
-            "NAME DETECTIVE": "Identify the name and its source-stated detail.",
-            "MEMORY MISSION": "Reconstruct the idea from memory, then verify the source.",
-        }
-    else:
-        return _detective_prompt(label) if game_mode == "detective" else _hero_prompt(label)
-    prompt = prompts[label]
-    return f"POWER-UP - {prompt}" if game_mode == "superhero" else prompt
-
-
-def _draw_visual_front(page, visual: SourceVisual, number: int, position: int, game_mode: str) -> None:
-    rect = _card_rect(position % 2, position // 2)
-    _draw_card_frame(page, rect)
-    inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
-    mode_label = "CASE EVIDENCE" if game_mode == "detective" else "HERO POWER-UP"
-    page.insert_text(
-        (inner.x0, inner.y0 + 8),
-        f"{mode_label} - SOURCE VISUAL",
-        fontname="hebo",
-        fontsize=7.2,
-        color=_GREEN if game_mode == "detective" else _HERO,
-    )
-    prompt = (
-        "Study this exact source image. What do you notice? Check nearby source text before explaining it."
-        if game_mode == "detective"
-        else "Choose one detail from this source image to help a fact stick. Your memory link is your own."
-    )
-    _draw_text(page, prompt, pymupdf.Rect(inner.x0, inner.y0 + 15, inner.x1, inner.y0 + 42), "helv", 8.0, _MUTED)
-    image_rect = pymupdf.Rect(inner.x0 + 5, inner.y0 + 47, inner.x1 - 5, inner.y0 + 119)
-    page.insert_image(image_rect, stream=visual.image, keep_proportion=True)
-    page.insert_text(
-        (inner.x0, inner.y1 - 8),
-        f"SOURCE PAGE {visual.page}  -  CARD {number + 1:02d}",
-        fontname="helv",
-        fontsize=6.4,
-        color=_MUTED,
-    )
-
-
-def _draw_visual_back(page, visual: SourceVisual, position: int, game_mode: str) -> None:
-    rect = _card_rect(position % 2, position // 2)
-    _draw_card_frame(page, rect)
-    inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
-    label = "CASE NOTES - SOURCE IMAGE" if game_mode == "detective" else "HERO NOTES - SOURCE IMAGE"
-    page.insert_text(
-        (inner.x0, inner.y0 + 8),
+def _draw_card(page, shape, kind: _Type, card: Card, number: int, box: pymupdf.Rect, theme: dict) -> None:
+    colour, tint = theme["colour"], theme["tint"]
+    centre = pymupdf.Point(box.x0 + 24, box.y0 + 24)
+    shape.draw_circle(centre, 11)
+    shape.finish(color=None, fill=colour)
+    label = str(number)
+    size = 9.5 if number < 100 else 8
+    shape.insert_text(
+        (centre.x - kind.width(label, size, True) / 2, centre.y + size * 0.35),
         label,
-        fontname="hebo",
-        fontsize=7.2,
-        color=_GREEN if game_mode == "detective" else _HERO,
+        fontname=kind.names[True],
+        fontsize=size,
+        color=(1, 1, 1),
     )
-    page.insert_text(
-        (inner.x0, inner.y0 + 33),
-        f"This image is reproduced from source page {visual.page}.",
-        fontname="helv",
-        fontsize=8.3,
-        color=_INK,
-    )
-    prompt = (
-        "Point to details you can verify in the source. Keep guesses separate from evidence."
-        if game_mode == "detective"
-        else "Invent a hero emblem to remember one verified detail. The emblem is a memory aid, not a source fact."
-    )
-    _draw_text(page, prompt, pymupdf.Rect(inner.x0, inner.y0 + 47, inner.x1, inner.y0 + 88), "helv", 8.0, _MUTED)
-    doodle = pymupdf.Rect(inner.x1 - 42, inner.y1 - 44, inner.x1, inner.y1 - 2)
-    page.draw_rect(doodle, color=_LINE, width=0.6)
-    page.insert_text(
-        (inner.x0, inner.y1 - 8),
-        f"PAGE {visual.page}  -  {game_mode.upper()} SOURCE VISUAL",
-        fontname="helv",
-        fontsize=6.4,
-        color=_MUTED,
-    )
-
-
-def _draw_front(page, fact: Fact, number: int, position: int, game_mode: str, standard: int) -> None:
-    rect = _card_rect(position % 2, position // 2)
-    warning = bool(fact.review_flags)
-    _draw_card_frame(page, rect, warning)
-    focus = _focus(fact)
-    if warning:
-        label = "PAUSE - VERIFY THIS SOURCE CLAIM"
-        prompt = "Check the quoted claim with a trusted adult before learning it."
-        text = fact.statement
-    elif focus:
-        mention, label, _ = focus
-        prompt = _mode_prompt(label, game_mode, standard)
-        text = _masked_statement(fact, mention)
+    if card.about:
+        about_box = pymupdf.Rect(box.x0 + 42, box.y0 + 15, box.x1 - 16, box.y0 + 36)
+        size, lines = kind.fit(card.about, about_box, 9, 7, True)
+        kind.draw(shape, lines[:2], size, about_box.x0, about_box.y0 + (2 if len(lines) == 1 else -2), True, colour)
+    clue_box = pymupdf.Rect(box.x0 + 18, box.y0 + 44, box.x1 - 18, box.y1 - 46)
+    if card.image is not None:
+        page.insert_image(clue_box, stream=card.image, keep_proportion=True)
     else:
-        label = "SOURCE QUESTION" if fact.statement.rstrip().endswith("?") else "SOURCE IDEA"
-        prompt = (
-            "Try to answer before turning over. Check the source when you are unsure."
-            if label == "SOURCE QUESTION"
-            else _mode_prompt("MEMORY MISSION", game_mode, standard)
-        )
-        text = fact.statement
+        size, lines = kind.fit(card.clue, clue_box, 14, 7, True)
+        height = len(lines) * size * 1.22
+        kind.draw(shape, lines, size, clue_box.x0, clue_box.y0 + max(0, (clue_box.height - height) / 2) - 2, True, _INK)
+    strip = pymupdf.Rect(box.x0 + 12, box.y1 - 40, box.x1 - 12, box.y1 - 12)
+    shape.draw_rect(strip, radius=0.25)
+    shape.finish(color=None, fill=tint)
+    inner = strip + (9, 4, -9, -4)
+    size, lines = kind.fit(card.question, inner, 10, 7.5, True)
+    height = len(lines) * size * 1.22
+    kind.draw(shape, lines, size, inner.x0, inner.y0 + (inner.height - height) / 2 - 1, True, colour)
 
-    inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
-    page.insert_text(
-        (inner.x0, inner.y0 + 8), label, fontname="hebo", fontsize=7.2, color=_ORANGE if warning else _GREEN
+
+def _cut_lines(shape, count: int) -> None:
+    for position in range(count):
+        shape.draw_rect(_card_box(position))
+    shape.finish(color=_CUT, width=0.5, dashes="[3 3] 0")
+
+
+def _header(shape, kind: _Type, theme: dict, sheet: int, sheets: int, first: int, last: int) -> None:
+    left = f"{theme['title']}  ·  SHEET {sheet} OF {sheets}  ·  CARDS {first}–{last}"
+    kind.draw(shape, [kind.printable(left, True)], 7.5, _LEFT, 17, True, _MUTED)
+    note = kind.printable("Cut along the dashed lines. The answers are at the end.")
+    kind.draw(shape, [note], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
+
+
+def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: tuple[str, ...]) -> None:
+    margin, width = 46.0, _PAGE_WIDTH - 92.0
+    page = shape = None
+    y = 0.0
+
+    def new_page(first: bool) -> None:
+        nonlocal page, shape, y
+        if shape is not None:
+            shape.commit()
+        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+        kind.prepare(page)
+        shape = page.new_shape()
+        title = "ANSWER SHEET" if first else "ANSWER SHEET (CONTINUED)"
+        y = kind.draw(shape, [title], 15, margin, 34, True, theme["colour"])
+        note = (
+            f"{theme['title'].title()}  ·  {len(cards)} cards  ·  Keep this page away from the cards. "
+            "“p.” is the page of your study sheet."
+        )
+        y = kind.draw(shape, [kind.printable(note)], 8, margin, y + 2, False, _MUTED) + 12
+
+    new_page(True)
+    for number, card in enumerate(cards, start=1):
+        answer = card.answer or "The sheet gives no answer for this question. Answer it from your notes."
+        size, lines = 10.0, kind.wrap(kind.printable(answer, True), 10, width - 70, True)
+        checks = [line for check in card.checks for line in kind.wrap(kind.printable(check), 8, width - 70)]
+        height = len(lines) * 12.2 + len(checks) * 9.8 + 8
+        if y + height > _PAGE_HEIGHT - 40:
+            new_page(False)
+        kind.draw(shape, [str(number)], 10, 0, y, True, theme["colour"], align_right=margin + 22)
+        kind.draw(shape, [f"p. {card.page}"], 8, 0, y + 1, False, _MUTED, align_right=margin + width)
+        bottom = kind.draw(shape, lines, size, margin + 32, y, True, _INK if card.answer else _MUTED)
+        if checks:
+            bottom = kind.draw(shape, checks, 8, margin + 32, bottom + 1, False, _ORANGE)
+        y = bottom + 7
+    for note in notes:
+        lines = kind.wrap(kind.printable(note), 8.5, width - 32)
+        if y + len(lines) * 10.4 + 8 > _PAGE_HEIGHT - 40:
+            new_page(False)
+        y = kind.draw(shape, lines, 8.5, margin + 32, y + 4, False, _ORANGE) + 4
+    shape.commit()
+
+
+def render_cards_pdf(
+    cards: list[Card], game_mode: str = "detective", standard: int = 8, notes: tuple[str, ...] = ()
+) -> bytes:
+    """Print the cards eight to an A4 page, fronts only, then the answer sheet and any notes for the adult."""
+    theme = _THEMES[game_mode]
+    kind = _Type()
+    document = pymupdf.open()
+    sheets = (len(cards) + _CARDS_PER_PAGE - 1) // _CARDS_PER_PAGE
+    for sheet in range(sheets):
+        group = cards[sheet * _CARDS_PER_PAGE : (sheet + 1) * _CARDS_PER_PAGE]
+        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+        kind.prepare(page)
+        shape = page.new_shape()
+        first = sheet * _CARDS_PER_PAGE + 1
+        _header(shape, kind, theme, sheet + 1, sheets, first, first + len(group) - 1)
+        _cut_lines(shape, len(group))
+        for position, card in enumerate(group):
+            _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
+        shape.commit()
+    _answer_pages(document, kind, cards, theme, notes)
+    document.set_metadata(
+        {"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"}
     )
-    if not warning:
-        badge = {
-            "WORD DETECTIVE": "ABC",
-            "TIME DETECTIVE": "DATE",
-            "NUMBER DETECTIVE": "123",
-            "PLACE DETECTIVE": "MAP",
-            "NAME DETECTIVE": "NAME",
-            "MEMORY MISSION": "IDEA",
-            "SOURCE QUESTION": "ASK",
-            "SOURCE IDEA": "IDEA",
-        }[label]
-        badge_rect = pymupdf.Rect(inner.x1 - 28, inner.y0 - 1, inner.x1, inner.y0 + 17)
-        mode_color = _GREEN if game_mode == "detective" else _HERO
-        page.draw_circle(
-            ((badge_rect.x0 + badge_rect.x1) / 2, (badge_rect.y0 + badge_rect.y1) / 2), 9, color=None, fill=_PAPER
-        )
-        page.insert_textbox(badge_rect, badge, fontname="hebo", fontsize=4.8, color=mode_color, align=1)
-    prompt_rect = pymupdf.Rect(inner.x0, inner.y0 + 17, inner.x1, inner.y0 + 45)
-    _draw_text(page, prompt, prompt_rect, "helv", 8.2, _MUTED)
-    clue_rect = pymupdf.Rect(inner.x0, inner.y0 + 48, inner.x1, inner.y0 + 107)
-    _draw_text(page, text, clue_rect, "hebo", 12.0, _INK)
-    page.insert_text((inner.x0, inner.y1 - 8), f"CARD {number + 1:02d}", fontname="helv", fontsize=6.4, color=_MUTED)
-
-
-def _draw_back(page, fact: Fact, number: int, position: int, game_mode: str) -> None:
-    rect = _card_rect(position % 2, position // 2)
-    warning = bool(fact.review_flags)
-    _draw_card_frame(page, rect, warning)
-    inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
-    label = "VERIFY FIRST" if warning else "SOURCE ANSWER"
-    mode_color = _ORANGE if warning else (_GREEN if game_mode == "detective" else _HERO)
-    page.insert_text((inner.x0, inner.y0 + 8), label, fontname="hebo", fontsize=7.2, color=mode_color)
-    quote_rect = pymupdf.Rect(inner.x0, inner.y0 + 20, inner.x1, inner.y0 + 86)
-    _draw_text(page, fact.statement, quote_rect, "hebo", 10.0, _INK)
-    source = f"Source page {fact.page}  -  {fact.source_unit_id}"
-    page.insert_text((inner.x0, inner.y0 + 96), source, fontname="helv", fontsize=6.5, color=_MUTED)
-    if warning:
-        review = ", ".join(fact.review_flags)
-        _draw_text(
-            page,
-            f"Review flag: {review}",
-            pymupdf.Rect(inner.x0, inner.y0 + 104, inner.x1, inner.y0 + 119),
-            "helv",
-            6.8,
-            _ORANGE,
-        )
-        page.insert_text(
-            (inner.x0, inner.y1 - 8),
-            "Do not treat as confirmed until checked against the source.",
-            fontname="helv",
-            fontsize=6.1,
-            color=_ORANGE,
-        )
-    else:
-        if game_mode == "detective":
-            page.insert_text(
-                (inner.x0, inner.y0 + 111),
-                "CASE POINT: recall + cite the page",
-                fontname="hebo",
-                fontsize=6.3,
-                color=_GREEN,
-            )
-        else:
-            page.insert_text(
-                (inner.x0, inner.y0 + 111),
-                "POWER: recall + teach + draw a symbol",
-                fontname="hebo",
-                fontsize=6.0,
-                color=_HERO,
-            )
-        page.insert_text(
-            (inner.x0, inner.y0 + 127),
-            "My memory hook:",
-            fontname="hebo",
-            fontsize=6.8,
-            color=_GREEN if game_mode == "detective" else _HERO,
-        )
-        page.draw_line((inner.x0 + 57, inner.y0 + 114), (inner.x1 - 33, inner.y0 + 114), color=_LINE, width=0.6)
-        doodle = pymupdf.Rect(inner.x1 - 29, inner.y0 + 103, inner.x1 - 1, inner.y0 + 131)
-        page.draw_rect(doodle, color=_LINE, width=0.6)
-        page.insert_text((doodle.x0 + 2, doodle.y1 + 7), "SKETCH", fontname="helv", fontsize=4.8, color=_MUTED)
-        page.insert_text(
-            (inner.x0, inner.y1 - 8),
-            "Your memory link is not a source fact",
-            fontname="helv",
-            fontsize=6.1,
-            color=_MUTED,
-        )
+    if kind.embedded:
+        document.subset_fonts()
+    result = document.tobytes(garbage=4, deflate=True)
+    document.close()
+    return result
 
 
 def extract_source_visuals(source_pdf: bytes, pages: set[int] | None = None) -> list[SourceVisual]:
@@ -483,70 +878,24 @@ def render_printable_cards_pdf(
     pages: set[int] | None = None,
     standard: int = 8,
 ) -> bytes:
-    """Create 85 × 68.8 mm two-sided game cards with source facts, citations, and embedded visuals."""
-    if game_mode not in {"detective", "superhero"}:
+    """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them."""
+    if game_mode not in _THEMES:
         raise ValueError("Choose either Detective or Superhero game mode.")
     if standard not in {7, 8, 9}:
         raise ValueError("Choose ICSE Standard 7, 8, or 9.")
-    if not inventory.facts:
+    if not inventory.facts and not source_pdf:
         raise ValueError("No source facts were found to turn into cards.")
-    visuals = extract_source_visuals(source_pdf, pages) if source_pdf else []
-    entries = [("fact", segment) for fact in inventory.facts for segment in _split_long_fact(fact)]
-    entries.extend(("visual", visual) for visual in visuals)
-    document = pymupdf.open()
-    cards_per_sheet = 8
-    sheets = (len(entries) + cards_per_sheet - 1) // cards_per_sheet
-
-    for sheet_number in range(sheets):
-        start = sheet_number * cards_per_sheet
-        group = entries[start : start + cards_per_sheet]
-        for side in ("FRONTS", "BACKS"):
-            page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
-            mode_title = "DETECTIVE CASE FILE" if game_mode == "detective" else "SUPERHERO POWER-UP GAME"
-            heading = f"{mode_title}  -  SHEET {sheet_number + 1}  -  {side}"
-            if side == "BACKS":
-                heading += "  -  FLIP ON LONG EDGE"
-            page.insert_text((18, 18), heading, fontname="hebo", fontsize=7, color=_MUTED)
-            directions = (
-                "HOW TO PLAY: Read the clue, name the missing evidence, then flip. "
-                "Earn a case point for a correct answer and source page."
-                if game_mode == "detective"
-                else "HOW TO PLAY: Reveal a clue, recall its source detail, then teach a teammate. "
-                "Draw a memory emblem to earn a power."
-            )
-            page.insert_text(
-                (18, 27), directions, fontname="helv", fontsize=6, color=_GREEN if game_mode == "detective" else _HERO
-            )
-            for position in range(cards_per_sheet):
-                if side == "FRONTS":
-                    fact_index = start + position
-                else:
-                    mirror = position + 1 if position % 2 == 0 else position - 1
-                    fact_index = start + mirror
-                if fact_index >= start + len(group):
-                    continue
-                entry_type, entry = entries[fact_index]
-                if side == "FRONTS":
-                    if entry_type == "fact":
-                        _draw_front(page, entry, fact_index, position, game_mode, standard)
-                    else:
-                        _draw_visual_front(page, entry, fact_index, position, game_mode)
-                else:
-                    if entry_type == "fact":
-                        _draw_back(page, entry, fact_index, position, game_mode)
-                    else:
-                        _draw_visual_back(page, entry, position, game_mode)
-            page.insert_text(
-                (_PAGE_WIDTH - 90, _PAGE_HEIGHT - 10),
-                f"{sheet_number + 1} / {sheets}",
-                fontname="helv",
-                fontsize=6.5,
-                color=_MUTED,
-            )
-
-    document.set_metadata(
-        {"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"}
+    sheet = read_sheet(inventory, source_pdf, pages)
+    cards = plan_cards(sheet, standard)
+    if not cards:
+        raise ValueError(
+            "No source facts were found to turn into cards. The selected pages need bullet points, sentences or "
+            "practice questions."
+        )
+    lost = lost_text_pages(sheet)
+    notes = tuple(
+        f"Some text on page {page} could not be read from the PDF (its font has no letters for it), so it is on "
+        "no card. Check that page by eye."
+        for page in lost
     )
-    result = document.tobytes(garbage=4, deflate=True)
-    document.close()
-    return result
+    return render_cards_pdf(cards, game_mode, standard, notes)
