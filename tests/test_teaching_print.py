@@ -138,8 +138,9 @@ def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
     pages = _page_texts(render_printable_cards_pdf(extract_facts(_units(rows))))
     cards_page, answer_sheet = pages[0], pages[-1]
 
-    assert len(pages) == 2
+    assert len(pages) == 3
     assert cards_page.startswith("DETECTIVE CASE FILE")
+    assert pages[1].startswith("FILL IN THE BLANKS")
     dash = "–" if _HAS_EXTENDED_PDF_FONT else "-"
     assert f"______ {dash} Capital of the United Kingdom & England" in cards_page
     assert "The city hosted the Olympic Games in ______." in cards_page
@@ -310,6 +311,12 @@ def test_four_weak_water_cycle_cards_become_explain_and_connect_prompts():
     assert cards[6].question == "After rain falls on land, where can the water go next?"
     assert "tiny liquid droplets" in cards[3].answer
     assert "carry water back" in cards[6].answer
+    pages = _page_texts(render_cards_pdf(cards))
+    assert pages[1].startswith("FILL IN THE BLANKS")
+    assert "This movement is called ________________." in pages[1]
+    assert "forms of ________________." in pages[1]
+    assert pages[2].startswith("ANSWER SHEET")
+    assert "FILL-IN-THE-BLANK ANSWERS" in pages[2]
 
 
 def test_abstract_topic_titles_and_unreadable_process_lines_are_not_printed_as_cards():

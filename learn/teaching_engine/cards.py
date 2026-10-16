@@ -1013,6 +1013,74 @@ def _cut_lines(shape, count: int) -> None:
     shape.finish(color=_CUT, width=0.5, dashes="[3 3] 0")
 
 
+def _practice_prompt(card: Card) -> tuple[str, str]:
+    clue = card.clue.strip()
+    answer = card.answer.strip()
+    blank = "________________"
+    if GAP in clue:
+        return clue.replace(GAP, blank), answer
+    if card.kind == "teach":
+        label = re.search(r"this\s+(change|movement|process)", card.question, re.I)
+        if label:
+            return f"{clue}\nThis {label[1]} is called {blank}.", answer
+    if card.kind == "learn":
+        text = answer
+        preferred = (
+            "water vapour",
+            "liquid water",
+            "tiny liquid droplets",
+            "precipitation",
+            "oceans",
+            "rain",
+            "snow",
+            "hail",
+        )
+        for target in preferred:
+            match = re.search(rf"\b{re.escape(target)}\b", text, re.I)
+            if match:
+                return f"{text[:match.start()]}{blank}{text[match.end():]}", match.group()
+    if answer and re.search(rf"\b{re.escape(answer)}\b", clue, re.I):
+        return re.sub(rf"\b{re.escape(answer)}\b", blank, clue, count=1, flags=re.I), answer
+    return f"{card.question.rstrip('?').rstrip('.')} {blank}.", answer
+
+
+def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
+    margin, width = 48.0, _PAGE_WIDTH - 96.0
+    page = shape = None
+    y = 0.0
+
+    def new_page(first: bool) -> None:
+        nonlocal page, shape, y
+        if shape is not None:
+            shape.commit()
+        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+        kind.prepare(page)
+        shape = page.new_shape()
+        title = "FILL IN THE BLANKS" if first else "FILL IN THE BLANKS (CONTINUED)"
+        y = kind.draw(shape, [title], 17, margin, 40, True, theme["colour"])
+        y = kind.draw(
+            shape,
+            ["Write the missing name, year or key word. Try these before checking the answer sheet."],
+            9,
+            margin,
+            y + 3,
+            False,
+            _MUTED,
+        ) + 18
+
+    new_page(True)
+    for number, card in enumerate(cards, start=1):
+        prompt, _ = _practice_prompt(card)
+        lines = kind.wrap(kind.printable(prompt), 11, width - 42)
+        height = len(lines) * 14 + 12
+        if y + height > _PAGE_HEIGHT - 42:
+            new_page(False)
+        kind.draw(shape, [f"{number}."] , 10, margin, y, True, theme["colour"])
+        bottom = kind.draw(shape, lines, 11, margin + 28, y, False, _INK)
+        y = max(bottom, y + 11) + 9
+    shape.commit()
+
+
 def _header(shape, kind: _Type, theme: dict, sheet: int, sheets: int, first: int, last: int) -> None:
     left = f"{theme['title']}  ·  SHEET {sheet} OF {sheets}  ·  CARDS {first}–{last}"
     kind.draw(shape, [kind.printable(left, True)], 7.5, _LEFT, 17, True, _MUTED)
@@ -1056,6 +1124,18 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
         if checks:
             bottom = kind.draw(shape, checks, 8, margin + 32, bottom + 1, False, _ORANGE)
         y = bottom + 7
+    if cards:
+        if y + 38 > _PAGE_HEIGHT - 40:
+            new_page(False)
+        y = kind.draw(shape, ["FILL-IN-THE-BLANK ANSWERS"], 12, margin + 32, y + 5, True, theme["colour"]) + 8
+        for number, card in enumerate(cards, start=1):
+            _, answer = _practice_prompt(card)
+            lines = kind.wrap(kind.printable(answer, True), 9.5, width - 70, True)
+            if y + len(lines) * 11.6 + 6 > _PAGE_HEIGHT - 40:
+                new_page(False)
+            kind.draw(shape, [str(number)], 9.5, 0, y, True, theme["colour"], align_right=margin + 22)
+            bottom = kind.draw(shape, lines, 9.5, margin + 32, y, True, _INK)
+            y = bottom + 6
     for note in notes:
         lines = kind.wrap(kind.printable(note), 8.5, width - 32)
         if y + len(lines) * 10.4 + 8 > _PAGE_HEIGHT - 40:
@@ -1149,6 +1229,7 @@ def render_cards_pdf(
         for position, card in enumerate(group):
             _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
         shape.commit()
+    _practice_pages(document, kind, cards, theme)
     _answer_pages(document, kind, cards, theme, notes)
     if _has_water_cycle_evidence(cards):
         _water_cycle_diagram(document, kind)
