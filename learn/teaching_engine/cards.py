@@ -1,8 +1,8 @@
 """Render source-grounded, double-sided learning cards as an A4 PDF."""
 
+import re
 from dataclasses import dataclass, replace
 from hashlib import sha256
-import re
 
 import pymupdf
 
@@ -23,7 +23,8 @@ _ORANGE = (0.70, 0.34, 0.14)
 _HERO = (0.31, 0.27, 0.64)
 _MAX_CARD_SOURCE_CHARS = 160
 _HEADING_CUES = re.compile(
-    r"\b(?:quick revision|key ideas?|contents|chapter|unit|lesson|class|grade|standard|page|table|feature|sample|comparison|question|answers?|model answers?)\b",
+    r"\b(?:quick revision|key ideas?|contents|chapter|unit|lesson|class|grade|standard|page|table|feature"
+    r"|sample|comparison|question|answers?|model answers?)\b",
     re.IGNORECASE,
 )
 _PRINT_SUBSTITUTIONS = str.maketrans(
@@ -79,9 +80,7 @@ def _split_long_fact(fact: Fact) -> tuple[Fact, ...]:
         segment_start = fact.start + start
         segment_end = fact.start + end
         mentions = tuple(
-            mention
-            for mention in fact.mentions
-            if mention.start >= segment_start and mention.end <= segment_end
+            mention for mention in fact.mentions if mention.start >= segment_start and mention.end <= segment_end
         )
         segments.append(
             replace(
@@ -102,7 +101,9 @@ def _focus(fact: Fact) -> tuple[Mention, str, str] | None:
     if "?" in statement or re.match(r"^(?:question|q\.)\s*\d+\b", statement, re.IGNORECASE):
         return None
     has_relation = any(mention.kind == "relationship_cue" for mention in fact.mentions)
-    has_definition = re.search(r"\b(?:means|refers to|is defined as|are defined as|is called|are called)\b", statement, re.IGNORECASE)
+    has_definition = re.search(
+        r"\b(?:means|refers to|is defined as|are defined as|is called|are called)\b", statement, re.IGNORECASE
+    )
     if _HEADING_CUES.search(statement) and not (has_relation or has_definition):
         return None
     if not (has_relation or has_definition):
@@ -253,7 +254,13 @@ def _draw_visual_front(page, visual: SourceVisual, number: int, position: int, g
     _draw_card_frame(page, rect)
     inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
     mode_label = "CASE EVIDENCE" if game_mode == "detective" else "HERO POWER-UP"
-    page.insert_text((inner.x0, inner.y0 + 8), f"{mode_label} - SOURCE VISUAL", fontname="hebo", fontsize=7.2, color=_GREEN if game_mode == "detective" else _HERO)
+    page.insert_text(
+        (inner.x0, inner.y0 + 8),
+        f"{mode_label} - SOURCE VISUAL",
+        fontname="hebo",
+        fontsize=7.2,
+        color=_GREEN if game_mode == "detective" else _HERO,
+    )
     prompt = (
         "Study this exact source image. What do you notice? Check nearby source text before explaining it."
         if game_mode == "detective"
@@ -262,7 +269,13 @@ def _draw_visual_front(page, visual: SourceVisual, number: int, position: int, g
     _draw_text(page, prompt, pymupdf.Rect(inner.x0, inner.y0 + 15, inner.x1, inner.y0 + 42), "helv", 8.0, _MUTED)
     image_rect = pymupdf.Rect(inner.x0 + 5, inner.y0 + 47, inner.x1 - 5, inner.y0 + 119)
     page.insert_image(image_rect, stream=visual.image, keep_proportion=True)
-    page.insert_text((inner.x0, inner.y1 - 8), f"SOURCE PAGE {visual.page}  -  CARD {number + 1:02d}", fontname="helv", fontsize=6.4, color=_MUTED)
+    page.insert_text(
+        (inner.x0, inner.y1 - 8),
+        f"SOURCE PAGE {visual.page}  -  CARD {number + 1:02d}",
+        fontname="helv",
+        fontsize=6.4,
+        color=_MUTED,
+    )
 
 
 def _draw_visual_back(page, visual: SourceVisual, position: int, game_mode: str) -> None:
@@ -270,13 +283,35 @@ def _draw_visual_back(page, visual: SourceVisual, position: int, game_mode: str)
     _draw_card_frame(page, rect)
     inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
     label = "CASE NOTES - SOURCE IMAGE" if game_mode == "detective" else "HERO NOTES - SOURCE IMAGE"
-    page.insert_text((inner.x0, inner.y0 + 8), label, fontname="hebo", fontsize=7.2, color=_GREEN if game_mode == "detective" else _HERO)
-    page.insert_text((inner.x0, inner.y0 + 33), f"This image is reproduced from source page {visual.page}.", fontname="helv", fontsize=8.3, color=_INK)
-    prompt = "Point to details you can verify in the source. Keep guesses separate from evidence." if game_mode == "detective" else "Invent a hero emblem to remember one verified detail. The emblem is a memory aid, not a source fact."
+    page.insert_text(
+        (inner.x0, inner.y0 + 8),
+        label,
+        fontname="hebo",
+        fontsize=7.2,
+        color=_GREEN if game_mode == "detective" else _HERO,
+    )
+    page.insert_text(
+        (inner.x0, inner.y0 + 33),
+        f"This image is reproduced from source page {visual.page}.",
+        fontname="helv",
+        fontsize=8.3,
+        color=_INK,
+    )
+    prompt = (
+        "Point to details you can verify in the source. Keep guesses separate from evidence."
+        if game_mode == "detective"
+        else "Invent a hero emblem to remember one verified detail. The emblem is a memory aid, not a source fact."
+    )
     _draw_text(page, prompt, pymupdf.Rect(inner.x0, inner.y0 + 47, inner.x1, inner.y0 + 88), "helv", 8.0, _MUTED)
     doodle = pymupdf.Rect(inner.x1 - 42, inner.y1 - 44, inner.x1, inner.y1 - 2)
     page.draw_rect(doodle, color=_LINE, width=0.6)
-    page.insert_text((inner.x0, inner.y1 - 8), f"PAGE {visual.page}  -  {game_mode.upper()} SOURCE VISUAL", fontname="helv", fontsize=6.4, color=_MUTED)
+    page.insert_text(
+        (inner.x0, inner.y1 - 8),
+        f"PAGE {visual.page}  -  {game_mode.upper()} SOURCE VISUAL",
+        fontname="helv",
+        fontsize=6.4,
+        color=_MUTED,
+    )
 
 
 def _draw_front(page, fact: Fact, number: int, position: int, game_mode: str, standard: int) -> None:
@@ -302,7 +337,9 @@ def _draw_front(page, fact: Fact, number: int, position: int, game_mode: str, st
         text = fact.statement
 
     inner = pymupdf.Rect(rect.x0 + 12, rect.y0 + 15, rect.x1 - 12, rect.y1 - 10)
-    page.insert_text((inner.x0, inner.y0 + 8), label, fontname="hebo", fontsize=7.2, color=_ORANGE if warning else _GREEN)
+    page.insert_text(
+        (inner.x0, inner.y0 + 8), label, fontname="hebo", fontsize=7.2, color=_ORANGE if warning else _GREEN
+    )
     if not warning:
         badge = {
             "WORD DETECTIVE": "ABC",
@@ -316,7 +353,9 @@ def _draw_front(page, fact: Fact, number: int, position: int, game_mode: str, st
         }[label]
         badge_rect = pymupdf.Rect(inner.x1 - 28, inner.y0 - 1, inner.x1, inner.y0 + 17)
         mode_color = _GREEN if game_mode == "detective" else _HERO
-        page.draw_circle(((badge_rect.x0 + badge_rect.x1) / 2, (badge_rect.y0 + badge_rect.y1) / 2), 9, color=None, fill=_PAPER)
+        page.draw_circle(
+            ((badge_rect.x0 + badge_rect.x1) / 2, (badge_rect.y0 + badge_rect.y1) / 2), 9, color=None, fill=_PAPER
+        )
         page.insert_textbox(badge_rect, badge, fontname="hebo", fontsize=4.8, color=mode_color, align=1)
     prompt_rect = pymupdf.Rect(inner.x0, inner.y0 + 17, inner.x1, inner.y0 + 45)
     _draw_text(page, prompt, prompt_rect, "helv", 8.2, _MUTED)
@@ -339,19 +378,56 @@ def _draw_back(page, fact: Fact, number: int, position: int, game_mode: str) -> 
     page.insert_text((inner.x0, inner.y0 + 96), source, fontname="helv", fontsize=6.5, color=_MUTED)
     if warning:
         review = ", ".join(fact.review_flags)
-        _draw_text(page, f"Review flag: {review}", pymupdf.Rect(inner.x0, inner.y0 + 104, inner.x1, inner.y0 + 119), "helv", 6.8, _ORANGE)
-        page.insert_text((inner.x0, inner.y1 - 8), "Do not treat as confirmed until checked against the source.", fontname="helv", fontsize=6.1, color=_ORANGE)
+        _draw_text(
+            page,
+            f"Review flag: {review}",
+            pymupdf.Rect(inner.x0, inner.y0 + 104, inner.x1, inner.y0 + 119),
+            "helv",
+            6.8,
+            _ORANGE,
+        )
+        page.insert_text(
+            (inner.x0, inner.y1 - 8),
+            "Do not treat as confirmed until checked against the source.",
+            fontname="helv",
+            fontsize=6.1,
+            color=_ORANGE,
+        )
     else:
         if game_mode == "detective":
-            page.insert_text((inner.x0, inner.y0 + 111), "CASE POINT: recall + cite the page", fontname="hebo", fontsize=6.3, color=_GREEN)
+            page.insert_text(
+                (inner.x0, inner.y0 + 111),
+                "CASE POINT: recall + cite the page",
+                fontname="hebo",
+                fontsize=6.3,
+                color=_GREEN,
+            )
         else:
-            page.insert_text((inner.x0, inner.y0 + 111), "POWER: recall + teach + draw a symbol", fontname="hebo", fontsize=6.0, color=_HERO)
-        page.insert_text((inner.x0, inner.y0 + 127), "My memory hook:", fontname="hebo", fontsize=6.8, color=_GREEN if game_mode == "detective" else _HERO)
+            page.insert_text(
+                (inner.x0, inner.y0 + 111),
+                "POWER: recall + teach + draw a symbol",
+                fontname="hebo",
+                fontsize=6.0,
+                color=_HERO,
+            )
+        page.insert_text(
+            (inner.x0, inner.y0 + 127),
+            "My memory hook:",
+            fontname="hebo",
+            fontsize=6.8,
+            color=_GREEN if game_mode == "detective" else _HERO,
+        )
         page.draw_line((inner.x0 + 57, inner.y0 + 114), (inner.x1 - 33, inner.y0 + 114), color=_LINE, width=0.6)
         doodle = pymupdf.Rect(inner.x1 - 29, inner.y0 + 103, inner.x1 - 1, inner.y0 + 131)
         page.draw_rect(doodle, color=_LINE, width=0.6)
         page.insert_text((doodle.x0 + 2, doodle.y1 + 7), "SKETCH", fontname="helv", fontsize=4.8, color=_MUTED)
-        page.insert_text((inner.x0, inner.y1 - 8), "Your memory link is not a source fact", fontname="helv", fontsize=6.1, color=_MUTED)
+        page.insert_text(
+            (inner.x0, inner.y1 - 8),
+            "Your memory link is not a source fact",
+            fontname="helv",
+            fontsize=6.1,
+            color=_MUTED,
+        )
 
 
 def extract_source_visuals(source_pdf: bytes, pages: set[int] | None = None) -> list[SourceVisual]:
@@ -386,7 +462,9 @@ def extract_source_visuals(source_pdf: bytes, pages: set[int] | None = None) -> 
                     if not placements:
                         raise ValueError("No visible placement")
                     placement = max(placements, key=lambda rect: rect.width * rect.height)
-                    image_bytes = page.get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=placement, alpha=False).tobytes("png")
+                    image_bytes = page.get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=placement, alpha=False).tobytes(
+                        "png"
+                    )
                 except Exception:
                     continue
             fingerprint = sha256(image_bytes).hexdigest()
@@ -430,11 +508,15 @@ def render_printable_cards_pdf(
                 heading += "  -  FLIP ON LONG EDGE"
             page.insert_text((18, 18), heading, fontname="hebo", fontsize=7, color=_MUTED)
             directions = (
-                "HOW TO PLAY: Read the clue, name the missing evidence, then flip. Earn a case point for a correct answer and source page."
+                "HOW TO PLAY: Read the clue, name the missing evidence, then flip. "
+                "Earn a case point for a correct answer and source page."
                 if game_mode == "detective"
-                else "HOW TO PLAY: Reveal a clue, recall its source detail, then teach a teammate. Draw a memory emblem to earn a power."
+                else "HOW TO PLAY: Reveal a clue, recall its source detail, then teach a teammate. "
+                "Draw a memory emblem to earn a power."
             )
-            page.insert_text((18, 27), directions, fontname="helv", fontsize=6, color=_GREEN if game_mode == "detective" else _HERO)
+            page.insert_text(
+                (18, 27), directions, fontname="helv", fontsize=6, color=_GREEN if game_mode == "detective" else _HERO
+            )
             for position in range(cards_per_sheet):
                 if side == "FRONTS":
                     fact_index = start + position
@@ -454,9 +536,17 @@ def render_printable_cards_pdf(
                         _draw_back(page, entry, fact_index, position, game_mode)
                     else:
                         _draw_visual_back(page, entry, position, game_mode)
-            page.insert_text((_PAGE_WIDTH - 90, _PAGE_HEIGHT - 10), f"{sheet_number + 1} / {sheets}", fontname="helv", fontsize=6.5, color=_MUTED)
+            page.insert_text(
+                (_PAGE_WIDTH - 90, _PAGE_HEIGHT - 10),
+                f"{sheet_number + 1} / {sheets}",
+                fontname="helv",
+                fontsize=6.5,
+                color=_MUTED,
+            )
 
-    document.set_metadata({"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"})
+    document.set_metadata(
+        {"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"}
+    )
     result = document.tobytes(garbage=4, deflate=True)
     document.close()
     return result

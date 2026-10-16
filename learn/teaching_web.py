@@ -2,10 +2,10 @@
 
 from pathlib import Path
 
+import pymupdf
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-import pymupdf
 
 from .extraction import ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
@@ -17,6 +17,8 @@ app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
 )
+
+
 def _page(name: str, **ctx) -> HTMLResponse:
     return HTMLResponse(_env.get_template(name).render(**ctx))
 
@@ -41,14 +43,18 @@ def visual_library(region: str = "all"):
 def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[bytes, str]:
     with pymupdf.open(stream=data, filetype="pdf") as document:
         metadata = document.metadata or {}
-    if metadata.get("author") == "Learn Teaching Engine" and (metadata.get("title") or "").startswith("Learn ICSE Standard"):
+    if metadata.get("author") == "Learn Teaching Engine" and (metadata.get("title") or "").startswith(
+        "Learn ICSE Standard"
+    ):
         raise ValueError("This is already a Learn-generated card PDF. Upload the original curriculum PDF instead.")
     page_range = parse_page_range(pages.strip()[:50], pdf_page_count(data))
     ocr, ocr_name = choose_ocr("auto", None)
     source = extract(data, ocr, ocr_name, page_range)
 
     if not source.units:
-        raise ValueError("No readable text was found in the selected pages. Scanned PDFs need OCR before they can be used.")
+        raise ValueError(
+            "No readable text was found in the selected pages. Scanned PDFs need OCR before they can be used."
+        )
 
     inventory = extract_facts(source.units)
     if output == "lesson":

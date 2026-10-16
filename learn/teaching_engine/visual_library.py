@@ -60,7 +60,8 @@ VISUAL_LIBRARY = (
         "The Sepoy revolt at Meerut (1857)",
         "Revolt of 1857; reading historical images critically",
         "Indian Studies",
-        "An 1857 newspaper illustration. It reflects the publication's viewpoint; pair it with other sources rather than treating it as a neutral photograph.",
+        "An 1857 newspaper illustration. It reflects the publication's viewpoint; "
+        "pair it with other sources rather than treating it as a neutral photograph.",
         "The Sepoy revolt at Meerut.jpg",
         "The Illustrated Times",
         "Public domain",
@@ -126,7 +127,8 @@ VISUAL_LIBRARY = (
         "Watt's double steam engine (1782 design)",
         "Industrial Revolution; technology and change",
         "UK comparison",
-        "An 1822 engraving depicting a double steam engine associated with James Watt's 1782 specification. It is an illustration, not evidence that one person invented the steam engine.",
+        "An 1822 engraving depicting a double steam engine associated with James Watt's 1782 specification. "
+        "It is an illustration, not evidence that one person invented the steam engine.",
         "Steam engine - Mr. Watt's double steam engine from his specification of 1782 LCCN2006691752.jpg",
         "Library of Congress",
         "Public domain (Commons record)",
@@ -137,7 +139,8 @@ VISUAL_LIBRARY = (
         "Model of a Watt beam engine",
         "Industrial Revolution; engineering and industrial change",
         "UK comparison",
-        "Photograph of a later model of a beam engine featuring Watt's parallel linkage; not a photograph of the original machine.",
+        "Photograph of a later model of a beam engine featuring Watt's parallel linkage; "
+        "not a photograph of the original machine.",
         "JamesWattEngine.jpg",
         "Tamorlan",
         "Public domain (author dedication)",

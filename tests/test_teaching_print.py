@@ -8,8 +8,8 @@ from learn.extraction import choose_ocr, extract
 from learn.grounding import SourceUnit
 from learn.teaching_engine import (
     create_teaching_lesson,
-    extract_source_visuals,
     extract_facts,
+    extract_source_visuals,
     render_printable_cards_pdf,
     render_teaching_pdf,
 )
@@ -228,7 +228,9 @@ def test_long_table_fragment_is_split_into_exact_cited_card_excerpts():
 
     segments = _split_long_fact(fact)
     pdf_bytes = render_printable_cards_pdf(extract_facts([SourceUnit("SRC-P3-U5", 3, statement, "text")]))
-    output_text = " ".join("\n".join(page.get_text() for page in pymupdf.open(stream=pdf_bytes, filetype="pdf")).split())
+    output_text = " ".join(
+        "\n".join(page.get_text() for page in pymupdf.open(stream=pdf_bytes, filetype="pdf")).split()
+    )
 
     assert len(segments) > 1
     assert "".join(segment.statement for segment in segments) == statement
@@ -252,7 +254,9 @@ def test_printing_uses_safe_formula_symbols_without_changing_source_fact():
 
 @pytest.mark.parametrize("game_mode", ["detective", "superhero"])
 def test_card_text_layout_retries_a_smaller_size_when_actual_wrapping_differs(game_mode):
-    statement = "• Key role in the Industrial Revolution; global industrial centre until the latter half of the 20th century."
+    statement = (
+        "• Key role in the Industrial Revolution; global industrial centre until the latter half of the 20th century."
+    )
     inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
 
     pdf_bytes = render_printable_cards_pdf(inventory, game_mode=game_mode)

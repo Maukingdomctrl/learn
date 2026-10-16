@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Turn curriculum PDFs into game cards | Mauforge Learn</title>
+<meta name="description" content="Upload an ICSE curriculum PDF and get double-sided Detective or Superhero game cards with page clues. Free, no account or API key needed.">
+<link rel="canonical" href="https://learn.mauforge.com/">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+<meta name="theme-color" content="#266a4e">
+<meta name="color-scheme" content="light">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mauforge Learn">
+<meta property="og:title" content="Turn curriculum PDFs into game cards">
+<meta property="og:description" content="Detective and Superhero game cards built from your ICSE curriculum PDF. Free, no account needed.">
+<meta property="og:url" content="https://learn.mauforge.com/">
+<meta property="og:image" content="https://learn.mauforge.com/og-image.png">
+<meta property="og:image:alt" content="Double-sided game cards generated from a curriculum PDF">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="stylesheet" href="mauforge-layout.css">
+<link rel="stylesheet" href="mauforge-theme.css">
+<link rel="stylesheet" href="mauforge-motion.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://learn.mauforge.com/#website",
+      "url": "https://learn.mauforge.com/",
+      "name": "Mauforge Learn",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://mauforge.com/#org",
+      "name": "Mauforge",
+      "url": "https://mauforge.com/"
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "https://learn.mauforge.com/#app",
+      "name": "Mauforge Teaching Engine",
+      "url": "https://learn.mauforge.com/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any (web browser)",
+      "description": "Turns a curriculum PDF into double-sided Detective or Superhero game cards with page clues.",
+      "audience": { "@type": "EducationalAudience", "educationalRole": "teacher" },
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "isPartOf": { "@id": "https://learn.mauforge.com/#website" },
+      "publisher": { "@id": "https://mauforge.com/#org" }
+    }
+  ]
+}
+</script>
+</head>
+<body class="mf-app">
+  <a href="#main" class="skip">Skip to content</a>
+
+  <header class="mf-topbar">
+    <a class="logo" href="/"><i aria-hidden="true"></i>Mauforge Learn</a>
+    <nav class="nav" aria-label="Primary">
+      <a href="/visual-library/">Study Visual Library</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="mf-shell">
+      <div class="mf-controls">
+        <div class="card mf-split">
+
+          <div class="mf-intro">
+            <span class="tag">For Standard 8</span>
+            <h1>Make ideas easier to remember</h1>
+            <p class="lead">Turn a chapter into double-sided game cards.</p>
+            <ol class="mf-steps">
+              <li>Choose your curriculum PDF</li>
+              <li>Pick pages and your standard</li>
+              <li>Play a mode or preview the cards</li>
+            </ol>
+            <svg class="deck" viewBox="0 0 320 170" aria-hidden="true" focusable="false">
+              <rect x="30" y="30" width="120" height="150" rx="14" fill="#fff" stroke="#1b4f3a" stroke-width="3" transform="rotate(-10 90 105)"/>
+              <rect x="170" y="20" width="120" height="150" rx="14" fill="#f2b84b" stroke="#1b4f3a" stroke-width="3" transform="rotate(8 230 95)"/>
+            </svg>
+          </div>
+
+          <div class="mf-form">
+            <label class="drop" for="file">
+              <b>Choose a curriculum PDF</b>
+              <span>Text-based PDFs, up to 30 MB. Scanned pages may need OCR.</span>
+              <input type="file" id="file" name="file" accept="application/pdf" class="visually-hidden">
+            </label>
+
+            <div class="mf-fields">
+              <div><label for="pages">Pages <i>(optional)</i></label><input id="pages" name="pages" type="text" placeholder="e.g. 3-5"></div>
+              <div><label for="standard">Standard</label>
+                <select id="standard" name="standard">
+                  <!-- EDIT: list the ICSE standards you actually support -->
+                  <option value="8">Standard 8</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mf-modes">
+              <button type="button" class="btn p" id="play-detective">Play Detective</button>
+              <button type="button" class="btn o" id="play-superhero">Play Superhero</button>
+            </div>
+            <div class="mf-secondary">
+              <button type="button" class="btn g" id="preview">Preview</button>
+              <button type="button" class="btn g" id="lesson-pdf">Lesson PDF</button>
+            </div>
+            <p class="note">No account or API key needed. Review flagged claims before teaching.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <aside class="mf-preview" aria-label="Preview">
+        <div class="mf-preview-body">
+          <div class="mf-preview-grid"><!-- generated cards go here --></div>
+        </div>
+      </aside>
+    </div>
+
+    <section aria-labelledby="how">
+      <h2 id="how">How it works</h2>
+      <ol>
+        <li>Choose a text-based curriculum PDF, up to 30 MB.</li>
+        <li>Optionally enter the pages to use, such as 3-5, and pick your ICSE standard.</li>
+        <li>Select Play Detective or Play Superhero to turn the facts into double-sided game cards.</li>
+        <li>Preview the cards, then create a lesson PDF to print or share.</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="faq">
+      <h2 id="faq">Questions teachers ask</h2>
+      <h3>Do I need an account or an API key?</h3>
+      <p>No. You can use the tool without signing up, and there is no paid AI call.</p>
+      <h3>What kind of PDF works best?</h3>
+      <p>Text-based PDFs work best. Scanned pages may need OCR first.</p>
+      <h3>Should I check the cards before teaching?</h3>
+      <p>Yes. Review any flagged claims against your textbook before using the cards in class.</p>
+      <h3>Which standards are supported?</h3>
+      <p>EDIT: list the ICSE standards you actually support.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built by Mauforge. <a href="/visual-library/">Study Visual Library</a></p>
+  </footer>
+
+  <script src="mauforge-layout.js" defer></script>
+</body>
+</html>
