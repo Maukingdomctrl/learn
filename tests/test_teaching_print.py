@@ -4,6 +4,7 @@ from time import perf_counter
 import pymupdf
 import pytest
 
+from learn.extraction import choose_ocr, extract
 from learn.grounding import SourceUnit
 from learn.teaching_engine import (
     create_teaching_lesson,
@@ -12,6 +13,7 @@ from learn.teaching_engine import (
     render_printable_cards_pdf,
     render_teaching_pdf,
 )
+from learn.teaching_engine.cards import _focus
 
 
 def test_printable_pdf_keeps_source_citations_recall_and_review_flags():
@@ -75,7 +77,7 @@ def test_printable_cards_include_fronts_mirrored_backs_source_pages_and_review_w
     assert document.page_count == 4
     assert "PLACE DETECTIVE" in all_fronts
     assert "________" in fronts
-    assert "MEMORY MISSION" in second_sheet_fronts
+    assert "SOURCE IDEA" in second_sheet_fronts
     assert "SOURCE ANSWER" in backs
     assert "The Thames flows through London." in backs
     assert "Source page 2" in backs
@@ -109,12 +111,115 @@ def test_detective_and_superhero_games_use_different_prompts_and_source_visuals(
 
     assert len(visuals) == 3
     assert "DETECTIVE CASE FILE" in detective_text
+    assert "name the missing evidence" in detective_text
+    assert "CASE POINT" in detective_text
     assert "What does this word mean here?" in detective_text
     assert "SOURCE VISUAL" in detective_text
     assert "SUPERHERO POWER-UP GAME" in superhero_text
     assert "POWER-UP - Explain this word to your teammate." in superhero_text
-    assert "ICSE STANDARD 7" in superhero_text
+    assert "teach a teammate" in superhero_text
+    assert "POWER:" in superhero_text
+    assert "ICSE STANDARD" not in superhero_text
+    assert "TURN OVER TO CHECK" not in superhero_text
     assert "PAGE 1" in superhero_text
+
+
+@pytest.mark.parametrize("filename", ["civics-sheet.pdf", "industries-sheet.pdf"])
+def test_card_layout_fits_long_source_rows_and_comparison_tables(filename):
+    source_pdf = (Path(__file__).parents[1] / "cards" / "sample" / filename).read_bytes()
+    ocr, ocr_name = choose_ocr("auto")
+    source = extract(source_pdf, ocr, ocr_name)
+
+    pdf_bytes = render_printable_cards_pdf(extract_facts(source.units), source_pdf)
+
+    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    assert pdf_bytes.startswith(b"%PDF")
+    assert document.page_count >= 2
+    assert "SOURCE ANSWER" in "\n".join(page.get_text() for page in document)
+
+
+def test_card_focus_does_not_turn_class_or_page_numbers_into_quiz_answers():
+    source = SourceUnit(
+        "SRC-P2-U1",
+        2,
+        "Class 8 Geography | Industries sample Page 2 COMPARATIVE TABLE Feature Cotton Textile Industry",
+        "text",
+    )
+    fact = extract_facts([source]).facts[0]
+
+    focus = _focus(fact)
+
+    assert focus is None or focus[0].text not in {"8", "2"}
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "Respiration produces carbon dioxide.",
+        "QUICK REVISION - Key Ideas for the Carbon Cycle",
+        "Question 7: Which two processes release carbon dioxide?",
+    ],
+)
+def test_card_focus_preserves_headings_and_arbitrary_capitalized_words(statement):
+    fact = extract_facts([SourceUnit("SRC-P2-U1", 2, statement, "text")]).facts[0]
+
+    assert _focus(fact) is None
+
+
+def test_card_focus_keeps_a_full_question_unmasked_even_with_a_numbered_prefix():
+    statement = "Question 7: Which city is the capital of the UK?"
+    inventory = extract_facts([SourceUnit("SRC-P2-U1", 2, statement, "text")])
+    front = pymupdf.open(stream=render_printable_cards_pdf(inventory), filetype="pdf")[0].get_text()
+
+    assert "SOURCE QUESTION" in front
+    assert statement in " ".join(front.split())
+    assert "________" not in front
+
+
+@pytest.mark.parametrize(
+    ("statement", "expected_label", "expected_target"),
+    [
+        ("Migration means the movement of people.", "WORD DETECTIVE", "Migration"),
+        ("The industrial steam engine was invented in 1760.", "TIME DETECTIVE", "1760"),
+        ("The population was 8 million in 2020.", "TIME DETECTIVE", "2020"),
+    ],
+)
+def test_card_focus_blanks_only_supported_terms_and_values(statement, expected_label, expected_target):
+    fact = extract_facts([SourceUnit("SRC-P2-U1", 2, statement, "text")]).facts[0]
+
+    focus = _focus(fact)
+
+    assert focus is not None
+    assert focus[1] == expected_label
+    assert focus[0].text == expected_target
+
+
+def test_numbered_question_stays_together_and_is_not_turned_into_a_cloze():
+    question = "Question 7 ?Although plants produce carbon dioxide.? What does this tell you about the two processes?"
+    inventory = extract_facts([SourceUnit("SRC-P3-U1", 3, question, "text")])
+
+    assert len(inventory.facts) == 1
+    assert _focus(inventory.facts[0]) is None
+
+    pdf_bytes = render_printable_cards_pdf(inventory)
+    front = pymupdf.open(stream=pdf_bytes, filetype="pdf")[0].get_text()
+
+    assert "SOURCE QUESTION" in front
+    assert "Question 7" in front
+    assert "________" not in front
+
+
+def test_printing_uses_safe_formula_symbols_without_changing_source_fact():
+    statement = "Photosynthesis: CO₂ + H₂O → glucose + O₂"
+    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
+    pdf_bytes = render_printable_cards_pdf(inventory)
+    printed_text = "\n".join(page.get_text() for page in pymupdf.open(stream=pdf_bytes, filetype="pdf"))
+
+    assert inventory.facts[0].statement == statement
+    normalized_text = " ".join(printed_text.split())
+    assert "CO2 + H2O" in normalized_text
+    assert "->" in normalized_text
+    assert "glucose + O2" in normalized_text
 
 
 def test_long_lesson_pdf_renders_without_host_timeout():

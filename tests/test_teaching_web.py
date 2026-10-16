@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 import pymupdf
+import pytest
 
 import learn.teaching_web as web
 
@@ -13,9 +14,13 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
     assert "No account, API key, or paid AI call" in page
     assert "Play Detective" in page
     assert "Play Superhero" in page
-    assert "Create lesson PDF" in page
+    assert 'id="output-preview" class="preview" aria-label="Output preview" hidden' in page
+    assert 'aria-expanded="false" aria-controls="output-preview"' in page
+    assert 'id="preview-button" class="secondary" type="button"' in page
+    assert 'name="output" value="detective"' in page
+    assert 'name="output" value="superhero"' in page
     assert "Browse the Study Visual Library" in page
-    assert "Preview in side window" in page
+    assert "Preview before printing" in page
     with open(sample_pdf, "rb") as pdf_file:
         response = client.post("/generate", files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")})
 
@@ -45,7 +50,8 @@ def test_teaching_web_builds_selected_superhero_mode(sample_pdf):
     document = pymupdf.open(stream=response.content, filetype="pdf")
     text = "\n".join(page.get_text() for page in document)
     assert "SUPERHERO POWER-UP GAME" in text
-    assert "ICSE STANDARD 9" in text
+    assert "ICSE STANDARD" not in text
+    assert "TURN OVER TO CHECK" not in text
 
 
 def test_preview_endpoint_returns_the_generated_pdf_inline(sample_pdf):
@@ -79,6 +85,19 @@ def test_teaching_web_keeps_lesson_pdf_as_an_option(sample_pdf):
     assert "IDEA 1" in document[0].get_text()
 
 
+def test_teaching_web_rejects_unknown_game_mode(sample_pdf):
+    client = TestClient(web.app)
+    with open(sample_pdf, "rb") as pdf_file:
+        response = client.post(
+            "/generate",
+            data={"output": "not-a-game"},
+            files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    assert "Choose Detective, Superhero, or lesson PDF." in response.text
+
+
 def test_teaching_web_rejects_bad_file_and_page_range(sample_pdf):
     client = TestClient(web.app)
     response = client.post("/generate", files={"pdf": ("bad.pdf", b"not a pdf", "application/pdf")})
@@ -99,3 +118,14 @@ def test_teaching_web_does_not_require_credentials(monkeypatch):
     client = TestClient(web.app)
 
     assert client.get("/").status_code == 200
+
+
+def test_teaching_web_rejects_its_own_generated_card_pdf():
+    document = pymupdf.open()
+    document.new_page()
+    document.set_metadata({"title": "Learn ICSE Standard 8 detective game", "author": "Learn Teaching Engine"})
+    generated_pdf = document.tobytes()
+    document.close()
+
+    with pytest.raises(ValueError, match="already a Learn-generated card PDF"):
+        web._build_pdf(generated_pdf, "", "detective", 8)
