@@ -161,6 +161,9 @@ def test_teaching_engine_is_offline_and_builds_supported_source_sequence():
     assert taught.source_statement == eligible[0].statement
     assert taught.source_unit_id == eligible[0].source_unit_id
     assert taught.memory_link_is_scaffold is True
+    assert "Birmingham" in taught.child_explanation and "England" in taught.child_explanation
+    assert "arrow labelled with that exact link" in taught.child_explanation
+    assert "Birmingham is in England." in taught.visual_brief
     assert [round_.support for round_ in taught.recall_rounds] == ["full", "light", "none"]
     assert [round_.mode for round_ in taught.recall_rounds] == ["look_and_tell", "draw_from_memory", "teach_a_friend"]
     assert lesson.held_for_review[0].source_statement == units[1].text

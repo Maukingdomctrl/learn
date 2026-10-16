@@ -35,7 +35,7 @@ _THEMES = {
 _ABSTRACT_TOPIC = re.compile(
     r"\b(?:cycle|process|system|stage|stages|step|steps|change|changes|evaporation|condensation|"
     r"precipitation|transpiration|rainfall|photosynthesis|respiration|reproduction|circulation|"
-    r"movement|energy|matter|force|weather|climate)\b",
+    r"energy|matter|force|weather|climate)\b",
     re.I,
 )
 # Plain questions for Standards 7, 8 and 9.
@@ -600,6 +600,7 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
                     _card("recall", "Answer in your own words.", recall_question, piece, item, source=piece)
                 )
                 continue
+            continue
         finished = _finish(piece)
         if finished is not None:
             cards.append(_card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece))
@@ -622,7 +623,11 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
     for index, item in enumerate(items):
         if item.kind == "topic" and item.text in headings:
             heading = headings[item.text]
-            if heading.after.strip(" –—-:") and len(heading.name.split()) <= 8:
+            if (
+                heading.after.strip(" –—-:")
+                and len(heading.name.split()) <= 8
+                and not _ABSTRACT_TOPIC.search(heading.name)
+            ):
                 clue = GAP + _hide_name(heading.after, heading.name)
                 cards.append(
                     _card("name", _ask("who" if heading.person else "what", standard), clue, heading.name, item)

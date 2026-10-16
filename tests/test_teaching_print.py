@@ -188,6 +188,17 @@ def test_non_person_topic_facts_become_specific_recall_cards_not_topic_riddles()
     assert any(card.clue == "Rain, snow and hail are forms of ______." for card in cards)
 
 
+def test_abstract_topic_titles_and_unreadable_process_lines_are_not_printed_as_cards():
+    cards = _cards(
+        [
+            (1, "Evaporation, Condensation and Rainfall"),
+            (1, "• A simple model is: heating ? evaporation ? cooling ? condensation ? precipitation."),
+        ]
+    )
+
+    assert cards == []
+
+
 def test_uk_sheet_cards_drop_list_numbers_titles_footers_and_table_fragments():
     cards = _cards(UK_SHEET)
     shown = [text for card in cards for text in (card.clue, card.answer, card.about)]
