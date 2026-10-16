@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from time import perf_counter
 
@@ -13,7 +14,76 @@ from learn.teaching_engine import (
     render_printable_cards_pdf,
     render_teaching_pdf,
 )
-from learn.teaching_engine.cards import _focus, _split_long_fact
+from learn.teaching_engine.cards import _CARD_HEIGHT, _CARD_WIDTH, _LEFT, _TOP, GAP, plan_cards
+from learn.teaching_engine.sheet import read_sheet
+
+SAMPLES = Path(__file__).parents[1] / "cards" / "sample"
+
+# The extracted text of the UK cities sheet whose old cards printed "1.", page footers and "?" for every bullet.
+UK_SHEET = [
+    (
+        1,
+        "IMPORTANT CITIES OF THE UNITED KINGDOM Grade 8 Social Studies | Notes + Comparative Table + "
+        "Practice Questions",
+    ),
+    (
+        1,
+        "1. QUICK REVISION NOTES 1. LONDON – Capital of the United Kingdom & England "
+        "• Situated on the River Thames in southeastern England.",
+    ),
+    (1, "• Metropolitan area covers much of southeastern England."),
+    (1, "2. BIRMINGHAM – West Midlands, England • Major city of the West Midlands, lying on the River Rea."),
+    (1, "• Largest and most populous British city outside London."),
+    (
+        1,
+        "• Was a medium-sized market town in the medieval period; grew to international prominence in the "
+        "18th century.",
+    ),
+    (1, "• Birmingham Hippodrome is the UK's busiest theatre (over 520,000 visitors each year)."),
+    (
+        1,
+        "• Main engine of growth in the Welsh economy; centre for white-collar professions. "
+        "Grade 8 Social Studies | Country - United Kingdom Page 1",
+    ),
+    (
+        3,
+        "2. COMPARATIVE TABLE - EASY TO REMEMBER Feature London Birmingham Belfast Edinburgh Cardiff Northern Ireland "
+        "Scotland Wales Country / Region England (UK Capital)",
+    ),
+    (3, "Largest in N. Ireland; 2nd on Ireland island 2nd in Scotland; 7th in UK"),
+    (3, "• Belfast = Shipbuilding & Titanic (Lagan + Harland & Wolff)"),
+    (
+        4,
+        "3. PRACTICE QUESTIONS A. Fill in the Blanks (1 mark each) "
+        "1. London is situated on the tidal ________________ in southeastern England.",
+    ),
+    (4, "2. Birmingham is a major city of the ________________, England."),
+    (4, "B. Answer in One Sentence (1 mark each) 1. Name the capital city of Northern Ireland."),
+    (4, "2. Which river flows through Birmingham?"),
+    (
+        5,
+        "4. ANSWER KEY A. Fill in the Blanks - Answers 1. River Thames 2. West Midlands "
+        "B. One Sentence Answers 1. Belfast is the capital city of Northern Ireland.",
+    ),
+    (5, "2. The River Rea flows through Birmingham."),
+]
+
+
+def _units(rows):
+    counts: dict[int, int] = {}
+    units = []
+    for page, text in rows:
+        counts[page] = counts.get(page, 0) + 1
+        units.append(SourceUnit(f"SRC-P{page}-U{counts[page]}", page, text, "text"))
+    return units
+
+
+def _page_texts(pdf_bytes: bytes) -> list[str]:
+    return [" ".join(page.get_text().split()) for page in pymupdf.open(stream=pdf_bytes, filetype="pdf")]
+
+
+def _cards(rows, standard=8):
+    return plan_cards(read_sheet(extract_facts(_units(rows))), standard)
 
 
 def test_printable_pdf_keeps_source_citations_recall_and_review_flags():
@@ -49,89 +119,138 @@ def test_printable_pdf_keeps_source_citations_recall_and_review_flags():
     assert "diagram" in text
 
 
-def test_printable_cards_include_fronts_mirrored_backs_source_pages_and_review_warning():
-    statements = [
-        "The Thames flows through London.",
-        "The industrial steam engine was invented by James Watt.",
-        "The population was 8 million in 2020.",
-        "Migration means the movement of people.",
-        "Children remember source ideas by making a personal picture.",
-        "A river flows into the sea.",
-        "The city grew near the coast.",
-        "A factory makes steel from iron.",
-        "The port is located in Belfast.",
-        "The railway opened in 1840.",
-        "The museum stands beside the river.",
+def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
+    rows = [
+        (2, "1. LONDON – Capital of the United Kingdom & England"),
+        (2, "• Situated on the River Thames in southeastern England."),
+        (2, "• The city hosted the Olympic Games in 2012."),
+        (2, "2. BELFAST – Capital of Northern Ireland"),
+        (2, "• Population about 286,000 (2011 census)."),
     ]
-    units = [SourceUnit("SRC-P2-U1", 2, " ".join(statements), "text")]
-    inventory = extract_facts(units)
 
-    pdf_bytes = render_printable_cards_pdf(inventory)
-    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-    fronts = document[0].get_text()
-    backs = document[1].get_text()
-    all_fronts = fronts + document[2].get_text()
-    second_sheet_fronts = document[2].get_text()
+    pages = _page_texts(render_printable_cards_pdf(extract_facts(_units(rows))))
+    cards_page, answer_sheet = pages[0], pages[-1]
 
-    assert pdf_bytes.startswith(b"%PDF")
-    assert document.page_count == 4
-    assert "PLACE DETECTIVE" in all_fronts
-    assert "________" in fronts
-    assert "SOURCE IDEA" in second_sheet_fronts
-    assert "SOURCE ANSWER" in backs
-    assert "The Thames flows through London." in backs
-    assert "Source page 2" in backs
-    assert "My memory hook" in backs
-    assert "SKETCH" in backs
-    assert "VERIFY FIRST" in backs
-    assert "verify_attribution_or_absolute_claim" in backs
+    assert len(pages) == 2
+    assert cards_page.startswith("DETECTIVE CASE FILE")
+    assert "______ – Capital of the United Kingdom & England" in cards_page
+    assert "The city hosted the Olympic Games in ______." in cards_page
+    assert "Which year fits the gap?" in cards_page
+    assert "Situated on the River Thames in southeastern England." in cards_page
+    assert "What is this about?" in cards_page
+    assert "2012" not in cards_page and "286,000" not in cards_page
+    assert answer_sheet.startswith("ANSWER SHEET")
+    for answer in ("LONDON", "2012", "BELFAST", "286,000", "p. 2"):
+        assert answer in answer_sheet
 
 
-def test_printable_cards_reject_empty_inventory_and_split_oversized_source_fact():
-    empty = extract_facts([])
+def test_cards_carry_no_source_codes_game_rules_or_raw_review_flags():
+    inventory = extract_facts(
+        [SourceUnit("SRC-P1-U1", 1, "The steam engine was invented by James Watt in 1769.", "text")]
+    )
+
+    pages = _page_texts(render_printable_cards_pdf(inventory))
+
+    for clutter in (
+        "SRC-P1",
+        "verify_attribution",
+        "CASE POINT",
+        "memory hook",
+        "SKETCH",
+        "SOURCE IDEA",
+        "Review flag",
+    ):
+        assert all(clutter not in page for page in pages)
+    assert "1769" not in pages[0]
+    assert "Check first: the sheet says" in pages[-1] and "invented" in pages[-1]
+
+
+def test_uk_sheet_cards_drop_list_numbers_titles_footers_and_table_fragments():
+    cards = _cards(UK_SHEET)
+    shown = [text for card in cards for text in (card.clue, card.answer, card.about)]
+
+    assert not any(text.strip() in {"1.", "2.", "3.", "A.", "B."} for text in shown)
+    assert not any("Grade 8 Social Studies" in text or "QUICK REVISION" in text for text in shown)
+    assert not any("COMPARATIVE TABLE" in text or "2nd on Ireland island" in text for text in shown)
+    assert not any("?" in card.clue and not card.clue.rstrip().endswith("?") for card in cards)
+    riddles = {card.clue: card.answer for card in cards if card.kind == "riddle"}
+    assert riddles["Metropolitan area covers much of southeastern England."] == "LONDON"
+    assert riddles["Major city of the West Midlands, lying on the River Rea."] == "BIRMINGHAM"
+    names = {card.answer: card.clue for card in cards if card.kind == "name"}
+    assert names["LONDON"] == "______ – Capital of the United Kingdom & England"
+    gaps = {card.answer: card for card in cards if card.kind == "gap"}
+    assert gaps["18th"].question == "Which century fits the gap?" and gaps["18th"].about == "BIRMINGHAM"
+    assert "______ visitors" in gaps["520,000"].clue
+    assert any(card.kind == "summary" and card.answer == "Belfast" for card in cards)
+
+
+def test_uk_sheet_practice_questions_take_their_answers_from_the_answer_key():
+    questions = {card.clue: card for card in _cards(UK_SHEET) if card.kind == "question"}
+
+    tidal = questions["London is situated on the tidal ______ in southeastern England."]
+    assert tidal.question == "Fill the gap." and tidal.answer == "River Thames"
+    assert questions["Birmingham is a major city of the ______, England."].answer == "West Midlands"
+    assert (
+        questions["Name the capital city of Northern Ireland."].answer
+        == "Belfast is the capital city of Northern Ireland."
+    )
+    assert questions["Which river flows through Birmingham?"].answer == "The River Rea flows through Birmingham."
+    assert "ANSWER KEY" not in questions and "River Thames" not in questions
+
+
+def test_flagged_claims_stay_on_the_card_with_a_plain_note_for_the_adult():
+    cards = _cards(UK_SHEET)
+    largest = next(card for card in cards if "most populous British city" in card.clue)
+
+    assert largest.answer == "BIRMINGHAM"
+    assert largest.checks and "“largest”" in largest.checks[0] and "“most populous”" in largest.checks[0]
+    assert all("verify_" not in check for card in cards for check in card.checks)
+
+
+def test_standards_ask_the_same_question_in_their_own_words():
+    rows = [(1, "1. LONDON – Capital of the United Kingdom & England"), (1, "• It grew quickly after 1850.")]
+
+    questions = {standard: [card.question for card in _cards(rows, standard)] for standard in (7, 8, 9)}
+
+    assert questions[7] == ["What is it?", "Which year goes in the gap?"]
+    assert questions[8] == ["What is it?", "Which year fits the gap?"]
+    assert questions[9] == ["Identify it.", "Supply the missing year."]
+
+
+def test_printable_cards_reject_empty_inventory_and_shrink_rather_than_fail_on_long_text():
     with pytest.raises(ValueError, match="No source facts"):
-        render_printable_cards_pdf(empty)
+        render_printable_cards_pdf(extract_facts([]))
 
-    statement = ("longword " * 300) + "."
-    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
-    segments = _split_long_fact(inventory.facts[0])
+    statement = "Rivers carry water to the sea " * 40 + "in the end."
+    pdf_bytes = render_printable_cards_pdf(extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")]))
 
-    assert len(segments) > 1
-    assert "".join(segment.statement for segment in segments) == statement
-    pdf_bytes = render_printable_cards_pdf(inventory)
-    assert pdf_bytes.startswith(b"%PDF")
+    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    card = pymupdf.Rect(_LEFT, _TOP, _LEFT + _CARD_WIDTH, _TOP + _CARD_HEIGHT)
+    words = [pymupdf.Rect(word[:4]) for word in document[0].get_text("words") if word[1] > _TOP]
+    assert words and all(card.contains(word) for word in words)  # the clue shrinks and stops inside its card
+    assert "in the end." in document[-1].get_text()
 
 
-def test_detective_and_superhero_games_use_different_prompts_and_source_visuals():
-    source_pdf = Path("cards/sample/people-sheet.pdf").read_bytes()
-    visuals = extract_source_visuals(source_pdf, pages={1})
-    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, "Migration means the movement of people.", "text")])
+def test_detective_and_superhero_games_print_picture_cards_named_by_the_sheet():
+    source_pdf = (SAMPLES / "people-sheet.pdf").read_bytes()
+    inventory = extract_facts(extract(source_pdf).units)
 
-    detective_pdf = render_printable_cards_pdf(inventory, source_pdf, "detective", {1}, 8)
-    superhero_pdf = render_printable_cards_pdf(inventory, source_pdf, "superhero", {1}, 7)
-    detective = pymupdf.open(stream=detective_pdf, filetype="pdf")
-    superhero = pymupdf.open(stream=superhero_pdf, filetype="pdf")
-    detective_text = "\n".join(page.get_text() for page in detective)
-    superhero_text = "\n".join(page.get_text() for page in superhero)
+    detective = _page_texts(render_printable_cards_pdf(inventory, source_pdf, "detective", {1}, 8))
+    superhero = _page_texts(render_printable_cards_pdf(inventory, source_pdf, "superhero", {1}, 7))
+    pictures = [card for card in plan_cards(read_sheet(inventory, source_pdf)) if card.kind == "picture"]
 
-    assert len(visuals) == 3
-    assert "DETECTIVE CASE FILE" in detective_text
-    assert "name the missing evidence" in detective_text
-    assert "CASE POINT" in detective_text
-    assert "What does this word mean here?" in detective_text
-    assert "SOURCE VISUAL" in detective_text
-    assert "SUPERHERO POWER-UP GAME" in superhero_text
-    assert "POWER-UP - Explain this word to your teammate." in superhero_text
-    assert "teach a teammate" in superhero_text
-    assert "POWER:" in superhero_text
-    assert "ICSE STANDARD" not in superhero_text
-    assert "TURN OVER TO CHECK" not in superhero_text
-    assert "PAGE 1" in superhero_text
+    assert len(extract_source_visuals(source_pdf, pages={1})) == 3
+    assert [card.answer for card in pictures] == ["RAJA RAM MOHAN ROY", "ISHWAR CHANDRA VIDYASAGAR", "JYOTIRAO PHULE"]
+    assert all(card.question == "Who is this?" and card.image for card in pictures)
+    assert detective[0].startswith("DETECTIVE CASE FILE")
+    assert superhero[0].startswith("SUPERHERO POWER-UP GAME")
+    assert "Picture from your sheet" in " ".join(detective)
+    assert "ICSE STANDARD" not in " ".join(superhero)
 
 
 @pytest.mark.parametrize("filename", ["civics-sheet.pdf", "industries-sheet.pdf"])
 def test_card_layout_fits_long_source_rows_and_comparison_tables(filename):
-    source_pdf = (Path(__file__).parents[1] / "cards" / "sample" / filename).read_bytes()
+    source_pdf = (SAMPLES / filename).read_bytes()
     ocr, ocr_name = choose_ocr("auto")
     source = extract(source_pdf, ocr, ocr_name)
 
@@ -140,131 +259,70 @@ def test_card_layout_fits_long_source_rows_and_comparison_tables(filename):
     document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     assert pdf_bytes.startswith(b"%PDF")
     assert document.page_count >= 2
-    assert "SOURCE ANSWER" in "\n".join(page.get_text() for page in document)
+    assert "ANSWER SHEET" in document[-1].get_text()
+    for page in document:  # every printed word stays inside the page
+        for x0, y0, x1, y1, *_ in page.get_text("words"):
+            assert 0 <= x0 and x1 <= page.rect.width and 0 <= y0 and y1 <= page.rect.height
 
 
-def test_card_focus_does_not_turn_class_or_page_numbers_into_quiz_answers():
-    source = SourceUnit(
-        "SRC-P2-U1",
-        2,
-        "Class 8 Geography | Industries sample Page 2 COMPARATIVE TABLE Feature Cotton Textile Industry",
-        "text",
-    )
-    fact = extract_facts([source]).facts[0]
+def test_class_grade_and_page_numbers_never_become_answers():
+    rows = [
+        (2, "Class 8 Geography | Industries sample Page 2 COMPARATIVE TABLE Feature Cotton Textile Industry"),
+        (2, "Grade 8 pupils read about 12 cities in 2019."),
+    ]
 
-    focus = _focus(fact)
-
-    assert focus is None or focus[0].text not in {"8", "2"}
+    assert [card.answer for card in _cards(rows)] == ["2019"]
 
 
-@pytest.mark.parametrize(
-    "statement",
-    [
-        "Respiration produces carbon dioxide.",
-        "QUICK REVISION - Key Ideas for the Carbon Cycle",
-        "Question 7: Which two processes release carbon dioxide?",
-    ],
-)
-def test_card_focus_preserves_headings_and_arbitrary_capitalized_words(statement):
-    fact = extract_facts([SourceUnit("SRC-P2-U1", 2, statement, "text")]).facts[0]
+def test_a_numbered_question_stays_whole_and_is_not_turned_into_a_gap():
+    for statement in (
+        "Question 7: Which city is the capital of the UK?",
+        "Question 7 ?Although plants produce carbon dioxide.? What does this tell you about the two processes?",
+    ):
+        cards = _cards([(3, statement)])
 
-    assert _focus(fact) is None
+        assert len(cards) == 1 and cards[0].kind == "question"
+        assert GAP not in cards[0].clue
+        assert cards[0].clue.endswith("?")
 
 
-def test_card_focus_keeps_a_full_question_unmasked_even_with_a_numbered_prefix():
-    statement = "Question 7: Which city is the capital of the UK?"
-    inventory = extract_facts([SourceUnit("SRC-P2-U1", 2, statement, "text")])
-    front = pymupdf.open(stream=render_printable_cards_pdf(inventory), filetype="pdf")[0].get_text()
-
-    assert "SOURCE QUESTION" in front
-    assert statement in " ".join(front.split())
-    assert "________" not in front
-
-
-@pytest.mark.parametrize(
-    ("statement", "expected_label", "expected_target"),
-    [
-        ("Migration means the movement of people.", "WORD DETECTIVE", "Migration"),
-        ("The industrial steam engine was invented in 1760.", "TIME DETECTIVE", "1760"),
-        ("The population was 8 million in 2020.", "TIME DETECTIVE", "2020"),
-    ],
-)
-def test_card_focus_blanks_only_supported_terms_and_values(statement, expected_label, expected_target):
-    fact = extract_facts([SourceUnit("SRC-P2-U1", 2, statement, "text")]).facts[0]
-
-    focus = _focus(fact)
-
-    assert focus is not None
-    assert focus[1] == expected_label
-    assert focus[0].text == expected_target
-
-
-def test_numbered_question_stays_together_and_is_not_turned_into_a_cloze():
-    question = "Question 7 ?Although plants produce carbon dioxide.? What does this tell you about the two processes?"
-    inventory = extract_facts([SourceUnit("SRC-P3-U1", 3, question, "text")])
-
-    assert len(inventory.facts) == 1
-    assert _focus(inventory.facts[0]) is None
-
-    pdf_bytes = render_printable_cards_pdf(inventory)
-    front = pymupdf.open(stream=pdf_bytes, filetype="pdf")[0].get_text()
-
-    assert "SOURCE QUESTION" in front
-    assert "Question 7" in front
-    assert "________" not in front
-    assert _split_long_fact(inventory.facts[0]) == (inventory.facts[0],)
-
-
-def test_long_table_fragment_is_split_into_exact_cited_card_excerpts():
-    statement = (
-        "Heart of Industrial Revolution; steam engine Financial centre of Europe Scottish Parliament; RBS HQ "
-        "Famous Landmark / Fact Birmingham Hippodrome (busiest theatre) Titanic Belfast Museum; Harland & Wolff "
-        "Wales Millennium Centre; Capital since 1955 Modern Economy Finance, innovation, culture Industry, technology, "
-        "culture Industry, aerospace, arts, education Finance, banking, tourism (£1.6 bn) Retail, finance, media, "
-        "tourism Special Note Metropolitan area covers SE England Grew to prominence in 18th century Pop. ~286,000 "
-        "(2011); economic engine of NI"
-    )
-    fact = extract_facts([SourceUnit("SRC-P3-U5", 3, statement, "text")]).facts[0]
-
-    segments = _split_long_fact(fact)
-    pdf_bytes = render_printable_cards_pdf(extract_facts([SourceUnit("SRC-P3-U5", 3, statement, "text")]))
-    output_text = " ".join(
-        "\n".join(page.get_text() for page in pymupdf.open(stream=pdf_bytes, filetype="pdf")).split()
-    )
-
-    assert len(segments) > 1
-    assert "".join(segment.statement for segment in segments) == statement
-    assert all(segment.page == fact.page and segment.source_unit_id == fact.source_unit_id for segment in segments)
-    assert "Heart of Industrial Revolution" in output_text
-    assert "economic engine of NI" in output_text
-
-
-def test_printing_uses_safe_formula_symbols_without_changing_source_fact():
+def test_printing_keeps_formula_symbols_without_changing_the_source_fact():
     statement = "Photosynthesis: CO₂ + H₂O → glucose + O₂"
     inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
-    pdf_bytes = render_printable_cards_pdf(inventory)
-    printed_text = "\n".join(page.get_text() for page in pymupdf.open(stream=pdf_bytes, filetype="pdf"))
+
+    pages = _page_texts(render_printable_cards_pdf(inventory))
 
     assert inventory.facts[0].statement == statement
-    normalized_text = " ".join(printed_text.split())
-    assert "CO2 + H2O" in normalized_text
-    assert "->" in normalized_text
-    assert "glucose + O2" in normalized_text
+    assert "Photosynthesis: CO₂ + H₂O → ______" in pages[0]
+    assert "glucose + O₂" in pages[-1]
+    assert "CO?" not in pages[0] and "H?O" not in pages[0]
 
 
 @pytest.mark.parametrize("game_mode", ["detective", "superhero"])
-def test_card_text_layout_retries_a_smaller_size_when_actual_wrapping_differs(game_mode):
+def test_typed_bullets_never_print_as_question_marks(game_mode):
     statement = (
         "• Key role in the Industrial Revolution; global industrial centre until the latter half of the 20th century."
     )
     inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
 
-    pdf_bytes = render_printable_cards_pdf(inventory, game_mode=game_mode)
-    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
-    text = " ".join("\n".join(page.get_text() for page in document).split())
+    pages = _page_texts(render_printable_cards_pdf(inventory, game_mode=game_mode))
 
-    assert "Key role in the Industrial Revolution" in text
-    assert "global industrial centre until the latter half" in text
+    assert "Key role in the Industrial Revolution" in pages[0]
+    assert "the latter half of the ______ century." in pages[0]
+    assert "•" not in pages[0] and "? Key role" not in pages[0]
+    assert "20th" in pages[-1]
+
+
+def test_many_cards_render_quickly():
+    statements = [f"The river number {n} reaches the sea after {n + 10} km of flowing." for n in range(150)]
+    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, " ".join(statements), "text")])
+
+    started = perf_counter()
+    pdf_bytes = render_printable_cards_pdf(inventory)
+    elapsed = perf_counter() - started
+
+    assert pymupdf.open(stream=pdf_bytes, filetype="pdf").page_count >= 20
+    assert elapsed < 20, f"rendering took {elapsed:.1f} s"
 
 
 def test_long_lesson_pdf_renders_without_host_timeout():
@@ -278,3 +336,13 @@ def test_long_lesson_pdf_renders_without_host_timeout():
 
     assert pymupdf.open(stream=pdf_bytes, filetype="pdf").page_count > 100
     assert elapsed < 20, f"rendering took {elapsed:.1f} s"
+
+
+def test_without_the_font_package_cards_fall_back_to_safe_ascii_symbols(monkeypatch):
+    monkeypatch.setitem(sys.modules, "pymupdf_fonts", None)  # import pymupdf_fonts now raises ImportError
+    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, "Grass → Grasshopper → Frog → Snake", "text")])
+
+    pages = _page_texts(render_printable_cards_pdf(inventory))
+
+    assert "Grass -> Grasshopper -> ______ -> Snake" in pages[0]
+    assert "Frog" in pages[-1]

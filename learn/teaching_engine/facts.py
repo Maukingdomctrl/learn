@@ -6,6 +6,18 @@ from dataclasses import asdict, dataclass
 from ..extraction import SourceUnit
 
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\"'“‘([{A-Z0-9])")
+# Bullet glyphs, including the private-use bullets that Word's Symbol and Wingdings fonts leave in PDF text.
+BULLETS = "•●○◦▪■□‣∙➢➤►▶❖✓✔\uf0b7\uf0a7\uf076\uf0d8\uf0fc"
+_BEFORE_BULLET = re.compile(rf"\s+(?=[{BULLETS}])")
+# "1.", "2)", "Q3." or a section letter "B." before a word: the start of a list item.
+_LIST_MARKER = re.compile(r"(?:(?P<q>Q\s?)?(?P<number>\d{1,2})[.)]|(?P<letter>[A-H])\.(?=\s+[A-Z][a-z]))(?=\s+\S)")
+_MARKER_ONLY = re.compile(r"(?:Q\s?)?\d{1,2}[.)]|[A-Z]\.|\(?[a-z]\)")
+_ABBREVIATIONS = frozenset(
+    "dr mr mrs ms st sr jr prof rev hon no nos vs approx est fig figs vol ch govt pvt ltd co inc dept "
+    "jan feb mar apr jun jul aug sep sept oct nov dec e.g i.e viz cf al".split()
+)
+# Words after which a capital letter and a full stop name a label ("Vitamin C.") rather than an initial ("N. Ireland").
+_LETTER_LABELS = frozenset("vitamin plan grade class group section part type category point step option phase".split())
 _PATTERNS: dict[str, re.Pattern[str]] = {
     "date": re.compile(
         r"\b(?:\d{1,2}(?:st|nd|rd|th)?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)"
@@ -71,7 +83,7 @@ _RELATIONS = (
     "grew",
     "developed",
 )
-_REVIEW_CUES = re.compile(
+REVIEW_CUES = re.compile(
     r"\b(?:invented|first|oldest|largest|smallest|most populous|only|always|never)\b", re.IGNORECASE
 )
 _DIFFICULT_CUES = re.compile(r"\b(?:important|key|significant|technical|special|difficult|known as)\b", re.IGNORECASE)
@@ -109,30 +121,85 @@ class FactInventory:
         return asdict(self)
 
 
-def _sentence_spans(text: str) -> list[tuple[int, int]]:
+@dataclass
+class _ListState:
+    """The last list numbers seen, so a "2." or "B." inside a unit only starts an item when it continues a list."""
+
+    number: int = 0
+    question: int = 0
+    letter: str = ""
+
+    def starts_item(self, text: str, marker: re.Match[str]) -> bool:
+        at_start = not text[: marker.start()].strip()
+        if not at_start and not text[marker.start() - 1].isspace():
+            return False  # inside a number or word, such as "2012."
+        if marker["letter"]:
+            letter = marker["letter"]
+            previous = text[: marker.start()].split()[-1:] or [""]
+            if previous[0].casefold() in _LETTER_LABELS:
+                return False
+            follows = bool(self.letter) and ord(letter) == ord(self.letter) + 1
+            if at_start or follows or (letter == "A" and previous[0].isupper()):
+                self.letter = letter
+                return True
+            return False
+        number = int(marker["number"])
+        last = self.question if marker["q"] else self.number
+        if at_start or number in (1, last + 1):
+            if marker["q"]:
+                self.question = number
+            else:
+                self.number = number
+            return True
+        return False
+
+
+def _closes_abbreviation(text: str, end: int) -> bool:
+    """True when the full stop just before ``end`` belongs to an abbreviation or an initial, not a sentence."""
+    match = re.search(r"(?:^|(?<=[\s(]))([\w.]+)\.$", text[:end])
+    if not match:
+        return False
+    word = match.group(1)
+    if word.casefold() in _ABBREVIATIONS:
+        return True
+    if len(word) == 1 and word.isupper():
+        previous = re.findall(r"\w+", text[: match.start()])[-1:]
+        return not (previous and previous[0].casefold() in _LETTER_LABELS)
+    return False
+
+
+def _sentence_spans(text: str, state: _ListState | None = None) -> list[tuple[int, int]]:
     if re.match(r"\s*(?:question|q\.)\s*\d+\b", text, re.IGNORECASE):
         start = len(text) - len(text.lstrip())
         end = len(text.rstrip())
         return [(start, end)] if start < end else []
+    state = state or _ListState()
+    # A bullet or a list marker starts a new statement; a sentence ends at . ! or ? unless the full stop closes an
+    # abbreviation ("Dr.", "est.") or an initial ("N. Ireland", "B. R. Ambedkar").
+    cuts = {match.end() for match in _BEFORE_BULLET.finditer(text)}
+    cuts.update(marker.start() for marker in _LIST_MARKER.finditer(text) if state.starts_item(text, marker))
+    cuts.update(
+        boundary.end() for boundary in _SENTENCE_END.finditer(text) if not _closes_abbreviation(text, boundary.start())
+    )
     spans: list[tuple[int, int]] = []
     start = 0
-    for boundary in _SENTENCE_END.finditer(text):
-        end = boundary.start()
+    for cut in [*sorted(cuts), len(text)]:
+        if cut < len(text) and _MARKER_ONLY.fullmatch(text[start:cut].strip()):
+            continue  # keep "1." with the item it numbers
+        end = cut
         while start < end and text[start].isspace():
             start += 1
         while end > start and text[end - 1].isspace():
             end -= 1
         if start < end:
             spans.append((start, end))
-        start = boundary.end()
-    while start < len(text) and text[start].isspace():
-        start += 1
-    end = len(text)
-    while end > start and text[end - 1].isspace():
-        end -= 1
-    if start < end:
-        spans.append((start, end))
+        start = cut
     return spans
+
+
+def split_sentences(text: str) -> list[str]:
+    """The sentences of a passage, split the way the inventory splits source units."""
+    return [text[start:end] for start, end in _sentence_spans(text)]
 
 
 def _mentions(statement: str, unit: SourceUnit, offset: int) -> tuple[Mention, ...]:
@@ -184,13 +251,14 @@ def extract_facts(units: list[SourceUnit]) -> FactInventory:
     Mentions are heuristic review candidates. They are never normalised, corrected, or supplemented.
     """
     facts: list[Fact] = []
+    lists = _ListState()
     for unit in units:
-        for sequence, (start, end) in enumerate(_sentence_spans(unit.text), start=1):
+        for sequence, (start, end) in enumerate(_sentence_spans(unit.text, lists), start=1):
             statement = unit.text[start:end]
             flags: list[str] = []
             if "\ufffd" in statement:
                 flags.append("verify_extracted_text")
-            if _REVIEW_CUES.search(statement):
+            if REVIEW_CUES.search(statement):
                 flags.append("verify_attribution_or_absolute_claim")
             facts.append(
                 Fact(

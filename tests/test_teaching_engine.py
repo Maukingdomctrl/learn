@@ -78,6 +78,65 @@ def test_sentence_splitting_keeps_decimal_and_abbreviation_periods():
     assert [fact.statement for fact in inventory.facts] == ["The value is 3.5 cm.", "E.g. this example is short."]
 
 
+def test_list_markers_and_bullets_start_statements_without_becoming_statements():
+    units = [
+        SourceUnit(
+            "SRC-P1-U1",
+            1,
+            "1. QUICK REVISION NOTES 1. LONDON – Capital of the United Kingdom & England "
+            "• Situated on the River Thames in southeastern England.",
+            "text",
+        ),
+        SourceUnit(
+            "SRC-P1-U2",
+            1,
+            "ANSWER KEY A. Fill in the Blanks - Answers 1. River Thames 2. West Midlands 3. 1695 "
+            "B. One Sentence Answers 1. Belfast is the capital city of Northern Ireland.",
+            "text",
+        ),
+    ]
+
+    inventory = extract_facts(units)
+    statements = [fact.statement for fact in inventory.facts]
+
+    assert statements == [
+        "1. QUICK REVISION NOTES",
+        "1. LONDON – Capital of the United Kingdom & England",
+        "• Situated on the River Thames in southeastern England.",
+        "ANSWER KEY",
+        "A. Fill in the Blanks - Answers",
+        "1. River Thames",
+        "2. West Midlands",
+        "3. 1695",
+        "B. One Sentence Answers",
+        "1. Belfast is the capital city of Northern Ireland.",
+    ]
+    for fact in inventory.facts:
+        unit = next(unit for unit in units if unit.id == fact.source_unit_id)
+        assert unit.text[fact.start : fact.end] == fact.statement
+
+
+def test_initials_and_abbreviations_do_not_end_sentences_but_numbers_out_of_sequence_do():
+    text = (
+        "Dr. B. R. Ambedkar chaired the Drafting Committee. A. O. Hume was General Secretary. "
+        "Capital of N. Ireland is Belfast. Asia's oldest exchange (est. 1875) is here. "
+        "The answer is 8. The next one is 9. Vitamin C. It helps."
+    )
+
+    statements = [fact.statement for fact in extract_facts([SourceUnit("SRC-P1-U1", 1, text, "text")]).facts]
+
+    assert statements == [
+        "Dr. B. R. Ambedkar chaired the Drafting Committee.",
+        "A. O. Hume was General Secretary.",
+        "Capital of N. Ireland is Belfast.",
+        "Asia's oldest exchange (est. 1875) is here.",
+        "The answer is 8.",
+        "The next one is 9.",
+        "Vitamin C.",
+        "It helps.",
+    ]
+
+
 def test_numbered_question_block_is_preserved_as_one_source_fact():
     text = "Question 7 ?Although plants produce carbon dioxide.? What does this tell you about the two processes?"
     facts = extract_facts([SourceUnit("SRC-P3-U1", 3, text, "text")]).facts

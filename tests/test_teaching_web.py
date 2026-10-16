@@ -31,8 +31,8 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
     assert document.page_count >= 2
     pdf_text = "\n".join(page.get_text() for page in document)
     assert "DETECTIVE CASE FILE" in pdf_text
-    assert "SOURCE ANSWER" in pdf_text
-    assert "Source page" in pdf_text
+    assert "ANSWER SHEET" in document[-1].get_text()
+    assert "p. 1" in document[-1].get_text()
     assert list(tmp_path.iterdir()) == []
 
 
