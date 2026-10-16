@@ -196,3 +196,64 @@ def test_every_sample_sheet_prints_cards_and_an_answer_sheet(name):
 
     assert len(pages) >= 2 and pages[-1].lstrip().startswith("ANSWER SHEET")
     assert all("SRC-P" not in page for page in pages)
+
+
+def test_a_printed_timeline_asks_for_each_year_and_for_the_order():
+    cards = _cards("full-history-timeline.pdf")
+    years = {card.clue: card.answer for card in cards if card.kind == "timeline"}
+    order = next(card for card in cards if card.kind == "order")
+
+    assert years == {"Plassey": "1757", "Revolt": "1857", "Congress": "1885", "Independence": "1947"}
+    assert order.clue.splitlines() == ["Congress", "Independence", "Plassey", "Revolt"]
+    assert order.answer.splitlines() == ["1757: Plassey", "1857: Revolt", "1885: Congress", "1947: Independence"]
+    assert cards[0].about == "BIG IDEA" and not cards[0].clue.startswith("BIG IDEA")
+
+
+def test_table_rows_ask_which_one_a_description_belongs_to():
+    rows = [card for card in _cards("full-history-timeline.pdf") if card.kind == "row"]
+    forces = [card for card in _cards("full-physics-forces.pdf") if card.kind == "row"]
+
+    first = rows[0]
+    assert (first.clue, first.question, first.answer, first.about) == (
+        "Taxation, trade, land revenue, access to resources",
+        "Which factor is it?",
+        "Economic",
+        "How it can influence change",
+    )
+    assert any(card.question == "Which source is it?" and card.answer == "Personal diary" for card in rows)
+    assert forces[0].question == "Which situation is it?" and forces[0].answer == "Book resting on table"
+
+
+def test_computed_results_are_asked_but_values_the_sheet_gives_are_not():
+    answers = {card.clue: card.answer for card in _cards("full-physics-forces.pdf")}
+
+    assert answers["Trial D: a = 1.00 ÷ 1.50 ≈ ______"] == "0.67 m/s²"
+    assert answers["Resultant force determines acceleration: F = ______"] == "ma"
+    assert answers["1 N = ______"] == "1 kg·m/s²"
+    assert "Find resultant force and acceleration." in " ".join(answers)  # the sheet's practice task
+    assert not any(clue.endswith("radius = ______") for clue in answers)
+
+
+@pytest.mark.parametrize(
+    ("name", "lost"),
+    [("full-chemistry-lost-subscripts.pdf", "CaCO"), ("full-finance-lost-rupee.pdf", "600 interest")],
+)
+def test_letters_the_pdf_font_lost_never_reach_a_card(name, lost):
+    data, _, inventory, sheet = _read(name)
+    cards = plan_cards(sheet)
+
+    shown = [text for card in cards for text in (card.clue, card.answer, card.about)]
+    assert cards and not any("�" in text or lost in text for text in shown)
+    assert not any(card.kind == "sort" for card in cards)  # a lost "₹" at the start of a cell is not a bullet
+    answer_sheet = pymupdf.open(stream=render_printable_cards_pdf(inventory, data))[-1].get_text()
+    assert "could not be read from the PDF" in answer_sheet
+
+
+def test_a_question_table_and_number_tables_make_the_right_cards():
+    cards = _cards("full-stem-checklist.pdf")
+    questions = {card.clue: card.answer for card in cards if card.kind == "question"}
+
+    assert questions["Are units consistent?"] == "Mixed units can create false comparisons."
+    assert questions["Does correlation prove cause?"] == "No; multiple explanations may fit the same pattern."
+    assert not any("Rainfall (mm)" in card.about or card.answer == "Jan" for card in cards)
+    assert any(card.clue == "Rainfall range = 240 − 15 = ______" and card.answer == "225 mm" for card in cards)

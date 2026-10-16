@@ -75,7 +75,9 @@ GENERIC_HEADING = re.compile(
     r"exercises?|quick check|check|think|did you know|fun facts?|important|learning (?:goals|objectives)|objectives?|"
     r"goals?|vocabulary|glossary|key ?words|key terms|definitions?|answers?|questions?|compare|contrast|review|recap|"
     r"tips?|hints?|warning|caution|overview|background|discussion|explanation|steps|procedure|method|materials|"
-    r"results?|observations?|aim|practice|homework|exit ticket|common mistakes?)\b",
+    r"results?|observations?|aim|practice|homework|exit ticket|common mistakes?|common errors|common traps|"
+    r"interpretation|analysis|evaluation|variables|safety|data|calculations?|worked|experiment|investigation|"
+    r"theory|hypothesis|apparatus|reasoning|evidence|applications?|uses|advantages|disadvantages)\b",
     re.I,
 )
 _QUESTION_START = re.compile(
@@ -84,13 +86,22 @@ _QUESTION_START = re.compile(
     r"Solve|Identify|Discuss)\b)"
 )
 _INLINE_MARKER = re.compile(r"(?<=\s)(?:Q\s?)?(\d{1,2})[.)]\s+(?=\S)")
+_YEAR_LABEL = re.compile(r"(?:c\.\s*)?\d{3,4}(?:\s*(?:BCE|BC|CE|AD))?|\d{1,2}\s+[A-Z][a-z]+\s+\d{4}")
+# A boxed call-out label run into its text: "BIG IDEA • Change is caused by several connected factors."
+_CALLOUT = re.compile(r"^(?P<label>[A-Z][A-Z0-9 &'’/-]{1,40}?)\s*•\s+(?=\S)")
+# A task set by the sheet: "Practice: Predict what could happen if …"
+_TASK = re.compile(
+    r"^(?:practice|exam practice|task|exercise|activity|challenge|try this|your turn|extended response|homework)"
+    r"\s*[\d.]*\s*:\s*",
+    re.I,
+)
 
 
 @dataclass(frozen=True)
 class Table:
     header: tuple[str, ...]
     rows: tuple[tuple[str, ...], ...]
-    panels: bool = False  # side-by-side bullet lists under one heading each, not a grid of facts
+    kind: str = "grid"  # grid | panels (bullet lists side by side) | timeline (years with the events beside them)
 
 
 @dataclass(frozen=True)
@@ -204,11 +215,28 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
             spans = [span for span in raw["spans"] if span["text"].strip()]
             if not spans:
                 continue
-            text = " ".join("".join(span["text"] for span in raw["spans"]).split())
+            # A dingbat font at the start of a line draws its bullet; inside the text it stands in for a letter the
+            # main font lacked (some PDF makers print a box instead of "₃" or "₹"), so that letter is lost.
+            chunks, dingbat_bullet = [], False
+            for index, span in enumerate(raw["spans"]):
+                chunk = span["text"]
+                if "dingbat" in span["font"].casefold() and chunk.strip():
+                    after = next((later for later in raw["spans"][index + 1 :] if later["text"].strip()), None)
+                    spaced = (
+                        after is None
+                        or after["text"][:1].isspace()
+                        or (after["bbox"][0] - span["bbox"][2] >= 0.25 * span["size"])
+                    )
+                    if not "".join(chunks).strip() and spaced:  # "■ Text": a bullet; "■600": a lost "₹"
+                        dingbat_bullet = True
+                        continue
+                    chunk = "".join(char if char.isspace() else "\ufffd" for char in chunk)
+                chunks.append(chunk)
+            text = " ".join("".join(chunks).split())
             box = pymupdf.Rect(spans[0]["bbox"])
             for span in spans[1:]:
                 box |= span["bbox"]
-            if all(char in BULLETS for char in text.replace(" ", "")):
+            if not text or all(char in BULLETS for char in text.replace(" ", "")):
                 lone_bullets.append(box)
                 continue
             sizes: dict[float, int] = {}
@@ -217,6 +245,7 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
             centre = pymupdf.Point((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2)
             unit = next((unit_id for rect, unit_id in units if centre in rect), "")
             line = _Line(text, box.x0, box.y0, box.x1, box.y1, max(sizes, key=sizes.get), (unit,) if unit else ())
+            line.bullet = dingbat_bullet
             if text[0] in BULLETS:
                 line.text = text.lstrip(BULLETS + " ")
                 line.bullet = True
@@ -300,8 +329,9 @@ def _find_table(lines: list[_Line], right: float) -> tuple[Table, list[_Line]] |
             rows[-1].append((line, index))
             bottom = max(bottom, line.y1)
         panels = any(line.bullet for line, _ in members)
-        if len(rows) < 3 or (len(starts) == 2 and not panels):
-            continue  # two plain columns are too easily confused with two columns of running text
+        first_column = [line.text for line, index in members if index == 0]
+        if len(rows) < 3 or (len(starts) == 2 and not panels and max(map(len, first_column)) > 40):
+            continue  # two columns of long lines are running text, not a table
         cells = []
         for row in rows:
             texts = [""] * len(starts)
@@ -311,7 +341,33 @@ def _find_table(lines: list[_Line], right: float) -> tuple[Table, list[_Line]] |
         body = [row for row in cells[1:] if sum(bool(cell) for cell in row) >= (1 if panels else 2)]
         if len(body) < 2:
             continue
-        return Table(header=cells[0], rows=tuple(body), panels=panels), [line for line, _ in members]
+        kind = "panels" if panels else "grid"
+        return Table(header=cells[0], rows=tuple(body), kind=kind), [line for line, _ in members]
+    return None
+
+
+def _find_timeline(lines: list[_Line]) -> tuple[Table, list[_Line]] | None:
+    """Three or more years printed in a row, each with a short label centred above or below it."""
+    bands = _bands(lines)
+    for index, band in enumerate(bands):
+        if len(band) < 3 or not all(_YEAR_LABEL.fullmatch(line.text) for line in band):
+            continue
+        height = max(line.y1 - line.y0 for line in band)
+        near = [other for other in bands[max(0, index - 1) : index + 2] if other is not band]
+        for labels in near:
+            if len(labels) != len(band) or abs(labels[0].y0 - band[0].y0) > 4 * height:
+                continue
+            spacing = min(b.x0 - a.x0 for a, b in pairwise(band))
+            centres = [(line.x0 + line.x1) / 2 for line in labels]
+            pairs = []
+            for year in band:
+                middle = (year.x0 + year.x1) / 2
+                nearest = min(range(len(labels)), key=lambda i: abs(centres[i] - middle))
+                if abs(centres[nearest] - middle) > 0.35 * spacing or len(labels[nearest].text.split()) > 5:
+                    break
+                pairs.append((year.text, labels[nearest].text))
+            if len(pairs) == len(band) and len({label for _, label in pairs}) == len(pairs):
+                return Table(header=("Year", "Event"), rows=tuple(pairs), kind="timeline"), [*band, *labels]
     return None
 
 
@@ -324,7 +380,7 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
     left = sorted(line.x0 for line in content)[int(0.1 * (len(content) - 1))]
     tables: list[tuple[Table, list[_Line]]] = []
     remaining = content
-    while (found := _find_table(remaining, right)) is not None:
+    while (found := _find_timeline(remaining) or _find_table(remaining, right)) is not None:
         tables.append(found)
         used = {id(line) for line in found[1]}
         remaining = [line for line in remaining if id(line) not in used]
@@ -368,7 +424,12 @@ def _continues(paragraph: _Paragraph, line: _Line, gap_limit: float, right: floa
     if line.y0 < last.y1 - 2 or line.y0 - last.y1 > gap_limit:
         return False
     if line.x0 < first.x0 - 3:
-        indented_first = len(paragraph.lines) == 1 and not first.bullet and not _MARKER.match(first.text)
+        indented_first = (
+            len(paragraph.lines) == 1
+            and not first.bullet
+            and not _MARKER.match(first.text)
+            and first.x0 - line.x0 <= 40  # a first-line indent, not a centred line
+        )
         if not (indented_first and not _ends_sentence(last.text)):
             return False
     if line.x0 > first.x0 + 40:
@@ -479,6 +540,8 @@ def summary_parts(text: str) -> tuple[str, str] | None:
     name, rest = match["name"].strip(), match["rest"].strip()
     if len(name.split()) > 6 or not name[:1].isalpha() or re.search(r"[\d+×÷*/^<>:;=]", name):
         return None
+    if rest[:1].isdigit() or re.search(r"[=×÷−^√²³]|\d\s*[/+]\s*\d", rest):
+        return None  # "base = 8 cm" and "speed = frequency × wavelength" are measurements and formulas
     return name, rest
 
 
@@ -493,7 +556,8 @@ def names_topic(text: str) -> bool:
 
 
 def _heading_like(text: str) -> bool:
-    return len(text) <= 160 and not _ends_sentence(text) and summary_parts(text) is None
+    formula = re.search(r"[=×÷√]", text)
+    return len(text) <= 160 and not _ends_sentence(text) and summary_parts(text) is None and not formula
 
 
 def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
@@ -506,7 +570,7 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
             weights[paragraph.size] = weights.get(paragraph.size, 0) + len(paragraph.text)
     body_size = max(weights, key=weights.get) if weights else 0.0
 
-    def add(kind: str, paragraph: _Paragraph, text: str, marker: str = "", **extra) -> None:
+    def add(kind: str, paragraph: _Paragraph, text: str, marker: str = "", note: str = "", **extra) -> None:
         items.append(
             Item(
                 kind,
@@ -517,7 +581,7 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
                 section=section,
                 group=group,
                 topic=topic if kind in {"point", "summary"} else "",
-                context=context if kind in {"point", "summary", "question"} else "",
+                context=(note or context) if kind in {"point", "summary", "question"} else "",
                 top=paragraph.top,
                 bottom=paragraph.bottom,
                 **extra,
@@ -533,6 +597,7 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         following = next((other for other in paragraphs[index + 1 :] if other.table is None), None)
         if not started:
             # The sheet's title block: up to three unnumbered lines at the top of the first page.
+            subtitle = bool(items) and items[-1].kind == "title" and bool(re.search(r"\s[|•]\s", body))
             title = (
                 index <= 2
                 and paragraph.page == paragraphs[0].page
@@ -541,15 +606,23 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
                 and not _ends_sentence(body)
                 and following is not None
                 and not following.bullet
-                and _heading_like(split_marker(following.text)[1])
+                and (subtitle or _heading_like(split_marker(following.text)[1]))
             )
             if title:
                 add("title", paragraph, body)
                 continue
             started = True
+        callout, note = _CALLOUT.match(body), ""
+        if callout and _ends_sentence(body):
+            note, body = callout["label"].strip(), body[callout.end() :]
         tip = _TIP.match(body)
         if tip and not marker:
             add("tip", paragraph, body[tip.end() :], marker=tip.group().strip(" :-–—"))
+            continue
+        task = _TASK.match(body)
+        if task and not marker and section != "answers":
+            question, answer = _split_answer(body[task.end() :])
+            add("question", paragraph, question, answer=answer)
             continue
         in_lists = section in {"questions", "answers", "qa"}
         if in_lists and re.fullmatch(r"[A-H][.)]", marker) and _heading_like(body):
@@ -605,11 +678,11 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
                 add("heading", paragraph, body, marker)
                 continue
         if summary_parts(body) is not None:
-            add("summary", paragraph, body, marker)
+            add("summary", paragraph, body, marker, note)
         elif re.match(r"Q(?:uestion)?\b", marker, re.I) or (_QUESTION_START.match(body) and "?" in body):
-            add("question", paragraph, body, marker)
+            add("question", paragraph, body, marker, note)
         elif section != "table":  # loose text around a table is usually a stray cell
-            add("point", paragraph, body, marker)
+            add("point", paragraph, body, marker, note)
     return items
 
 

@@ -18,6 +18,7 @@ _ABBREVIATIONS = frozenset(
 )
 # Words after which a capital letter and a full stop name a label ("Vitamin C.") rather than an initial ("N. Ireland").
 _LETTER_LABELS = frozenset("vitamin plan grade class group section part type category point step option phase".split())
+_UNIT_WORDS = frozenset("million billion thousand hundred lakh crore per".split())
 _PATTERNS: dict[str, re.Pattern[str]] = {
     "date": re.compile(
         r"\b(?:\d{1,2}(?:st|nd|rd|th)?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)"
@@ -130,9 +131,12 @@ class _ListState:
     letter: str = ""
 
     def starts_item(self, text: str, marker: re.Match[str]) -> bool:
-        at_start = not text[: marker.start()].strip()
+        before = text[: marker.start()]
+        at_start = not before.strip()
         if not at_start and not text[marker.start() - 1].isspace():
             return False  # inside a number or word, such as "2012."
+        if before.count("(") > before.count(")") or before.rstrip()[-1:] in tuple("+−×÷=*/("):
+            return False  # "3(2x − 1) = 21" closes a bracket in a formula
         if marker["letter"]:
             letter = marker["letter"]
             previous = text[: marker.start()].split()[-1:] or [""]
@@ -163,8 +167,10 @@ def _closes_abbreviation(text: str, end: int) -> bool:
     if word.casefold() in _ABBREVIATIONS:
         return True
     if len(word) == 1 and word.isupper():
-        previous = re.findall(r"\w+", text[: match.start()])[-1:]
-        return not (previous and previous[0].casefold() in _LETTER_LABELS)
+        previous = re.findall(r"[\w.,]+", text[: match.start()])[-1:]
+        if previous and (previous[0].casefold() in _LETTER_LABELS or re.fullmatch(r"[\d.,]+", previous[0])):
+            return False  # "Vitamin C." and "53 million L." end sentences; "N. Ireland" does not
+        return not (previous and previous[0].casefold() in _UNIT_WORDS)
     return False
 
 

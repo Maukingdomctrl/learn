@@ -13,7 +13,7 @@ from hashlib import sha256
 
 import pymupdf
 
-from .facts import REVIEW_CUES, FactInventory, split_sentences
+from .facts import BULLETS, REVIEW_CUES, FactInventory, split_sentences
 from .sheet import GENERIC_HEADING, Item, Sheet, names_topic, read_sheet, summary_parts
 
 GAP = "______"
@@ -52,6 +52,9 @@ _QUESTIONS = {
     "equation": ("What goes in the gap?", "What goes in the gap?", "Complete it."),
     "chain": ("What goes in the gap?", "What comes in the gap?", "Supply the missing step."),
     "sort": ("Which one is it: {}?", "Which one is it: {}?", "Classify it: {}?"),
+    "which": ("Which {} is it?", "Which {} is it?", "Identify the {}."),
+    "year_of": ("Which year is it?", "Which year goes with it?", "Give its year."),
+    "order": ("Put them in order.", "Put them in time order.", "Arrange them chronologically."),
 }
 _CHAIN = re.compile(r"(\s*(?:→|->|⟶|➜|➝)\s*)")
 _INLINE_SEPARATOR = re.compile(r"\s+[•|]\s+")
@@ -60,7 +63,8 @@ _NO_CARDS = re.compile(r"^(?:learning (?:goals|objectives|outcomes)|objectives?|
 _DEFINED_TERM = re.compile(
     r"\b(?:is|are|was|were)\s+(?:called|known as|termed|named)\s+(?:the\s+|an?\s+)?"
     r"(?P<term>[A-Za-z][\w'’-]*(?:\s+[\w'’-]+){0,3}?)(?=\s*[.,;:]|\s*$)"
-    r"|^(?P<lead>[A-Z][\w'’-]*(?:\s+[a-z][\w'’-]*){0,2})(?=\s+(?:means|refers to|is defined as|are defined as)\b)"
+    r"|^(?P<lead>[A-Z][\w'’-]*(?:\s+[a-z][\w'’-]*)?)"
+    r"(?=\s+(?:means|refers to|is defined as|are defined as)\s+(?:the|a|an)\b)"
 )
 _LABELLED = re.compile(r"^(?P<label>[A-Za-z][\w'’()/& -]{0,40}?)\s*(?::|\s[—–])\s+(?P<text>\S.*)$")
 _LIST_LABEL = re.compile(r"^(?:vocabulary|glossary|key ?words|key terms|terms|words|definitions)\s*:\s*", re.I)
@@ -125,7 +129,7 @@ class SourceVisual:
 class Card:
     """One printed card and its answer-sheet entry."""
 
-    kind: str  # name riddle gap term equation chain finish question compare sort summary tip picture
+    kind: str  # name riddle gap term equation chain finish question compare row sort timeline order summary tip picture
     question: str  # the one plain question printed on the card
     clue: str  # the sheet's words shown on the card; "" for a picture
     answer: str  # the answer-sheet entry, in the sheet's words
@@ -246,8 +250,18 @@ def _gap(text: str) -> tuple[str, str, str] | None:
 
 
 def _readable(text: str) -> bool:
-    """False for text the PDF lost, such as a script its font could not encode ("IIIII IIII")."""
-    return not any(_JUNK_WORD.fullmatch(word) for word in text.split())
+    """False for text the PDF lost: letters its font could not encode, extracted as "IIIII" or as U+FFFD."""
+    return "\ufffd" not in text and not any(_JUNK_WORD.fullmatch(word) for word in text.split())
+
+
+def lost_text_pages(sheet: Sheet) -> list[int]:
+    """Pages where some of the sheet's text could not be read from the PDF, so it is on no card."""
+    pages = set()
+    for item in sheet.items:
+        cells = [cell for row in (item.table.header, *item.table.rows) for cell in row] if item.table else []
+        if not all(_readable(text) for text in (item.text, item.answer, *cells)):
+            pages.add(item.page)
+    return sorted(pages)
 
 
 def _labelled(text: str) -> tuple[str, str] | None:
@@ -266,13 +280,18 @@ def _equation(piece: str) -> tuple[str, str] | None:
     """ "1 km = 1,000 m" → ("1 km = ______", "1,000 m"): the result is the answer, not the first number."""
     if "=" not in piece or not _MATH.search(piece):
         return None
-    left, right = piece.rsplit("=", 1)
+    split = max(piece.rfind("="), piece.rfind("≈"))
+    left, right = piece[:split], piece[split + 1 :]
     right = right.strip().rstrip(".")
     if not right or len(right.split()) > 7 or not left.strip():
         return None
+    measured = re.fullmatch(r"[\d.,]+\s*[A-Za-z/°%·²³]{0,6}", right)
+    given = re.split(r"[=≈,;:]|\b(?:and|so|then)\b", left)[-1]
+    if measured and not re.search(r"[\d¼½¾⅓⅔⅛+\-−×÷*/^√]", given):
+        return None  # "radius = 7 cm" or "x = 6" states a value; "1 km = 1,000 m" and "240 − 15 = 225 mm" teach one
     if _labelled(piece) is None and re.search(r"\d[a-z]\b|\b[a-z]\s*[+\-−×*/]", left):
         return None  # "3x + 7 = 25" is an equation to solve, not a fact to recall; "1 m = 100 cm" is a fact
-    return f"{left.rstrip()} = {GAP}", right
+    return f"{left.rstrip()} {piece[split]} {GAP}", right
 
 
 def _chain(piece: str) -> tuple[str, str] | None:
@@ -301,8 +320,6 @@ def _checks(text: str) -> tuple[str, ...]:
     if cues:
         quoted = ", ".join(f"“{cue}”" for cue in cues)
         notes.append(f"Check first: the sheet says {quoted}. Confirm it in the textbook before learning it.")
-    if "\ufffd" in text:
-        notes.append("Some letters did not copy from the PDF. Compare this card with the sheet.")
     return tuple(notes)
 
 
@@ -323,11 +340,18 @@ def _tip_card(item: Item, standard: int) -> Card | None:
     return _card("tip", _ask("tip", standard), finished[0], body, item, about=item.marker or "Memory tip")
 
 
+def _numeric(cell: str) -> bool:
+    """A measurement or calculation ("0.50", "4/8 = 1/2", "90 g") rather than words to learn."""
+    return bool(re.search(r"\d", cell)) and not re.search(r"[A-Za-z]{4,}", cell)
+
+
 def _table_cards(item: Item, standard: int) -> list[Card]:
     table = item.table
     header, rows = table.header, table.rows
     labels = [cell.strip().casefold() for cell in header]
-    if table.panels:  # "WEATHER | CLIMATE" lists: sort each line into its list
+    if table.kind == "timeline":
+        return _timeline_cards(item, standard)
+    if table.kind == "panels":  # "WEATHER | CLIMATE" lists: sort each line into its list
         options = [cell.strip() for cell in header if cell.strip()]
         choice = " or ".join(options) if len(options) == 2 else ", ".join(options[:-1]) + " or " + options[-1]
         return [
@@ -341,10 +365,12 @@ def _table_cards(item: Item, standard: int) -> list[Card]:
             )
             for row in rows
             for column, cell in enumerate(row)
-            if cell.strip() and header[column].strip() and _readable(cell)
+            if cell.strip() and header[column].strip()
         ]
     asks = [index for index, label in enumerate(labels) if re.fullmatch(r"questions?|problems?|sums?|tasks?", label)]
     replies = [index for index, label in enumerate(labels) if re.fullmatch(r"answers?|solutions?|results?", label)]
+    if asks and not replies and len(header) == 2:
+        replies = [1 - asks[0]]  # "Question | Why it matters": the other column answers it
     if asks and replies:  # a practice table: each row is a question and its answer
         working = [index for index, label in enumerate(labels) if re.fullmatch(r"working|method|steps?|hints?", label)]
         cards = []
@@ -357,23 +383,22 @@ def _table_cards(item: Item, standard: int) -> list[Card]:
                     _card("question", _ask("question", standard), question, answer, item, "Practice question", answer)
                 )
         return cards
-    return _compare_cards(item, standard)
+    if not header[0].strip() or labels[0] in {"feature", "features", "aspect", "aspects", "basis", "point", "points"}:
+        return _compare_cards(item, standard)
+    return _row_cards(item, standard)
 
 
 def _compare_cards(item: Item, standard: int) -> list[Card]:
-    table = item.table
-    header, rows = table.header, table.rows
-    if not header[0].strip() or header[0].strip().casefold() in {"feature", "features", "aspect", "basis", "point"}:
-        names, features = list(header[1:]), [(row[0], list(row[1:])) for row in rows]
-    else:  # one row per thing compared: read the table column by column
-        names = [row[0] for row in rows]
-        features = [(header[column], [row[column] for row in rows]) for column in range(1, len(header))]
+    """A "Feature | A | B | C" table: one card per feature, naming each thing compared."""
+    header, rows = item.table.header, item.table.rows
+    names = list(header[1:])
     cards = []
-    for label, values in features:
+    for row in rows:
+        label, values = row[0].strip(), list(row[1:])
         pairs = [
             (name, value) for name, value in zip(names, values, strict=False) if name.strip() and value.strip(" -–—")
         ]
-        if not label.strip() or len(pairs) < 2:
+        if not label or len(pairs) < 2 or all(_numeric(value) for _, value in pairs):
             continue
         for start in range(0, len(pairs), 5):
             chunk = pairs[start : start + 5]
@@ -381,9 +406,46 @@ def _compare_cards(item: Item, standard: int) -> list[Card]:
                 chunk = pairs[-2:]
             clue = "\n".join(name for name, _ in chunk)
             answer = "\n".join(f"{name}: {value}" for name, value in chunk)
-            question = _ask("compare", standard, label.strip())
             claims = " ".join(value for _, value in chunk)  # check the values, not the names in the header
+            question = _ask("compare", standard, label)
             cards.append(_card("compare", question, clue, answer, item, about="Compare", source=claims))
+    return cards
+
+
+def _row_cards(item: Item, standard: int) -> list[Card]:
+    """A "Concept | Rule | Example" table: each row's description asks which one it describes."""
+    header, rows = item.table.header, item.table.rows
+    words = header[0].split()
+    noun = (
+        " ".join(word if word.isupper() and len(word) > 1 else word.lower() for word in words)
+        if len(words) <= 3
+        else ""
+    )
+    columns = [
+        column
+        for column in range(1, len(header))
+        if sum(len(row[column].split()) >= 2 and not _numeric(row[column]) for row in rows) >= max(2, len(rows) // 2)
+    ][:2]
+    cards = []
+    for row in rows:
+        name = row[0].strip()
+        for column in columns:
+            cell = row[column].strip()
+            if not name or len(cell.split()) < 2 or _numeric(cell):
+                continue
+            question = _ask("which", standard, noun) if noun else _ask("what_about", standard)
+            cards.append(_card("row", question, _hide_name(cell, name), name, item, header[column].strip(), cell))
+    return cards
+
+
+def _timeline_cards(item: Item, standard: int) -> list[Card]:
+    """Each event on a printed timeline asks for its year; one more card asks for the whole order."""
+    pairs = item.table.rows
+    cards = [_card("timeline", _ask("year_of", standard), event, year, item, "Timeline") for year, event in pairs]
+    shuffled = sorted(event for _, event in pairs)  # alphabetical: a fixed order that is not the answer
+    answer = "\n".join(f"{year}: {event}" for year, event in pairs)
+    if shuffled != [event for _, event in pairs]:
+        cards.append(_card("order", _ask("order", standard), "\n".join(shuffled), answer, item, "Timeline", answer))
     return cards
 
 
@@ -395,7 +457,8 @@ def _pieces(text: str) -> list[str]:
     parts = _INLINE_SEPARATOR.split(text)
     if len(parts) > 1 and all(len(part.split()) <= 8 for part in parts):
         return [part.strip() for part in parts if part.strip()]
-    return [clause for sentence in split_sentences(text) for clause in _clauses(sentence)]
+    sentences = [sentence.lstrip(BULLETS + " ") for sentence in split_sentences(text)]
+    return [clause for sentence in sentences if sentence for clause in _clauses(sentence)]
 
 
 def _vocabulary(pieces: list[str]) -> bool:
@@ -444,7 +507,7 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
 
 def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
     """One plain question per card, in the order of the sheet."""
-    items = [item for item in sheet.items if _readable(item.text) or item.kind == "table"]
+    items = list(sheet.items)
     headings = {
         item.text: parse_heading(item.text) for item in items if item.kind == "topic" and names_topic(item.text)
     }
@@ -499,7 +562,7 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
         elif item.kind == "tip" and (tip := _tip_card(item, standard)) is not None:
             cards.append(tip)
     cards.extend(_picture_cards(sheet, headings, standard))
-    return cards
+    return [card for card in cards if _readable(card.clue) and _readable(card.answer)]
 
 
 def _picture_cards(sheet: Sheet, headings: dict[str, Heading], standard: int) -> list[Card]:
@@ -829,7 +892,7 @@ def render_printable_cards_pdf(
             "No source facts were found to turn into cards. The selected pages need bullet points, sentences or "
             "practice questions."
         )
-    lost = sorted({item.page for item in sheet.items if not _readable(item.text)})
+    lost = lost_text_pages(sheet)
     notes = tuple(
         f"Some text on page {page} could not be read from the PDF (its font has no letters for it), so it is on "
         "no card. Check that page by eye."

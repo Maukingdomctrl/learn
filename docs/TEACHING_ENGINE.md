@@ -60,7 +60,9 @@ To use `learn.mauforge.com`, first deploy and test the Render URL, then add that
 - Wrapped lines are joined back into whole bullets and sentences ("Non-" + "Cooperation" stays "Non-Cooperation").
 - Page headers, footers, page numbers, the sheet's title lines and bare list numbers ("1.") are left out.
 - A numbered heading followed by bullets ("1. Dadabhai Naoroji (1825–1917) – "Grand Old Man of India"") is a topic, and its bullets belong to it. A sub-heading such as "Four main stages" labels what follows without naming an answer.
-- Comparison tables are read cell by cell under their header row. Bullet lists printed side by side under short headings ("WEATHER", "CLIMATE") are read as panels.
+- Comparison tables are read cell by cell under their header row. Bullet lists printed side by side under short headings ("WEATHER", "CLIMATE") are read as panels, and a row of years with short labels centred under them as a timeline.
+- A box drawn in a dingbat font in place of a letter the PDF's font lacked (a subscript, "₹") marks that letter as lost; at the start of a line, followed by a space, it is a bullet.
+- A call-out label run into its text ("BIG IDEA • Change is caused by …") becomes the card's context line, and a task the sheet sets ("Practice: …", "Extended response: …") becomes a practice question.
 - Practice questions keep their answers: "— Ans: …" after the question, or the same number in a later answer key ("A. Fill in the Blanks – Answers 1. River Thames").
 - Pages without a text layer, and calls without a PDF, use the fact inventory instead.
 
@@ -74,16 +76,19 @@ To use `learn.mauforge.com`, first deploy and test the Render URL, then add that
 | What is it called? | "Term: meaning" lines listed under no named topic | The meaning | The term |
 | What goes in the gap? | A formula, a fact such as "1 km = 1,000 m", or an arrow chain | The line with its result, or a middle step, hidden | The hidden part |
 | Finish the sentence | Any other whole sentence | Its first words | The rest |
-| Compare | A table row | The things compared. *What is each one's Popular Title?* | Each one's value |
+| Compare | A "Feature \| A \| B" table row | The things compared. *What is each one's Popular Title?* | Each one's value |
+| Which one? | A row of a "Concept \| Rule \| Example" table | One description. *Which concept is it?* | The row's name |
+| Timeline | A printed timeline | One event. *Which year goes with it?* One more card lists the events to put in time order | The year; the order |
 | Which one is it? | Side-by-side panels | One line. *Which one is it: WEATHER or CLIMATE?* | The panel's heading |
-| Practice question | The sheet's own questions and worked examples | The question | The sheet's answer, or a note that the sheet has none |
+| Practice question | The sheet's own questions, tasks, question tables and worked examples | The question | The sheet's answer, or a note that the sheet has none |
 | Memory tip | A "Memory tip" or "Think" line | The tip's opening words. *Say the rest of the tip.* | The whole tip |
 | Picture | A picture printed beside a topic | The picture. *Who is this?* | The topic's name |
 
 Some things make no card:
 
 - a picture the sheet does not place beside a topic;
-- text the PDF's own font could not encode (it extracts as runs such as "IIIII"). The answer sheet names the page so an adult can check it by eye;
+- text with letters the PDF's own font could not encode (lost boxes, or runs such as "IIIII"). The answer sheet names the page so an adult can check it by eye;
+- columns of measurements, values the sheet gives rather than works out ("radius = 7 cm"), and labels from a diagram ("base = 8 cm");
 - class, grade and page numbers, which are never answers.
 
 **How it prints.** Cards print one-sided, eight 85 × 68.8 mm cards to an A4 page, with dashed cut lines. A card shows only its number, an optional line saying what it is about, the clue and the question: no source codes, rules or writing boxes. The answer sheet follows on its own pages, with each card's number, answer and the page of the study sheet, plus notes for the adult. A claim containing "first", "largest", "invented", "only" or a similar word is still played, but its answer-sheet entry says: "Check first: the sheet says “first”. Confirm it in the textbook before learning it."
@@ -92,7 +97,7 @@ Text prints in FiraGO from `pymupdf-fonts` (SIL Open Font Licence), which covers
 
 Learn-generated card PDFs are rejected as input, so printed questions and answers cannot become study facts. The app does not invent or fetch pictures.
 
-**Limits.** The reading rules were tuned on the sheets in `tests/sheets/` and `cards/sample/`, plus the extracted text of a UK cities sheet: Grade 8 revision sheets printed from a browser, and small synthetic layout tests. Two columns of running text, scanned pages and unfamiliar layouts are likely to come out worse. Cards repeat the sheet's own words, so mistakes in the sheet appear on the cards. The cards have not been tried with children.
+**Limits.** The reading rules were tuned on the sheets in `tests/sheets/` and `cards/sample/`, plus the extracted text of a UK cities sheet: Grade 8 revision sheets printed from a browser, one-page history, civics, chemistry, physics and maths sheets, and small synthetic layout tests. Two columns of running text, scanned pages and unfamiliar layouts are likely to come out worse. Cards repeat the sheet's own words, so mistakes in the sheet appear on the cards. The cards have not been tried with children.
 
 ## Tests
 

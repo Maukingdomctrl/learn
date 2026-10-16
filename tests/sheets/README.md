@@ -9,5 +9,9 @@
 | `compact-revision.pdf` | Facts separated by "•" and "|", and a question / working / answer table. |
 | `equations.pdf` | Formulas and worked equations. |
 | `missing-script-font.pdf` | Devanagari set in a font with no Devanagari letters, so the PDF's text layer is unreadable. |
+| `full-history-timeline.pdf` | A drawn timeline (years in one row, events centred under them), "Factor / Source" tables and a "BIG IDEA •" call-out. |
+| `full-physics-forces.pdf` | Data and description tables, worked calculations, given values and a "Practice:" task. |
+| `full-chemistry-lost-subscripts.pdf`, `full-finance-lost-rupee.pdf` | Characters the PDF's font lacked (subscripts, "₹") printed as a dingbat box, so those letters are lost from the text layer. |
+| `full-stem-checklist.pdf` | A "Question / Why it matters" table and a table of measurements. |
 
 The sheets were supplied as test material. The card tests check structure only; passing them says nothing about how well the cards teach.
