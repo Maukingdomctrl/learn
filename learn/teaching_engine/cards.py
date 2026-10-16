@@ -1081,12 +1081,45 @@ def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: li
     shape.commit()
 
 
+def _practice_reinforcement(card: Card) -> tuple[str, str]:
+    answer = card.answer.strip()
+    if card.kind == "teach":
+        if answer.casefold() == "water cycle":
+            return "What does the water cycle describe?", card.clue
+        if answer.casefold() == "evaporation":
+            return "What happens to liquid water during evaporation?", card.clue
+        if answer.casefold() == "condensation":
+            return "What happens as water vapour cools?", card.clue
+        if answer.casefold() == "transpiration":
+            return "How do plants add water vapour to the air?", card.clue
+        return "Explain the idea in your own words.", card.clue
+    if card.kind == "learn":
+        return card.question, answer
+    year = re.search(r"\b(?:1[0-9]{3}|20[0-9]{2})\b", answer)
+    if year:
+        prompt, _ = _practice_prompt(card)
+        return f"What event or fact is linked to {year.group()}?", prompt.replace("________________", answer)
+    if card.question and card.question not in {"Answer it.", "What is this about?"}:
+        return card.question, answer
+    return "Explain this fact in your own words.", answer
+
+
 def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
     practice_cards = []
     for card in cards:
         prompt, answer = _practice_prompt(card)
+        question, explanation = _practice_reinforcement(card)
         practice_cards.append(
-            Card("cloze", "Write the missing word.", prompt, answer, card.page, card.unit_ids, "Fill in the blank", card.checks)
+            Card(
+                "cloze",
+                question,
+                prompt,
+                answer,
+                card.page,
+                card.unit_ids,
+                "Fill in the blank",
+                (*card.checks, f"Follow-up answer: {explanation}"),
+            )
         )
     sheets = (len(practice_cards) + _CARDS_PER_PAGE - 1) // _CARDS_PER_PAGE
     for sheet in range(sheets):
@@ -1154,7 +1187,10 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
         y = kind.draw(shape, ["FILL-IN-THE-BLANK ANSWERS"], 12, margin + 32, y + 5, True, theme["colour"]) + 8
         for number, card in enumerate(cards, start=1):
             _, answer = _practice_prompt(card)
-            lines = kind.wrap(kind.printable(answer, True), 9.5, width - 70, True)
+            question, explanation = _practice_reinforcement(card)
+            blank_lines = kind.wrap(kind.printable(f"Blank: {answer}", True), 9.5, width - 70, True)
+            follow_up_lines = kind.wrap(kind.printable(f"{question} {explanation}", True), 9.5, width - 70, True)
+            lines = [*blank_lines, *follow_up_lines]
             if y + len(lines) * 11.6 + 6 > _PAGE_HEIGHT - 40:
                 new_page(False)
             kind.draw(shape, [str(number)], 9.5, 0, y, True, theme["colour"], align_right=margin + 22)
