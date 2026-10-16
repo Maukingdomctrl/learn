@@ -171,7 +171,9 @@ def test_non_person_topic_facts_become_specific_recall_cards_not_topic_riddles()
             (1, "THE WATER CYCLE"),
             (1, "• The Sun warms water in oceans, lakes and rivers."),
             (1, "• This change is evaporation."),
-            (1, "• Rain, snow and hail are precipitation."),
+            (1, "• Plants also release water vapour from their leaves."),
+            (1, "• As moist air rises, it cools."),
+            (1, "• Rain, snow and hail are forms of precipitation."),
             (1, "• Some rainwater flows over land."),
         ]
     )
@@ -179,7 +181,11 @@ def test_non_person_topic_facts_become_specific_recall_cards_not_topic_riddles()
     assert all(card.question != "What is this about?" for card in cards)
     assert all(card.answer != "THE WATER CYCLE" for card in cards)
     assert any(card.clue == "This change is ______." and card.answer == "evaporation" for card in cards)
-    assert any(card.kind == "finish" for card in cards)
+    recall = {card.clue: card.answer for card in cards if card.kind == "recall"}
+    assert recall["What does the Sun warm?"] == "The Sun warms water in oceans, lakes and rivers."
+    assert recall["What do plants release from their leaves?"] == "Plants also release water vapour from their leaves."
+    assert recall["What happens as moist air rises?"] == "As moist air rises, it cools."
+    assert any(card.clue == "Rain, snow and hail are forms of ______." for card in cards)
 
 
 def test_uk_sheet_cards_drop_list_numbers_titles_footers_and_table_fragments():

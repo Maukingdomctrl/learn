@@ -363,12 +363,45 @@ def _finish(text: str) -> tuple[str, str] | None:
 
 
 def _key_cloze(text: str) -> tuple[str, str] | None:
+    forms = re.search(r"\bare forms of (?P<answer>[A-Za-z][A-Za-z'’-]{2,})(?P<end>[.!?]?)$", text)
+    if forms is not None:
+        return f"{text[:forms.start('answer')]}{GAP}{forms['end']}", forms["answer"]
     match = re.search(
         r"\b(?:is|are|was|were)\s+(?P<answer>[A-Za-z][A-Za-z'’-]{2,})(?P<end>[.!?]?)$", text
     )
     if match is None:
         return None
     return f"{text[:match.start('answer')]}{GAP}{match['end']}", match["answer"]
+
+
+def _recall_question(text: str) -> str | None:
+    patterns = (
+        (r"^Plants? also release (?P<object>.+?) from (?P<place>[^.!?]+)[.!?]$", "What do plants release from {place}?"),
+        (r"^Together,\s*(?P<subject>.+?)\s+add\s+(?P<object>.+?)\s+to\s+(?P<place>[^.!?]+)[.!?]$", "What do {subject} add to {place}?"),
+        (r"^(?P<subject>[^.!?]+?)\s+warms?\s+(?P<object>[^.!?]+)[.!?]$", "What does {subject} warm?"),
+        (r"^(?P<subject>[^.!?]+?)\s+moves?\s+(?:continuously\s+)?(?P<detail>[^.!?]+)[.!?]$", "Where does {subject} move?"),
+        (r"^(?P<subject>[^.!?]+?)\s+changes?\s+into\s+(?P<answer>[^.!?]+)[.!?]$", "What does {subject} change into?"),
+        (r"^(?P<subject>[^.!?]+?)\s+release\s+(?P<object>[^.!?]+)[.!?]$", "What does {subject} release?"),
+        (r"^(?P<subject>[^.!?]+?)\s+add\s+(?P<object>[^.!?]+?)\s+to\s+(?P<place>[^.!?]+)[.!?]$", "What do {subject} add to {place}?"),
+        (r"^As\s+(?P<context>[^,]+),\s+(?P<answer>[^.!?]+)[.!?]$", "What happens as {context}?"),
+        (r"^(?P<subject>[^.!?]+?)\s+form\s+(?P<object>[^.!?]+)[.!?]$", "What do {subject} form?"),
+        (r"^(?P<subject>[^.!?]+?)\s+can\s+(?P<action>[^.!?]+)[.!?]$", "What can {subject} do?"),
+        (r"^When\s+(?P<context>[^,]+),\s+(?P<answer>[^.!?]+)[.!?]$", "What happens when {context}?"),
+        (r"^(?P<subject>[^.!?]+?)\s+flows?\s+(?P<detail>[^.!?]+)[.!?]$", "Where does {subject} flow?"),
+        (r"^Some\s+enters?\s+(?P<place>[^.!?]+?)\s+and\s+may\s+become\s+(?P<answer>[^.!?]+)[.!?]$", "What may some water become?"),
+        (r"^(?P<subject>[^.!?]+?)\s+carry\s+(?P<object>[^.!?]+?)(?:\s+back)?\s+towards\s+(?P<place>[^.!?]+)[.!?]$", "What do {subject} carry towards {place}?"),
+        (r"^(?P<subject>[^.!?]+?)\s+can\s+involve\s+(?P<object>[^.!?]+)[.!?]$", "What can {subject} involve?"),
+    )
+    for pattern, template in patterns:
+        match = re.match(pattern, text, re.I)
+        if match:
+            values = {
+                key: value.rstrip(" .")[:1].lower() + value.rstrip(" .")[1:]
+                for key, value in match.groupdict().items()
+                if value
+            }
+            return template.format(**values)
+    return None
 
 
 def _checks(text: str) -> tuple[str, ...]:
@@ -560,6 +593,12 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
             cloze = _key_cloze(piece)
             if cloze is not None:
                 cards.append(_card("gap", _ask("word", standard), cloze[0], cloze[1], item, about, source=piece))
+                continue
+            recall_question = _recall_question(piece)
+            if recall_question is not None:
+                cards.append(
+                    _card("recall", "Answer in your own words.", recall_question, piece, item, source=piece)
+                )
                 continue
         finished = _finish(piece)
         if finished is not None:
