@@ -13,5 +13,6 @@
 | `full-physics-forces.pdf` | Data and description tables, worked calculations, given values and a "Practice:" task. |
 | `full-chemistry-lost-subscripts.pdf`, `full-finance-lost-rupee.pdf` | Characters the PDF's font lacked (subscripts, "₹") printed as a dingbat box, so those letters are lost from the text layer. |
 | `full-stem-checklist.pdf` | A "Question / Why it matters" table and a table of measurements. |
+| `carbon-cycle-answers.pdf` | A model-answer sheet: "Question N" on a line of its own, the question in bold, then the answer's bullets, coloured sub-headings ("When animals are alive:") and notes, with a small-print credit line at the end. |
 
 The sheets were supplied as test material. The card tests check structure only; passing them says nothing about how well the cards teach.
