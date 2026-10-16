@@ -13,7 +13,7 @@ from learn.teaching_engine import (
     render_printable_cards_pdf,
     render_teaching_pdf,
 )
-from learn.teaching_engine.cards import _focus
+from learn.teaching_engine.cards import _focus, _split_long_fact
 
 
 def test_printable_pdf_keeps_source_citations_recall_and_review_flags():
@@ -87,14 +87,19 @@ def test_printable_cards_include_fronts_mirrored_backs_source_pages_and_review_w
     assert "verify_attribution_or_absolute_claim" in backs
 
 
-def test_printable_cards_reject_empty_inventory_and_oversized_source_fact():
+def test_printable_cards_reject_empty_inventory_and_split_oversized_source_fact():
     empty = extract_facts([])
     with pytest.raises(ValueError, match="No source facts"):
         render_printable_cards_pdf(empty)
 
-    long_unit = SourceUnit("SRC-P1-U1", 1, ("longword " * 300) + ".", "text")
-    with pytest.raises(ValueError, match="too long"):
-        render_printable_cards_pdf(extract_facts([long_unit]))
+    statement = ("longword " * 300) + "."
+    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
+    segments = _split_long_fact(inventory.facts[0])
+
+    assert len(segments) > 1
+    assert "".join(segment.statement for segment in segments) == statement
+    pdf_bytes = render_printable_cards_pdf(inventory)
+    assert pdf_bytes.startswith(b"%PDF")
 
 
 def test_detective_and_superhero_games_use_different_prompts_and_source_visuals():
@@ -207,6 +212,29 @@ def test_numbered_question_stays_together_and_is_not_turned_into_a_cloze():
     assert "SOURCE QUESTION" in front
     assert "Question 7" in front
     assert "________" not in front
+    assert _split_long_fact(inventory.facts[0]) == (inventory.facts[0],)
+
+
+def test_long_table_fragment_is_split_into_exact_cited_card_excerpts():
+    statement = (
+        "Heart of Industrial Revolution; steam engine Financial centre of Europe Scottish Parliament; RBS HQ "
+        "Famous Landmark / Fact Birmingham Hippodrome (busiest theatre) Titanic Belfast Museum; Harland & Wolff "
+        "Wales Millennium Centre; Capital since 1955 Modern Economy Finance, innovation, culture Industry, technology, "
+        "culture Industry, aerospace, arts, education Finance, banking, tourism (£1.6 bn) Retail, finance, media, "
+        "tourism Special Note Metropolitan area covers SE England Grew to prominence in 18th century Pop. ~286,000 "
+        "(2011); economic engine of NI"
+    )
+    fact = extract_facts([SourceUnit("SRC-P3-U5", 3, statement, "text")]).facts[0]
+
+    segments = _split_long_fact(fact)
+    pdf_bytes = render_printable_cards_pdf(extract_facts([SourceUnit("SRC-P3-U5", 3, statement, "text")]))
+    output_text = " ".join("\n".join(page.get_text() for page in pymupdf.open(stream=pdf_bytes, filetype="pdf")).split())
+
+    assert len(segments) > 1
+    assert "".join(segment.statement for segment in segments) == statement
+    assert all(segment.page == fact.page and segment.source_unit_id == fact.source_unit_id for segment in segments)
+    assert "Heart of Industrial Revolution" in output_text
+    assert "economic engine of NI" in output_text
 
 
 def test_printing_uses_safe_formula_symbols_without_changing_source_fact():
@@ -220,6 +248,19 @@ def test_printing_uses_safe_formula_symbols_without_changing_source_fact():
     assert "CO2 + H2O" in normalized_text
     assert "->" in normalized_text
     assert "glucose + O2" in normalized_text
+
+
+@pytest.mark.parametrize("game_mode", ["detective", "superhero"])
+def test_card_text_layout_retries_a_smaller_size_when_actual_wrapping_differs(game_mode):
+    statement = "• Key role in the Industrial Revolution; global industrial centre until the latter half of the 20th century."
+    inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])
+
+    pdf_bytes = render_printable_cards_pdf(inventory, game_mode=game_mode)
+    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    text = " ".join("\n".join(page.get_text() for page in document).split())
+
+    assert "Key role in the Industrial Revolution" in text
+    assert "global industrial centre until the latter half" in text
 
 
 def test_long_lesson_pdf_renders_without_host_timeout():

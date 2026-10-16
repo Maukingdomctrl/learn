@@ -1,6 +1,6 @@
 """Render source-grounded, double-sided learning cards as an A4 PDF."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 import re
 
@@ -21,6 +21,7 @@ _PAPER = (0.97, 0.96, 0.91)
 _LINE = (0.83, 0.86, 0.81)
 _ORANGE = (0.70, 0.34, 0.14)
 _HERO = (0.31, 0.27, 0.64)
+_MAX_CARD_SOURCE_CHARS = 160
 _HEADING_CUES = re.compile(
     r"\b(?:quick revision|key ideas?|contents|chapter|unit|lesson|class|grade|standard|page|table|feature|sample|comparison|question|answers?|model answers?)\b",
     re.IGNORECASE,
@@ -55,6 +56,45 @@ _PRINT_SUBSTITUTIONS = str.maketrans(
 class SourceVisual:
     page: int
     image: bytes
+
+
+def _split_long_fact(fact: Fact) -> tuple[Fact, ...]:
+    statement = fact.statement
+    if len(statement) <= _MAX_CARD_SOURCE_CHARS or "?" in statement:
+        return (fact,)
+
+    segments: list[Fact] = []
+    start = 0
+    while start < len(statement):
+        end = min(start + _MAX_CARD_SOURCE_CHARS, len(statement))
+        if end < len(statement):
+            lower_bound = start + _MAX_CARD_SOURCE_CHARS // 2
+            punctuation = max(statement.rfind(mark, lower_bound, end) for mark in (";", "|", "\n"))
+            if punctuation >= lower_bound:
+                end = punctuation + 1
+            else:
+                whitespace = statement.rfind(" ", lower_bound, end)
+                if whitespace > start:
+                    end = whitespace + 1
+        segment_start = fact.start + start
+        segment_end = fact.start + end
+        mentions = tuple(
+            mention
+            for mention in fact.mentions
+            if mention.start >= segment_start and mention.end <= segment_end
+        )
+        segments.append(
+            replace(
+                fact,
+                id=f"{fact.id}-C{len(segments) + 1}",
+                statement=statement[start:end],
+                start=segment_start,
+                end=segment_end,
+                mentions=mentions,
+            )
+        )
+        start = end
+    return tuple(segments)
 
 
 def _focus(fact: Fact) -> tuple[Mention, str, str] | None:
@@ -131,17 +171,20 @@ def _draw_text(page, text: str, rect: pymupdf.Rect, fontname: str, max_size: flo
     text = text.translate(_PRINT_SUBSTITUTIONS)
     font = pymupdf.Font(fontname)
     size = _fit_size(text, font, max_size, rect.width, rect.height)
-    result = page.insert_textbox(
-        rect,
-        text,
-        fontname=fontname,
-        fontsize=size,
-        lineheight=1.25,
-        color=color,
-        align=align,
-    )
-    if result < 0:
-        raise ValueError("A source fact could not be laid out on the printable cards. Select fewer pages.")
+    while size >= 4.8:
+        result = page.insert_textbox(
+            rect,
+            text,
+            fontname=fontname,
+            fontsize=size,
+            lineheight=1.25,
+            color=color,
+            align=align,
+        )
+        if result >= 0:
+            return
+        size = round(size - 0.5, 1)
+    raise ValueError("A source fact could not be laid out on the printable cards. Select fewer pages.")
 
 
 def _card_rect(column: int, row: int) -> pymupdf.Rect:
@@ -370,7 +413,7 @@ def render_printable_cards_pdf(
     if not inventory.facts:
         raise ValueError("No source facts were found to turn into cards.")
     visuals = extract_source_visuals(source_pdf, pages) if source_pdf else []
-    entries = [("fact", fact) for fact in inventory.facts]
+    entries = [("fact", segment) for fact in inventory.facts for segment in _split_long_fact(fact)]
     entries.extend(("visual", visual) for visual in visuals)
     document = pymupdf.open()
     cards_per_sheet = 8

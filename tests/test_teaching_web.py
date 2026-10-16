@@ -54,20 +54,22 @@ def test_teaching_web_builds_selected_superhero_mode(sample_pdf):
     assert "TURN OVER TO CHECK" not in text
 
 
-def test_preview_endpoint_returns_the_generated_pdf_inline(sample_pdf):
+@pytest.mark.parametrize("output", ["detective", "superhero"])
+def test_preview_endpoint_returns_the_selected_game_pdf_inline(sample_pdf, output):
     client = TestClient(web.app)
     with open(sample_pdf, "rb") as pdf_file:
         response = client.post(
             "/preview",
-            data={"output": "superhero", "standard": "8"},
+            data={"output": output, "standard": "8"},
             files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")},
         )
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/pdf")
-    assert response.headers["content-disposition"] == 'inline; filename="learn_superhero_game.pdf"'
+    assert response.headers["content-disposition"] == f'inline; filename="learn_{output}_game.pdf"'
     document = pymupdf.open(stream=response.content, filetype="pdf")
-    assert "SUPERHERO POWER-UP GAME" in "\n".join(page.get_text() for page in document)
+    game_title = "DETECTIVE CASE FILE" if output == "detective" else "SUPERHERO POWER-UP GAME"
+    assert game_title in "\n".join(page.get_text() for page in document)
 
 
 def test_teaching_web_keeps_lesson_pdf_as_an_option(sample_pdf):
