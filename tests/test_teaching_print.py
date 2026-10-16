@@ -231,6 +231,17 @@ def test_printable_cards_reject_empty_inventory_and_shrink_rather_than_fail_on_l
     assert "in the end." in document[-1].get_text()
 
 
+def test_printable_cards_reject_a_learn_generated_pdf():
+    document = pymupdf.open()
+    document.new_page().insert_text((72, 72), "Generated cards")
+    document.set_metadata({"title": "Learn ICSE Standard 8 Detective game", "author": "Learn Teaching Engine"})
+    source_pdf = document.tobytes()
+    document.close()
+
+    with pytest.raises(ValueError, match="already a Learn-generated PDF"):
+        render_printable_cards_pdf(extract_facts([]), source_pdf)
+
+
 def test_detective_and_superhero_games_print_picture_cards_named_by_the_sheet():
     source_pdf = (SAMPLES / "people-sheet.pdf").read_bytes()
     inventory = extract_facts(extract(source_pdf).units)

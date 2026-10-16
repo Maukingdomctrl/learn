@@ -56,6 +56,18 @@ _QUESTIONS = {
     "year_of": ("Which year is it?", "Which year goes with it?", "Give its year."),
     "order": ("Put them in order.", "Put them in time order.", "Arrange them chronologically."),
 }
+
+
+def reject_generated_pdf(source_pdf: bytes) -> None:
+    with pymupdf.open(stream=source_pdf, filetype="pdf") as document:
+        metadata = document.metadata or {}
+    title = metadata.get("title") or ""
+    if metadata.get("author") == "Learn Teaching Engine" and (
+        title.startswith("Learn ICSE Standard") or title in {"Learn detective game", "Learn superhero game"}
+    ):
+        raise ValueError("This is already a Learn-generated PDF. Upload the original curriculum PDF instead.")
+
+
 _CHAIN = re.compile(r"(\s*(?:→|->|⟶|➜|➝)\s*)")
 # Words a sentence's second half often starts with: "Dead animals are decomposed | by bacteria and fungi".
 _PHRASE_START = frozenset(
@@ -913,6 +925,8 @@ def render_printable_cards_pdf(
         raise ValueError("Choose either Detective or Superhero game mode.")
     if standard not in {7, 8, 9}:
         raise ValueError("Choose ICSE Standard 7, 8, or 9.")
+    if source_pdf:
+        reject_generated_pdf(source_pdf)
     if not inventory.facts and not source_pdf:
         raise ValueError("No source facts were found to turn into cards.")
     sheet = read_sheet(inventory, source_pdf, pages)

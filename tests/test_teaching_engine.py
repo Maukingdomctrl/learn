@@ -1,5 +1,8 @@
 import json
 
+import pymupdf
+import pytest
+
 from learn.extraction import SourceUnit
 from learn.teaching_engine import create_teaching_lesson, extract_facts
 from learn.teaching_engine.__main__ import main
@@ -192,3 +195,15 @@ def test_pdf_command_writes_lesson_without_api_key(sample_pdf, tmp_path, monkeyp
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["lesson"]["topics"]
+
+
+def test_pdf_command_rejects_a_learn_generated_pdf(tmp_path):
+    document = pymupdf.open()
+    document.new_page().insert_text((72, 72), "Generated cards")
+    document.set_metadata({"title": "Learn ICSE Standard 8 Detective game", "author": "Learn Teaching Engine"})
+    source = tmp_path / "generated.pdf"
+    document.save(source)
+    document.close()
+
+    with pytest.raises(ValueError, match="already a Learn-generated PDF"):
+        main([str(source), "--out", str(tmp_path / "lesson.json")])
