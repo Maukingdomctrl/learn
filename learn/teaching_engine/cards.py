@@ -82,7 +82,7 @@ def _fit_size(text: str, font: pymupdf.Font, max_size: float, max_width: float, 
     sizes = [size for size in (max_size, 11.0, 9.4, 8.8, 8.2, 7.6, 7.0, 6.4, 5.8) if size <= max_size]
     for size in dict.fromkeys(sizes):
         line_count = len(_wrapped(text, font, size, max_width))
-        if line_count * size * 1.25 <= max_height:
+        if line_count * size * 1.25 <= max_height * 0.9:
             return size
     raise ValueError("A source fact is too long to fit on a card. Select fewer pages or split that source sentence.")
 
@@ -245,12 +245,16 @@ def _draw_back(page, fact: Fact, number: int, position: int, game_mode: str) -> 
         _draw_text(page, f"Review flag: {review}", pymupdf.Rect(inner.x0, inner.y0 + 104, inner.x1, inner.y0 + 119), "helv", 6.8, _ORANGE)
         page.insert_text((inner.x0, inner.y1 - 8), "Do not treat as confirmed until checked against the source.", fontname="helv", fontsize=6.1, color=_ORANGE)
     else:
-        page.insert_text((inner.x0, inner.y0 + 111), "My memory hook:", fontname="hebo", fontsize=6.8, color=_GREEN)
+        if game_mode == "detective":
+            page.insert_text((inner.x0, inner.y0 + 111), "CASE POINT: recall + cite the page", fontname="hebo", fontsize=6.3, color=_GREEN)
+        else:
+            page.insert_text((inner.x0, inner.y0 + 111), "POWER: recall + teach + draw a symbol", fontname="hebo", fontsize=6.0, color=_HERO)
+        page.insert_text((inner.x0, inner.y0 + 127), "My memory hook:", fontname="hebo", fontsize=6.8, color=_GREEN if game_mode == "detective" else _HERO)
         page.draw_line((inner.x0 + 57, inner.y0 + 114), (inner.x1 - 33, inner.y0 + 114), color=_LINE, width=0.6)
         doodle = pymupdf.Rect(inner.x1 - 29, inner.y0 + 103, inner.x1 - 1, inner.y0 + 131)
         page.draw_rect(doodle, color=_LINE, width=0.6)
         page.insert_text((doodle.x0 + 2, doodle.y1 + 7), "SKETCH", fontname="helv", fontsize=4.8, color=_MUTED)
-        page.insert_text((inner.x0, inner.y1 - 8), "Make your own link or picture - not a source fact", fontname="helv", fontsize=6.1, color=_MUTED)
+        page.insert_text((inner.x0, inner.y1 - 8), "Your memory link is not a source fact", fontname="helv", fontsize=6.1, color=_MUTED)
 
 
 def extract_source_visuals(source_pdf: bytes, pages: set[int] | None = None) -> list[SourceVisual]:
@@ -328,7 +332,12 @@ def render_printable_cards_pdf(
             if side == "BACKS":
                 heading += "  -  FLIP ON LONG EDGE"
             page.insert_text((18, 18), heading, fontname="hebo", fontsize=7, color=_MUTED)
-            page.insert_text((18, 27), "Solve source clues and cite evidence." if game_mode == "detective" else "Recall a fact, teach a teammate, invent a memory emblem.", fontname="helv", fontsize=6, color=_GREEN if game_mode == "detective" else _HERO)
+            directions = (
+                "HOW TO PLAY: Read the clue, name the missing evidence, then flip. Earn a case point for a correct answer and source page."
+                if game_mode == "detective"
+                else "HOW TO PLAY: Reveal a clue, recall its source detail, then teach a teammate. Draw a memory emblem to earn a power."
+            )
+            page.insert_text((18, 27), directions, fontname="helv", fontsize=6, color=_GREEN if game_mode == "detective" else _HERO)
             for position in range(cards_per_sheet):
                 if side == "FRONTS":
                     fact_index = start + position

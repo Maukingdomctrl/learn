@@ -4,6 +4,7 @@ from time import perf_counter
 import pymupdf
 import pytest
 
+from learn.extraction import choose_ocr, extract
 from learn.grounding import SourceUnit
 from learn.teaching_engine import (
     create_teaching_lesson,
@@ -109,12 +110,30 @@ def test_detective_and_superhero_games_use_different_prompts_and_source_visuals(
 
     assert len(visuals) == 3
     assert "DETECTIVE CASE FILE" in detective_text
+    assert "name the missing evidence" in detective_text
+    assert "CASE POINT" in detective_text
     assert "What does this word mean here?" in detective_text
     assert "SOURCE VISUAL" in detective_text
     assert "SUPERHERO POWER-UP GAME" in superhero_text
     assert "POWER-UP - Explain this word to your teammate." in superhero_text
+    assert "teach a teammate" in superhero_text
+    assert "POWER:" in superhero_text
     assert "ICSE STANDARD 7" in superhero_text
     assert "PAGE 1" in superhero_text
+
+
+@pytest.mark.parametrize("filename", ["civics-sheet.pdf", "industries-sheet.pdf"])
+def test_card_layout_fits_long_source_rows_and_comparison_tables(filename):
+    source_pdf = (Path(__file__).parents[1] / "cards" / "sample" / filename).read_bytes()
+    ocr, ocr_name = choose_ocr("auto")
+    source = extract(source_pdf, ocr, ocr_name)
+
+    pdf_bytes = render_printable_cards_pdf(extract_facts(source.units), source_pdf)
+
+    document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+    assert pdf_bytes.startswith(b"%PDF")
+    assert document.page_count >= 2
+    assert "SOURCE ANSWER" in "\n".join(page.get_text() for page in document)
 
 
 def test_long_lesson_pdf_renders_without_host_timeout():
