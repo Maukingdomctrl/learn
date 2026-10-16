@@ -404,6 +404,75 @@ def _recall_question(text: str) -> str | None:
     return None
 
 
+_NAMED_PROCESS = re.compile(
+    r"^This\s+(?P<kind>change|movement|process)\s+(?:is|was)\s+(?:called\s+)?"
+    r"(?P<name>[A-Za-z][\w'’-]*(?:\s+[\w'’-]+){0,3})[.!?]?$",
+    re.I,
+)
+
+
+def _named_process(text: str) -> tuple[str, str] | None:
+    match = _NAMED_PROCESS.match(text.strip())
+    if match is None:
+        return None
+    name = re.sub(r"^(?:the|a|an)\s+", "", match["name"].strip(), flags=re.I).rstrip(".")
+    return match["kind"].casefold(), name
+
+
+def _supports_named_process(explanation: str, kind: str) -> bool:
+    patterns = {
+        "change": r"\b(?:change\w*|turn\w* into|become\w*)\b",
+        "movement": r"\b(?:move\w*|flow\w*|travel\w*|circulat\w*)\b",
+        "process": r"\b(?:release\w*|add\w*|produce\w*|form\w*)\b",
+    }
+    return bool(re.search(patterns[kind], explanation, re.I))
+
+
+def _paired_process_card(explanation: Item, naming: Item) -> Card | None:
+    named = _named_process(naming.text)
+    if named is None:
+        return None
+    kind, name = named
+    if not _supports_named_process(explanation.text, kind):
+        return None
+    question = {
+        "change": "What is this change called?",
+        "movement": "What is this movement called?",
+        "process": "What is this process called?",
+    }[kind]
+    unit_ids = tuple(dict.fromkeys((*explanation.unit_ids, *naming.unit_ids)))
+    source = f"{explanation.text} {naming.text}"
+    return Card(
+        "teach",
+        question,
+        explanation.text,
+        name,
+        explanation.page,
+        unit_ids,
+        "Use the full explanation",
+        _checks(source),
+    )
+
+
+def _joined_process_card(item: Item) -> Card | None:
+    sentences = split_sentences(item.text.replace("\ufffd", " "))
+    if len(sentences) < 2:
+        return None
+    naming = _named_process(sentences[-1])
+    if naming is None:
+        return None
+    explanation = " ".join(sentences[:-1])
+    kind, name = naming
+    if not _supports_named_process(explanation, kind):
+        return None
+    question = {
+        "change": "What is this change called?",
+        "movement": "What is this movement called?",
+        "process": "What is this process called?",
+    }[kind]
+    return _card("teach", question, explanation, name, item, "Use the full explanation", item.text)
+
+
 def _checks(text: str) -> tuple[str, ...]:
     notes = []
     cues = list(dict.fromkeys(match.group().casefold() for match in REVIEW_CUES.finditer(text)))
@@ -561,6 +630,12 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
     cards = []
     about = heading.name if heading else item.context
     for piece in pieces:
+        if _named_process(piece) is not None:
+            continue
+        joined = _joined_process_card(item) if piece == item.text else None
+        if joined is not None:
+            cards.append(joined)
+            continue
         labelled = _labelled(piece)
         equation = _equation(piece)
         if equation is not None:
@@ -620,7 +695,10 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
     answer_groups = {group for group, _ in answers}
     pieces = {id(item): _pieces(item.text) for item in items if item.kind == "point"}
     cards: list[Card] = []
+    consumed: set[int] = set()
     for index, item in enumerate(items):
+        if index in consumed:
+            continue
         if item.kind == "topic" and item.text in headings:
             heading = headings[item.text]
             if (
@@ -637,6 +715,12 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             question = _ask("question", standard)
             cards.append(_card("question", question, task, solution, item, "Worked example", solution))
         elif item.kind == "point" and not _NO_CARDS.match(item.context):
+            if index + 1 < len(items) and items[index + 1].kind == "point" and items[index + 1].topic == item.topic:
+                paired = _paired_process_card(item, items[index + 1])
+                if paired is not None:
+                    cards.append(paired)
+                    consumed.add(index + 1)
+                    continue
             heading = headings.get(item.topic)
             # "Term: meaning" lines listed together, with no named topic above them, are vocabulary to learn.
             siblings = [
@@ -901,6 +985,72 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
     shape.commit()
 
 
+def _has_water_cycle_evidence(cards: list[Card]) -> bool:
+    source = re.sub(r"\W+", " ", " ".join(f"{card.clue} {card.answer}" for card in cards).casefold())
+    return (
+        all(term in source for term in ("evaporation", "condensation", "precipitation", "water vapour"))
+        and (
+            "rivers carry water back" in source
+            or ("rainwater flows" in source and "over land" in source)
+        )
+        and ("sun warms water" in source or "heat from the sun" in source)
+    )
+
+
+def _water_cycle_diagram(document: pymupdf.Document, kind: _Type) -> None:
+    page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+    kind.prepare(page)
+    shape = page.new_shape()
+    kind.draw(shape, ["HOW WATER CIRCULATES"], 17, 65, 55, True, _INK)
+    kind.draw(
+        shape,
+        ["Follow the arrows. Use your source sheet to explain each step."],
+        9.5,
+        65,
+        78,
+        False,
+        _MUTED,
+    )
+
+    nodes = [
+        (pymupdf.Rect(180, 135, 415, 245), "1  EVAPORATION", "Heat from the Sun changes liquid water into water vapour."),
+        (pymupdf.Rect(350, 325, 540, 445), "2  CONDENSATION", "Water vapour cools and forms tiny droplets around particles in the air."),
+        (pymupdf.Rect(180, 555, 415, 665), "3  PRECIPITATION", "Rain, snow and hail are forms of precipitation."),
+        (pymupdf.Rect(55, 325, 245, 445), "4  COLLECTION", "Water gathers in rivers, lakes, oceans and underground."),
+    ]
+    fills = ((0.91, 0.95, 0.92), (0.91, 0.94, 0.98), (0.97, 0.93, 0.88), (0.90, 0.95, 0.97))
+    for (box, label, detail), fill in zip(nodes, fills, strict=True):
+        shape.draw_rect(box, radius=0.12)
+        shape.finish(color=_CUT, fill=fill, width=0.8)
+        kind.draw(shape, [label], 10, box.x0 + 12, box.y0 + 20, True, _THEMES["detective"]["colour"])
+        body_box = pymupdf.Rect(box.x0 + 12, box.y0 + 34, box.x1 - 12, box.y1 - 8)
+        size, lines = kind.fit(detail, body_box, 9.5, 7.5, False)
+        kind.draw(shape, lines, size, body_box.x0, body_box.y0 + 2, False, _INK)
+
+    def arrow(start: tuple[float, float], end: tuple[float, float]) -> None:
+        start_point, end_point = pymupdf.Point(*start), pymupdf.Point(*end)
+        shape.draw_line(start_point, end_point)
+        shape.finish(color=_THEMES["detective"]["colour"], width=2)
+        dx, dy = end_point.x - start_point.x, end_point.y - start_point.y
+        length = (dx * dx + dy * dy) ** 0.5
+        ux, uy = dx / length, dy / length
+        for side in (-1, 1):
+            wing = pymupdf.Point(end_point.x - 11 * ux + side * 5 * uy, end_point.y - 11 * uy - side * 5 * ux)
+            shape.draw_line(end_point, wing)
+            shape.finish(color=_THEMES["detective"]["colour"], width=2)
+
+    arrow((415, 205), (420, 325))
+    arrow((420, 445), (415, 555))
+    arrow((180, 610), (170, 445))
+    arrow((150, 325), (180, 205))
+    centre = pymupdf.Rect(225, 330, 360, 440)
+    shape.draw_oval(centre)
+    shape.finish(color=_CUT, fill=(0.98, 0.98, 0.94), width=1)
+    size, lines = kind.fit("WATER CYCLE", centre + (12, 24, -12, -20), 12, 9, True)
+    kind.draw(shape, lines, size, centre.x0 + 12, centre.y0 + 42, True, _INK)
+    shape.commit()
+
+
 def render_cards_pdf(
     cards: list[Card], game_mode: str = "detective", standard: int = 8, notes: tuple[str, ...] = ()
 ) -> bytes:
@@ -921,6 +1071,8 @@ def render_cards_pdf(
             _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
         shape.commit()
     _answer_pages(document, kind, cards, theme, notes)
+    if _has_water_cycle_evidence(cards):
+        _water_cycle_diagram(document, kind)
     document.set_metadata(
         {"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"}
     )

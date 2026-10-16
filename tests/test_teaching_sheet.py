@@ -154,8 +154,7 @@ def test_sub_headings_term_lists_and_questions_on_one_line():
     assert terms[0].clue == "Heat from the Sun changes liquid water into water vapour."
     assert {card.about for card in terms} == {"Four main stages"}
     assert questions == ["What causes evaporation?", "How do clouds form?", "Name two forms of precipitation."]
-    called = next(card for card in cards if card.answer == "water cycle")
-    assert called.clue == "This movement is called the ______."
+    assert any(card.clue.startswith("Water changes state, but the total amount") for card in cards)
     assert not any("By the end of this lesson" in card.clue for card in cards)
 
 
