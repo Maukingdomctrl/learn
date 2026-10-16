@@ -1,0 +1,91 @@
+/* MAUFORGE THEME: dark forest background, amber accents, white panels.
+   Every global rule is scoped to body.mf-app so other pages keep their own look.
+   Load order: mauforge-layout.css, then mauforge-theme.css, then mauforge-motion.css (last). */
+
+body.mf-app {
+  margin: 0; min-height: 100vh; position: relative;
+  font: 16px/1.5 "Helvetica Neue", Arial, sans-serif; color: #16241d;
+  background:
+    radial-gradient(900px 520px at 88% -8%, rgba(47, 143, 107, .55), transparent 60%),
+    radial-gradient(700px 520px at -5% 25%, rgba(242, 184, 75, .16), transparent 60%),
+    linear-gradient(165deg, #0c2a20 0%, #12392c 52%, #0a2119 100%);
+}
+body.mf-app::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .9;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180' fill='none' stroke='white' stroke-opacity='.04' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='34' cy='36' r='11'/><path d='M42 44l10 10'/><path d='M128 30l-12 20h10l-6 18 18-24h-11z'/><rect x='108' y='108' width='30' height='42' rx='5' transform='rotate(12 123 129)'/><rect x='24' y='116' width='30' height='42' rx='5' transform='rotate(-10 39 137)'/><circle cx='92' cy='92' r='2' fill='white' fill-opacity='.05'/></svg>");
+}
+body.mf-app *, body.mf-app *::before, body.mf-app *::after { box-sizing: border-box; }
+
+body.mf-app .mf-topbar { position: relative; background: transparent; border: 0; height: 72px; padding: 0 24px; }
+body.mf-app .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; color: #fff; letter-spacing: -.01em; }
+body.mf-app .logo i { width: 32px; height: 32px; border-radius: 9px; background: #f2b84b; display: inline-flex; align-items: center; justify-content: center; }
+body.mf-app .nav a { color: #d6e6dd; font-weight: 500; font-size: 15px; border: 1px solid rgba(255, 255, 255, .22); padding: 8px 14px; border-radius: 999px; }
+body.mf-app .card { background: transparent; border: 0; }
+body.mf-app .mf-split { padding: 12px 8px 8px; }
+body.mf-app .mf-intro { color: #fff; }
+body.mf-app .tag { display: inline-block; background: rgba(242, 184, 75, .16); color: #f6cf7d; border: 1px solid rgba(242, 184, 75, .4); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+body.mf-app h1 { font-size: 44px; line-height: 1.04; letter-spacing: -.03em; margin: 0 0 14px; font-weight: 800; color: #fff; }
+body.mf-app .lead { color: #cfe2d8; margin: 0 0 22px; font-size: 18px; max-width: 30ch; }
+body.mf-app .mf-steps { list-style: none; padding: 0; margin: 0 0 6px; counter-reset: s; }
+body.mf-app .mf-steps li { counter-increment: s; display: flex; align-items: center; gap: 12px; color: #e6efe9; margin-bottom: 10px; font-size: 16px; }
+body.mf-app .mf-steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: #f2b84b; color: #3a2a05; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+body.mf-app .deck { margin-top: 18px; height: 170px; }
+body.mf-app .mf-form { background: #fff; border-radius: 20px; padding: 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, .32); }
+
+body.mf-app .drop { border: 2px dashed #266a4e; background: #f1f6f3; border-radius: 14px; padding: 22px 14px; text-align: center; display: block; cursor: pointer; }
+body.mf-app .drop b { display: block; color: #1b4f3a; }
+body.mf-app .drop span { display: block; font-size: 13px; color: #4a574f; margin-top: 4px; }
+body.mf-app label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+body.mf-app label i { font-weight: 400; color: #5d6a62; font-style: normal; }
+body.mf-app input[type="text"], body.mf-app select {
+  width: 100%; border: 1px solid #c9ccc7; border-radius: 10px; padding: 11px 12px;
+  font: 15px/1.3 "Helvetica Neue", Arial, sans-serif; color: #16241d; background: #fff;
+}
+body.mf-app .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+body.mf-app .drop:focus-within { outline: 3px solid rgba(38, 106, 78, .35); outline-offset: 2px; }
+
+body.mf-app .btn { border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; text-align: center; border: 2px solid transparent; cursor: pointer; }
+body.mf-app .p { background: #266a4e; color: #fff; border-color: #266a4e; }
+body.mf-app .o { background: #fff; color: #1b4f3a; border-color: #266a4e; }
+body.mf-app .g { background: #fff; color: #16241d; border: 1px solid #c9ccc7; font-weight: 500; padding: 12px; }
+body.mf-app .note { font-size: 13px; color: #4a574f; margin: 14px 0 0; }
+body.mf-app .skip { position: absolute; left: 12px; top: -48px; background: #fff; color: #1b4f3a; padding: 8px 12px; border-radius: 8px; z-index: 50; }
+body.mf-app .skip:focus { top: 12px; }
+
+body.mf-app .mf-preview { background: #fff; border: 0; box-shadow: 0 24px 60px rgba(0, 0, 0, .32); }
+body.mf-app .pv { background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 24px 60px rgba(0, 0, 0, .32); margin-top: 16px; }
+body.mf-app .pv h2 { margin: 0 0 12px; font-size: 20px; }
+body.mf-app .pv h2 small { font-size: 13px; color: #5d6a62; font-weight: 400; margin-left: 8px; }
+body.mf-app .gc { border-radius: 16px; overflow: hidden; border: 1.5px solid #1b4f3a; background: #fff; display: flex; flex-direction: column; min-height: 170px; }
+body.mf-app .gb { background: #1b4f3a; color: #fff; font-size: 13px; font-weight: 600; padding: 9px 12px; display: flex; align-items: center; gap: 8px; }
+body.mf-app .gb svg { flex: none; }
+body.mf-app .gq { padding: 12px; font-size: 15px; font-weight: 600; flex: 1; }
+body.mf-app .gf { padding: 0 12px 12px; font-size: 12px; color: #5d6a62; }
+
+@media (max-width: 1023px) {
+  html:has(body.mf-app), body.mf-app { height: 100%; }
+  body.mf-app { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  body.mf-app .mf-topbar { height: 64px; flex: none; padding: 0 14px; }
+  body.mf-app .logo { font-size: 17px; }
+  body.mf-app .logo i { width: 28px; height: 28px; }
+  body.mf-app .nav a { font-size: 14px; padding: 6px 12px; }
+  body.mf-app .mf-shell { flex: 1; min-height: 0; display: block; padding: 4px 12px calc(76px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
+  body.mf-app .mf-split { display: block; padding: 0; }
+  body.mf-app .mf-intro { padding: 0 4px 12px; }
+  body.mf-app .tag { margin-bottom: 8px; font-size: 12px; padding: 4px 10px; }
+  body.mf-app h1 { font-size: 28px; margin: 0 0 4px; }
+  body.mf-app .lead { font-size: 15px; margin: 0; max-width: none; }
+  body.mf-app .mf-steps, body.mf-app .deck { display: none; }
+  body.mf-app .mf-form { padding: 14px; border-radius: 18px; }
+  body.mf-app .drop { padding: 12px; }
+  body.mf-app .drop b { font-size: 15px; }
+  body.mf-app .drop span { font-size: 12px; }
+  body.mf-app .mf-fields { margin-top: 10px; }
+  body.mf-app label { font-size: 13px; margin-bottom: 4px; }
+  body.mf-app input[type="text"], body.mf-app select { padding: 9px 12px; font-size: 14px; }
+  body.mf-app .mf-modes { grid-template-columns: 1fr 1fr; margin-top: 12px; gap: 10px; }
+  body.mf-app .btn { padding: 12px; font-size: 15px; min-height: 44px; }
+  body.mf-app .mf-secondary { margin-top: 8px; gap: 10px; }
+  body.mf-app .g { padding: 10px; }
+  body.mf-app .note { font-size: 12px; margin: 10px 0 0; }
+}
