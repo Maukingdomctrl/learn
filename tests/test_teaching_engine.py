@@ -53,6 +53,14 @@ def test_flags_questionable_attribution_without_rewriting_source():
     assert fact.review_flags == ("verify_attribution_or_absolute_claim",)
 
 
+def test_flags_corrupted_extracted_characters_without_rewriting_source():
+    sentence = "QUICK COMPARISON � Lok Sabha has a five-year term."
+    fact = extract_facts([SourceUnit("SRC-P1-U1", 1, sentence, "text")]).facts[0]
+
+    assert fact.statement == sentence
+    assert fact.review_flags == ("verify_extracted_text",)
+
+
 def test_retains_every_source_unit_even_when_it_has_no_sentences():
     units = [SourceUnit("SRC-P1-U1", 1, "Heading", "text"), SourceUnit("SRC-P1-U2", 1, "   ", "text")]
 
@@ -68,6 +76,13 @@ def test_sentence_splitting_keeps_decimal_and_abbreviation_periods():
     inventory = extract_facts([source])
 
     assert [fact.statement for fact in inventory.facts] == ["The value is 3.5 cm.", "E.g. this example is short."]
+
+
+def test_numbered_question_block_is_preserved_as_one_source_fact():
+    text = "Question 7 ?Although plants produce carbon dioxide.? What does this tell you about the two processes?"
+    facts = extract_facts([SourceUnit("SRC-P3-U1", 3, text, "text")]).facts
+
+    assert [fact.statement for fact in facts] == [text]
 
 
 def test_teaching_engine_is_offline_and_builds_supported_source_sequence():

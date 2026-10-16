@@ -110,6 +110,10 @@ class FactInventory:
 
 
 def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    if re.match(r"\s*(?:question|q\.)\s*\d+\b", text, re.IGNORECASE):
+        start = len(text) - len(text.lstrip())
+        end = len(text.rstrip())
+        return [(start, end)] if start < end else []
     spans: list[tuple[int, int]] = []
     start = 0
     for boundary in _SENTENCE_END.finditer(text):
@@ -184,6 +188,8 @@ def extract_facts(units: list[SourceUnit]) -> FactInventory:
         for sequence, (start, end) in enumerate(_sentence_spans(unit.text), start=1):
             statement = unit.text[start:end]
             flags: list[str] = []
+            if "\ufffd" in statement:
+                flags.append("verify_extracted_text")
             if _REVIEW_CUES.search(statement):
                 flags.append("verify_attribution_or_absolute_claim")
             facts.append(
