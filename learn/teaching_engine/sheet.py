@@ -95,6 +95,13 @@ _TASK = re.compile(
     r"\s*[\d.]*\s*:\s*",
     re.I,
 )
+# A question number printed on its own line above the question, as model-answer sheets print them: "Question 3".
+_QUESTION_NUMBER = re.compile(r"^(?:Q|Ques\.?|Question)\s*(?P<number>\d{1,2})\s*[.):]?$", re.I)
+# The same label run into the text before it, as text extraction can leave it: "… → glucose Question 3 Explain …".
+_RUN_IN_QUESTION = re.compile(r"\s+(?=Question\s+\d{1,2}\s+[A-Z‘“'\"(])")
+_LEADING_QUESTION = re.compile(r"^(?P<label>Question\s+\d{1,2})\s+(?=[A-Z‘“'\"(])")
+# "Note: Water is also a reactant, but the question asks for the gas." explains the answer to whoever checks it.
+_COMMENT = re.compile(r"^(?:notes?|n\.?\s?b\.?)\s*[:–—-]\s", re.I)
 
 
 @dataclass(frozen=True)
@@ -117,7 +124,7 @@ class Item:
     group: str = ""  # section letter that question and answer numbers belong to ("A", "B")
     topic: str = ""  # text of the topic heading a point belongs to
     context: str = ""  # the sub-heading above an item, such as "Four main stages"
-    answer: str = ""
+    answer: str = ""  # a question's answer; a model answer printed under it keeps one line per point
     table: Table | None = None
     top: float = 0.0  # position on the page, when read from the PDF layout
     bottom: float = 0.0
@@ -421,6 +428,8 @@ def _continues(paragraph: _Paragraph, line: _Line, gap_limit: float, right: floa
     last, first = paragraph.lines[-1], paragraph.lines[0]
     if line.bullet or _MARKER.match(line.text) or _TIP.match(line.text) or abs(line.size - paragraph.size) > 0.75:
         return False
+    if _ends_sentence(last.text) and line.text.endswith(":") and line.x1 < early:
+        return False  # "… after they have died." then "When animals are alive:" heads what follows
     if line.y0 < last.y1 - 2 or line.y0 - last.y1 > gap_limit:
         return False
     if line.x0 < first.x0 - 3:
@@ -500,32 +509,41 @@ def _inventory_paragraphs(inventory: FactInventory, pages: set[int] | None) -> l
     for fact in inventory.facts:
         if pages is not None and fact.page not in pages:
             continue
-        text = _FOOTER_TAIL.sub("", fact.statement)
-        if _FOOTER.match(text):
+        statement = _FOOTER_TAIL.sub("", fact.statement)
+        if _FOOTER.match(statement):
             continue
-        heading = _LEADING_HEADING.match(text)
-        if heading and _section_kind(heading.group()) and len(heading.group().split()) >= 2:
-            paragraphs.append(_Paragraph(heading.group(), fact.page, [fact.source_unit_id]))
-            text = text[heading.end() :].strip()
-        previous = paragraphs[-1] if paragraphs else None
-        joins = (
-            previous is not None
-            and previous.page == fact.page
-            and not previous.table
-            and not _ends_sentence(previous.text)
-            and text[:1] not in BULLETS
-            and not _MARKER.match(text)
-            and (text[:1].islower() or text[:1] in ")]," or bool(_CONTINUES_AFTER.search(previous.text)))
-        )
-        if joins:
-            previous.text = join_lines(previous.text, text)
-            if fact.source_unit_id not in previous.units:
-                previous.units.append(fact.source_unit_id)
-            continue
-        bullet = text[:1] in BULLETS
-        paragraphs.append(
-            _Paragraph(text.lstrip(BULLETS + " ") if bullet else text, fact.page, [fact.source_unit_id], bullet)
-        )
+        # "… glucose + oxygen Question 3 Explain why …": the question's number goes on a line of its own.
+        texts: list[str] = []
+        for part in _RUN_IN_QUESTION.split(statement):
+            label = _LEADING_QUESTION.match(part)
+            texts.extend([label["label"], part[label.end() :]] if label else [part])
+        for text in texts:
+            heading = _LEADING_HEADING.match(text)
+            if heading and _section_kind(heading.group()) and len(heading.group().split()) >= 2:
+                paragraphs.append(_Paragraph(heading.group(), fact.page, [fact.source_unit_id]))
+                text = text[heading.end() :].strip()
+            if not text.strip():
+                continue
+            previous = paragraphs[-1] if paragraphs else None
+            joins = (
+                previous is not None
+                and previous.page == fact.page
+                and not previous.table
+                and not _ends_sentence(previous.text)
+                and not _QUESTION_NUMBER.match(previous.text)
+                and text[:1] not in BULLETS
+                and not _MARKER.match(text)
+                and (text[:1].islower() or text[:1] in ")]," or bool(_CONTINUES_AFTER.search(previous.text)))
+            )
+            if joins:
+                previous.text = join_lines(previous.text, text)
+                if fact.source_unit_id not in previous.units:
+                    previous.units.append(fact.source_unit_id)
+                continue
+            bullet = text[:1] in BULLETS
+            paragraphs.append(
+                _Paragraph(text.lstrip(BULLETS + " ") if bullet else text, fact.page, [fact.source_unit_id], bullet)
+            )
     return paragraphs
 
 
@@ -569,12 +587,26 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         if paragraph.size and paragraph.table is None:
             weights[paragraph.size] = weights.get(paragraph.size, 0) + len(paragraph.text)
     body_size = max(weights, key=weights.get) if weights else 0.0
+    # Smaller print after the last line of main text is a credit or a note about the sheet itself ("Model answers
+    # based on the textbook …"), not something to learn.
+    last_body = max(
+        (
+            index
+            for index, paragraph in enumerate(paragraphs)
+            if paragraph.table is not None or not paragraph.size or paragraph.size >= body_size * 0.9
+        ),
+        default=-1,
+    )
+    # A model-answer sheet prints "Question 3" on its own line, then the question, then the answer's points.
+    asked, asked_size = "", 0.0
+    answering: int | None = None  # the question whose model answer is being read
 
     def add(kind: str, paragraph: _Paragraph, text: str, marker: str = "", note: str = "", **extra) -> None:
+        text = text.strip()
         items.append(
             Item(
                 kind,
-                text.strip(),
+                text,
                 paragraph.page,
                 tuple(paragraph.units),
                 marker=marker,
@@ -590,11 +622,29 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
 
     for index, paragraph in enumerate(paragraphs):
         if paragraph.table is not None:
-            started, topic = True, ""
+            started, topic, answering = True, "", None
             add("table", paragraph, "", table=paragraph.table)
+            continue
+        if index > last_body and body_size and paragraph.size and paragraph.size <= body_size * 0.85:
             continue
         marker, body = split_marker(paragraph.text)
         following = next((other for other in paragraphs[index + 1 :] if other.table is None), None)
+        number = _QUESTION_NUMBER.match(paragraph.text.strip())
+        if number and not paragraph.bullet:
+            started, topic, context = True, "", ""
+            asked, asked_size, answering = f"Question {number['number']}", paragraph.size, None
+            continue
+        if asked:
+            label, asked = asked, ""
+            if section == "answers":
+                add("answer", paragraph, _LEADING_ANSWER.sub("", paragraph.text), label)
+                answering = len(items) - 1
+                continue
+            if not paragraph.bullet and not marker:
+                question, answer = _split_answer(paragraph.text)
+                add("question", paragraph, question, label, answer=answer)
+                answering = len(items) - 1 if section != "questions" else None
+                continue
         if not started:
             # The sheet's title block: up to three unnumbered lines at the top of the first page.
             subtitle = bool(items) and items[-1].kind == "title" and bool(re.search(r"\s[|•]\s", body))
@@ -635,10 +685,31 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         sized = bool(body_size) and paragraph.size >= body_size * 1.12 and words <= 12
         heading = _heading_like(body) and not paragraph.bullet
         shaped = heading and (upper or sized or (_title_case(body) and not marker) or (words <= 4 and not marker))
+        # Inside a model answer only a heading as large as the question numbers starts something new.
+        large = upper or not (paragraph.size and asked_size) or paragraph.size >= asked_size - 0.3
         if kind and shaped and (not (in_lists and marker) or (upper and kind != section)):
-            section, group, topic, context = kind, "", "", ""
-            add("section", paragraph, body, marker)
+            if answering is None or large:
+                section, group, topic, context, answering = kind, "", "", "", None
+                add("section", paragraph, body, marker)
+                continue
+        sub_heading = heading and words <= 10 and body.endswith(":")
+        if answering is not None and not (heading and large and not (sub_heading and not paragraph.size)):
+            owner = items[answering]
+            line = _LEADING_ANSWER.sub("", paragraph.text)
+            if owner.kind == "question" and not owner.answer and not paragraph.bullet and body.endswith("?"):
+                items[answering] = _extend(owner, paragraph, text=join_lines(owner.text, body))
+                continue  # the question goes on: "… this statement." then "What does it tell you?"
+            line = f"• {line}" if paragraph.bullet else line
+            if owner.kind == "answer":
+                items[answering] = _extend(owner, paragraph, text=f"{owner.text}\n{line}")
+                continue
+            items[answering] = _extend(owner, paragraph, answer=f"{owner.answer}\n{line}".strip())
+            if sub_heading:
+                context = body.rstrip(":").strip()  # "When animals are alive:" heads the points under it
+            elif not _COMMENT.match(body):
+                add("point", paragraph, body, marker, note)
             continue
+        answering = None
         last = items[-1] if items else None
         # "1)" under a numbered answer is part of that answer, not a new one.
         sub_item = bool(_SUB_MARKER.match(paragraph.text)) and last is not None and last.marker.endswith(".")

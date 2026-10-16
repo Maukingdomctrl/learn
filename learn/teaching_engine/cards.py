@@ -57,6 +57,11 @@ _QUESTIONS = {
     "order": ("Put them in order.", "Put them in time order.", "Arrange them chronologically."),
 }
 _CHAIN = re.compile(r"(\s*(?:→|->|⟶|➜|➝)\s*)")
+# Words a sentence's second half often starts with: "Dead animals are decomposed | by bacteria and fungi".
+_PHRASE_START = frozenset(
+    "by that which who whom whose to in on for with because so and from into at as when where while after before "
+    "during through than but or of until since unless if".split()
+)
 _INLINE_SEPARATOR = re.compile(r"\s+[•|]\s+")
 # Sub-headings whose text states goals for the lesson rather than facts to learn.
 _NO_CARDS = re.compile(r"^(?:learning (?:goals|objectives|outcomes)|objectives?|aims?|success criteria)\b", re.I)
@@ -298,19 +303,44 @@ def _chain(piece: str) -> tuple[str, str] | None:
     """ "Grass → Grasshopper → Frog → Snake" with a middle step hidden; "CO₂ + H₂O → glucose" with the result hidden."""
     parts = _CHAIN.split(piece.rstrip("."))
     steps, arrows = [step.strip() for step in parts[0::2]], parts[1::2]
-    if len(steps) < 2 or any(not step or len(step.split()) > 6 for step in steps):
-        return None
+    if len(steps) < 2 or any(not step or len(step.split()) > 6 or ";" in step for step in steps):
+        return None  # "Alive → respiration releases CO2; Dead → …" runs two chains together
     hidden = len(steps) // 2 if len(steps) > 2 else 1
     shown = [GAP if index == hidden else step for index, step in enumerate(steps)]
     clue = shown[0] + "".join(arrow + step for arrow, step in zip(arrows, shown[1:], strict=True))
     return clue, steps[hidden]
 
 
+def _reason(text: str) -> tuple[str, str] | None:
+    """ "Plants are still a useful sink because …": the reason the sheet gives is the answer."""
+    found = re.search(r"\sbecause\s", text)
+    if found is None or len(text[: found.start()].split()) < 3 or len(text[found.end() :].split()) < 2:
+        return None
+    return text[: found.end()].rstrip() + " …", "… " + text[found.end() :].strip()
+
+
 def _finish(text: str) -> tuple[str, str] | None:
+    """The first part of a sentence as the clue and the rest as the answer, cut where the rest is a whole phrase."""
+    reason = _reason(text)
+    if reason is not None:
+        return reason
     words = text.split()
     if len(words) < 6 or _MATH.search(text) or not re.search(r"[.!?][\"'”’)]*$", text):
         return None  # only whole sentences: a line without a full stop is a heading or a fragment
-    shown = min(max(3, round(len(words) * 0.45)), len(words) - 3)
+    cuts, depth = [], 0
+    for index, word in enumerate(words):
+        if depth <= 0 and 3 <= index <= len(words) - 3:
+            cuts.append(index)  # never inside brackets: "Respiration continues (plants | need energy)" is no cut
+        depth += word.count("(") + word.count("[") - word.count(")") - word.count("]")
+    if not cuts:
+        return None
+    middle = [index for index in cuts if 0.3 * len(words) <= index <= 0.7 * len(words)] or cuts
+    natural = [
+        index
+        for index in middle
+        if words[index].casefold().strip("(\"'“‘") in _PHRASE_START or words[index - 1].endswith((",", ";"))
+    ]
+    shown = min(natural or middle, key=lambda index: abs(index - 0.45 * len(words)))
     return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
 
 

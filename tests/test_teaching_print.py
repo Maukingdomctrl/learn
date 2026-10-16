@@ -286,6 +286,37 @@ def test_a_numbered_question_stays_whole_and_is_not_turned_into_a_gap():
         assert cards[0].clue.endswith("?")
 
 
+def test_question_numbers_run_into_the_text_still_start_their_question():
+    rows = [
+        (1, "Question 2 Describe how carbon gets into glucose."),
+        (1, "• Carbon dioxide is used to make glucose in the leaves."),
+        (1, "Word equation: carbon dioxide + water → glucose Question 3 Explain why plants are a carbon sink."),
+        (1, "• Plants take in more carbon dioxide than they give out."),
+    ]
+
+    questions = {card.clue: card.answer for card in _cards(rows) if card.kind == "question"}
+
+    assert questions == {
+        "Describe how carbon gets into glucose.": "• Carbon dioxide is used to make glucose in the leaves.",
+        "Explain why plants are a carbon sink.": "• Plants take in more carbon dioxide than they give out.",
+    }
+
+
+def test_finish_cards_cut_before_a_phrase_and_never_inside_brackets():
+    cards = _cards(
+        [
+            (1, "Dead animals are decomposed by bacteria and fungi in the soil."),
+            (1, "Respiration continues (plants need energy all the time)."),
+            (1, "Plants are still a useful sink because photosynthesis is faster than respiration."),
+        ]
+    )
+
+    assert [(card.clue, card.answer) for card in cards] == [
+        ("Dead animals are decomposed …", "… by bacteria and fungi in the soil."),
+        ("Plants are still a useful sink because …", "… photosynthesis is faster than respiration."),
+    ]
+
+
 def test_printing_keeps_formula_symbols_without_changing_the_source_fact():
     statement = "Photosynthesis: CO₂ + H₂O → glucose + O₂"
     inventory = extract_facts([SourceUnit("SRC-P1-U1", 1, statement, "text")])

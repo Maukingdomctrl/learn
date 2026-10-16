@@ -64,6 +64,8 @@ To use `learn.mauforge.com`, first deploy and test the Render URL, then add that
 - A box drawn in a dingbat font in place of a letter the PDF's font lacked (a subscript, "₹") marks that letter as lost; at the start of a line, followed by a space, it is a bullet.
 - A call-out label run into its text ("BIG IDEA • Change is caused by …") becomes the card's context line, and a task the sheet sets ("Practice: …", "Extended response: …") becomes a practice question.
 - Practice questions keep their answers: "— Ans: …" after the question, or the same number in a later answer key ("A. Fill in the Blanks – Answers 1. River Thames").
+- A model-answer sheet prints "Question 3" on a line of its own, then the question, then the answer's points. The question keeps every point, sub-heading ("When animals are alive:") and note under it as its answer, one line each, until the next question number or a heading printed as large. The points also make cards of their own; a "Note:" line stays on the answer sheet only.
+- Small print after the sheet's last line of main text, such as a credit ("Model answers based on the textbook …"), is left out.
 - Pages without a text layer, and calls without a PDF, use the fact inventory instead.
 
 **What a card asks.** Each card asks one plain question. Every clue and answer is a run of the sheet's own words, with some words hidden behind a gap; the only added words are the fixed questions and labels.
@@ -75,12 +77,12 @@ To use `learn.mauforge.com`, first deploy and test the Render URL, then add that
 | Fill the gap | A bullet with a defined term, date, year, number or century | The bullet with one value hidden: a term defined with "is called" or "means" first, then a full date, a year outside brackets, a number with a unit | The hidden value |
 | What is it called? | "Term: meaning" lines listed under no named topic | The meaning | The term |
 | What goes in the gap? | A formula, a fact such as "1 km = 1,000 m", or an arrow chain | The line with its result, or a middle step, hidden | The hidden part |
-| Finish the sentence | Any other whole sentence | Its first words | The rest |
+| Finish the sentence | Any other whole sentence | Its first words, cut where the rest starts a phrase ("Dead animals are decomposed …"), never inside brackets; a sentence with "because" stops there | The rest |
 | Compare | A "Feature \| A \| B" table row | The things compared. *What is each one's Popular Title?* | Each one's value |
 | Which one? | A row of a "Concept \| Rule \| Example" table | One description. *Which concept is it?* | The row's name |
 | Timeline | A printed timeline | One event. *Which year goes with it?* One more card lists the events to put in time order | The year; the order |
 | Which one is it? | Side-by-side panels | One line. *Which one is it: WEATHER or CLIMATE?* | The panel's heading |
-| Practice question | The sheet's own questions, tasks, question tables and worked examples | The question | The sheet's answer, or a note that the sheet has none |
+| Practice question | The sheet's own questions, tasks, question tables and worked examples | The question | The sheet's answer (a model answer keeps one line per point), or a note that the sheet has none |
 | Memory tip | A "Memory tip" or "Think" line | The tip's opening words. *Say the rest of the tip.* | The whole tip |
 | Picture | A picture printed beside a topic | The picture. *Who is this?* | The topic's name |
 

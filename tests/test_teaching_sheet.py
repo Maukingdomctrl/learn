@@ -249,6 +249,31 @@ def test_letters_the_pdf_font_lost_never_reach_a_card(name, lost):
     assert "could not be read from the PDF" in answer_sheet
 
 
+def test_model_answers_printed_under_their_questions_become_their_answers():
+    sheet = _read("carbon-cycle-answers.pdf")[3]
+    questions = [item for item in sheet.items if item.kind == "question"]
+    cards = plan_cards(sheet)
+
+    assert [item.number for item in questions] == ["1", "2", "3", "4", "5", "6", "7"]
+    assert questions[0].text == "Name the gas that is a reactant in photosynthesis."
+    assert questions[0].answer.splitlines() == [
+        "• Carbon dioxide (CO2)",
+        "Note: Water is also a reactant, but the question asks for the gas.",
+    ]
+    assert questions[4].answer.splitlines()[:2] == [
+        "When animals are alive:",
+        "• Animals carry out respiration (aerobic respiration).",
+    ]
+    assert questions[6].text.endswith("about the reactions of photosynthesis and respiration in plants?")
+    assert all(card.answer for card in cards if card.kind == "question")
+    decomposed = next(card for card in cards if card.clue.startswith("Dead animals are decomposed"))
+    assert decomposed.about == "After animals have died"
+    assert decomposed.answer == "… by bacteria and fungi (decomposers)."
+    assert any(card.clue == "In respiration, glucose + oxygen → ______" for card in cards)
+    shown = [card.clue for card in cards]
+    assert not any(clue.startswith("Note:") or "Model answers based on" in clue for clue in shown)
+
+
 def test_a_question_table_and_number_tables_make_the_right_cards():
     cards = _cards("full-stem-checklist.pdf")
     questions = {card.clue: card.answer for card in cards if card.kind == "question"}
