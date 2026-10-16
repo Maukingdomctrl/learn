@@ -1044,7 +1044,7 @@ def _practice_prompt(card: Card) -> tuple[str, str]:
     return f"{card.question.rstrip('?').rstrip('.')} {blank}.", answer
 
 
-def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
+def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
     margin, width = 48.0, _PAGE_WIDTH - 96.0
     page = shape = None
     y = 0.0
@@ -1079,6 +1079,30 @@ def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], 
         bottom = kind.draw(shape, lines, 11, margin + 28, y, False, _INK)
         y = max(bottom, y + 11) + 9
     shape.commit()
+
+
+def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
+    practice_cards = []
+    for card in cards:
+        prompt, answer = _practice_prompt(card)
+        practice_cards.append(
+            Card("cloze", "Write the missing word.", prompt, answer, card.page, card.unit_ids, "Fill in the blank", card.checks)
+        )
+    sheets = (len(practice_cards) + _CARDS_PER_PAGE - 1) // _CARDS_PER_PAGE
+    for sheet in range(sheets):
+        group = practice_cards[sheet * _CARDS_PER_PAGE : (sheet + 1) * _CARDS_PER_PAGE]
+        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+        kind.prepare(page)
+        shape = page.new_shape()
+        title = f"FILL IN THE BLANKS  ·  SHEET {sheet + 1} OF {sheets}"
+        kind.draw(shape, [kind.printable(title, True)], 7.5, _LEFT, 17, True, _MUTED)
+        note = "Cut along the dashed lines. Write the missing name, year or key word."
+        kind.draw(shape, [kind.printable(note)], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
+        _cut_lines(shape, len(group))
+        first = sheet * _CARDS_PER_PAGE + 1
+        for position, card in enumerate(group):
+            _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
+        shape.commit()
 
 
 def _header(shape, kind: _Type, theme: dict, sheet: int, sheets: int, first: int, last: int) -> None:

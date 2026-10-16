@@ -141,6 +141,7 @@ def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
     assert len(pages) == 3
     assert cards_page.startswith("DETECTIVE CASE FILE")
     assert pages[1].startswith("FILL IN THE BLANKS")
+    assert pages[1].count("Write the missing word.") == 5
     dash = "–" if _HAS_EXTENDED_PDF_FONT else "-"
     assert f"______ {dash} Capital of the United Kingdom & England" in cards_page
     assert "The city hosted the Olympic Games in ______." in cards_page
