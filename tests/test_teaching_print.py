@@ -5,6 +5,13 @@ from time import perf_counter
 import pymupdf
 import pytest
 
+try:
+    import pymupdf_fonts  # noqa: F401
+
+    _HAS_EXTENDED_PDF_FONT = True
+except ImportError:
+    _HAS_EXTENDED_PDF_FONT = False
+
 from learn.extraction import choose_ocr, extract
 from learn.grounding import SourceUnit
 from learn.teaching_engine import (
@@ -133,7 +140,8 @@ def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
 
     assert len(pages) == 2
     assert cards_page.startswith("DETECTIVE CASE FILE")
-    assert "______ – Capital of the United Kingdom & England" in cards_page
+    dash = "–" if _HAS_EXTENDED_PDF_FONT else "-"
+    assert f"______ {dash} Capital of the United Kingdom & England" in cards_page
     assert "The city hosted the Olympic Games in ______." in cards_page
     assert "Which year fits the gap?" in cards_page
     assert "Situated on the River Thames in southeastern England." in cards_page
@@ -369,8 +377,10 @@ def test_printing_keeps_formula_symbols_without_changing_the_source_fact():
     pages = _page_texts(render_printable_cards_pdf(inventory))
 
     assert inventory.facts[0].statement == statement
-    assert "Photosynthesis: CO₂ + H₂O → ______" in pages[0]
-    assert "glucose + O₂" in pages[-1]
+    formula = "Photosynthesis: CO₂ + H₂O → ______" if _HAS_EXTENDED_PDF_FONT else "Photosynthesis: CO2 + H2O -> ______"
+    assert formula in pages[0]
+    product = "glucose + O₂" if _HAS_EXTENDED_PDF_FONT else "glucose + O2"
+    assert product in pages[-1]
     assert "CO?" not in pages[0] and "H?O" not in pages[0]
 
 
