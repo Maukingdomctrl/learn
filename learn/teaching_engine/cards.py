@@ -744,7 +744,10 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
             cards.append(_card("gap", _ask(kind, standard), clue, answer, item, about, source=piece))
             continue
         if heading is not None and not _MATH.search(piece):
-            if heading.person or not _ABSTRACT_TOPIC.search(heading.name):
+            # Only a heading that names a person or a thing ("LONDON – Capital of …") is an answer to guess; a
+            # chapter title such as "Ratios Compare Quantities" is not, so its sentences get other cards.
+            names_thing = heading.person or bool(heading.after.strip(" –—-:"))
+            if names_thing and not _ABSTRACT_TOPIC.search(heading.name):
                 hidden = _hide_name(piece, heading.name)
                 if len(hidden.replace(GAP, "").split()) >= 3:
                     question = _ask("who_about" if heading.person else "what_about", standard)
@@ -758,7 +761,8 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
             if recall_question is not None:
                 cards.append(_card("recall", "Answer in your own words.", recall_question, piece, item, source=piece))
                 continue
-            continue
+            if names_thing or _ABSTRACT_TOPIC.search(heading.name):
+                continue
         finished = _finish(piece)
         if finished is not None:
             cards.append(_card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece))
@@ -1059,6 +1063,12 @@ def _practice_prompt(card: Card) -> tuple[str, str]:
     return f"{card.question.rstrip('?').rstrip('.')} {blank}.", answer
 
 
+def _has_blank(card: Card) -> bool:
+    """A fill-in card only when the blank stands for words left out of the card, not after its own question."""
+    prompt, _ = _practice_prompt(card)
+    return not prompt.startswith(card.question.rstrip("?").rstrip("."))
+
+
 def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
     margin, width = 48.0, _PAGE_WIDTH - 96.0
     page = shape = None
@@ -1124,7 +1134,7 @@ def _practice_reinforcement(card: Card) -> tuple[str, str]:
 
 def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
     practice_cards = []
-    for card in cards:
+    for card in filter(_has_blank, cards):
         prompt, answer = _practice_prompt(card)
         question, explanation = _practice_reinforcement(card)
         practice_cards.append(
@@ -1199,11 +1209,11 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
         if checks:
             bottom = kind.draw(shape, checks, 8, margin + 32, bottom + 1, False, _ORANGE)
         y = bottom + 7
-    if cards:
+    if any(map(_has_blank, cards)):
         if y + 38 > _PAGE_HEIGHT - 40:
             new_page(False)
         y = kind.draw(shape, ["FILL-IN-THE-BLANK ANSWERS"], 12, margin + 32, y + 5, True, theme["colour"]) + 8
-        for number, card in enumerate(cards, start=1):
+        for number, card in enumerate(filter(_has_blank, cards), start=1):
             _, answer = _practice_prompt(card)
             question, explanation = _practice_reinforcement(card)
             blank_lines = kind.wrap(kind.printable(f"Blank: {answer}", True), 9.5, width - 70, True)
