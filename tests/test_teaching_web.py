@@ -11,15 +11,16 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
     client = TestClient(web.app)
 
     page = client.get("/").text
-    assert "No account, API key, or paid AI call" in page
-    assert "Play Detective" in page
-    assert "Play Superhero" in page
-    assert 'id="output-preview" class="preview" aria-label="Output preview" hidden' in page
-    assert 'aria-expanded="false" aria-controls="output-preview"' in page
-    assert 'id="preview-button" class="secondary" type="button"' in page
-    assert 'name="output" value="detective"' in page
+    assert "No account or API key needed" in page
+    assert "<strong>Detective</strong>" in page
+    assert "<strong>Superhero</strong>" in page
+    assert '<dialog class="preview" id="output-preview"' in page
+    assert 'aria-haspopup="dialog"' in page
+    assert 'aria-controls="output-preview" hidden' in page
+    assert 'id="preview-button"' in page
+    assert 'name="output" value="detective" checked' in page
     assert 'name="output" value="superhero"' in page
-    assert "Browse the Study Visual Library" in page
+    assert "Study Visual Library" in page
     assert "Preview before printing" in page
     with open(sample_pdf, "rb") as pdf_file:
         response = client.post("/generate", files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")})

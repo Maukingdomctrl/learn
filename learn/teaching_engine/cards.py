@@ -365,31 +365,47 @@ def _finish(text: str) -> tuple[str, str] | None:
 def _key_cloze(text: str) -> tuple[str, str] | None:
     forms = re.search(r"\bare forms of (?P<answer>[A-Za-z][A-Za-z'’-]{2,})(?P<end>[.!?]?)$", text)
     if forms is not None:
-        return f"{text[:forms.start('answer')]}{GAP}{forms['end']}", forms["answer"]
-    match = re.search(
-        r"\b(?:is|are|was|were)\s+(?P<answer>[A-Za-z][A-Za-z'’-]{2,})(?P<end>[.!?]?)$", text
-    )
+        return f"{text[: forms.start('answer')]}{GAP}{forms['end']}", forms["answer"]
+    match = re.search(r"\b(?:is|are|was|were)\s+(?P<answer>[A-Za-z][A-Za-z'’-]{2,})(?P<end>[.!?]?)$", text)
     if match is None:
         return None
-    return f"{text[:match.start('answer')]}{GAP}{match['end']}", match["answer"]
+    return f"{text[: match.start('answer')]}{GAP}{match['end']}", match["answer"]
 
 
 def _recall_question(text: str) -> str | None:
     patterns = (
-        (r"^Plants? also release (?P<object>.+?) from (?P<place>[^.!?]+)[.!?]$", "What do plants release from {place}?"),
-        (r"^Together,\s*(?P<subject>.+?)\s+add\s+(?P<object>.+?)\s+to\s+(?P<place>[^.!?]+)[.!?]$", "What do {subject} add to {place}?"),
+        (
+            r"^Plants? also release (?P<object>.+?) from (?P<place>[^.!?]+)[.!?]$",
+            "What do plants release from {place}?",
+        ),
+        (
+            r"^Together,\s*(?P<subject>.+?)\s+add\s+(?P<object>.+?)\s+to\s+(?P<place>[^.!?]+)[.!?]$",
+            "What do {subject} add to {place}?",
+        ),
         (r"^(?P<subject>[^.!?]+?)\s+warms?\s+(?P<object>[^.!?]+)[.!?]$", "What does {subject} warm?"),
-        (r"^(?P<subject>[^.!?]+?)\s+moves?\s+(?:continuously\s+)?(?P<detail>[^.!?]+)[.!?]$", "Where does {subject} move?"),
+        (
+            r"^(?P<subject>[^.!?]+?)\s+moves?\s+(?:continuously\s+)?(?P<detail>[^.!?]+)[.!?]$",
+            "Where does {subject} move?",
+        ),
         (r"^(?P<subject>[^.!?]+?)\s+changes?\s+into\s+(?P<answer>[^.!?]+)[.!?]$", "What does {subject} change into?"),
         (r"^(?P<subject>[^.!?]+?)\s+release\s+(?P<object>[^.!?]+)[.!?]$", "What does {subject} release?"),
-        (r"^(?P<subject>[^.!?]+?)\s+add\s+(?P<object>[^.!?]+?)\s+to\s+(?P<place>[^.!?]+)[.!?]$", "What do {subject} add to {place}?"),
+        (
+            r"^(?P<subject>[^.!?]+?)\s+add\s+(?P<object>[^.!?]+?)\s+to\s+(?P<place>[^.!?]+)[.!?]$",
+            "What do {subject} add to {place}?",
+        ),
         (r"^As\s+(?P<context>[^,]+),\s+(?P<answer>[^.!?]+)[.!?]$", "What happens as {context}?"),
         (r"^(?P<subject>[^.!?]+?)\s+form\s+(?P<object>[^.!?]+)[.!?]$", "What do {subject} form?"),
         (r"^(?P<subject>[^.!?]+?)\s+can\s+(?P<action>[^.!?]+)[.!?]$", "What can {subject} do?"),
         (r"^When\s+(?P<context>[^,]+),\s+(?P<answer>[^.!?]+)[.!?]$", "What happens when {context}?"),
         (r"^(?P<subject>[^.!?]+?)\s+flows?\s+(?P<detail>[^.!?]+)[.!?]$", "Where does {subject} flow?"),
-        (r"^Some\s+enters?\s+(?P<place>[^.!?]+?)\s+and\s+may\s+become\s+(?P<answer>[^.!?]+)[.!?]$", "What may some water become?"),
-        (r"^(?P<subject>[^.!?]+?)\s+carry\s+(?P<object>[^.!?]+?)(?:\s+back)?\s+towards\s+(?P<place>[^.!?]+)[.!?]$", "What do {subject} carry towards {place}?"),
+        (
+            r"^Some\s+enters?\s+(?P<place>[^.!?]+?)\s+and\s+may\s+become\s+(?P<answer>[^.!?]+)[.!?]$",
+            "What may some water become?",
+        ),
+        (
+            r"^(?P<subject>[^.!?]+?)\s+carry\s+(?P<object>[^.!?]+?)(?:\s+back)?\s+towards\s+(?P<place>[^.!?]+)[.!?]$",
+            "What do {subject} carry towards {place}?",
+        ),
         (r"^(?P<subject>[^.!?]+?)\s+can\s+involve\s+(?P<object>[^.!?]+)[.!?]$", "What can {subject} involve?"),
     )
     for pattern, template in patterns:
@@ -739,9 +755,7 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
                 continue
             recall_question = _recall_question(piece)
             if recall_question is not None:
-                cards.append(
-                    _card("recall", "Answer in your own words.", recall_question, piece, item, source=piece)
-                )
+                cards.append(_card("recall", "Answer in your own words.", recall_question, piece, item, source=piece))
                 continue
             continue
         finished = _finish(piece)
@@ -1038,7 +1052,7 @@ def _practice_prompt(card: Card) -> tuple[str, str]:
         for target in preferred:
             match = re.search(rf"\b{re.escape(target)}\b", text, re.I)
             if match:
-                return f"{text[:match.start()]}{blank}{text[match.end():]}", match.group()
+                return f"{text[: match.start()]}{blank}{text[match.end() :]}", match.group()
     if answer and re.search(rf"\b{re.escape(answer)}\b", clue, re.I):
         return re.sub(rf"\b{re.escape(answer)}\b", blank, clue, count=1, flags=re.I), answer
     return f"{card.question.rstrip('?').rstrip('.')} {blank}.", answer
@@ -1058,15 +1072,18 @@ def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: li
         shape = page.new_shape()
         title = "FILL IN THE BLANKS" if first else "FILL IN THE BLANKS (CONTINUED)"
         y = kind.draw(shape, [title], 17, margin, 40, True, theme["colour"])
-        y = kind.draw(
-            shape,
-            ["Write the missing name, year or key word. Try these before checking the answer sheet."],
-            9,
-            margin,
-            y + 3,
-            False,
-            _MUTED,
-        ) + 18
+        y = (
+            kind.draw(
+                shape,
+                ["Write the missing name, year or key word. Try these before checking the answer sheet."],
+                9,
+                margin,
+                y + 3,
+                False,
+                _MUTED,
+            )
+            + 18
+        )
 
     new_page(True)
     for number, card in enumerate(cards, start=1):
@@ -1075,7 +1092,7 @@ def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: li
         height = len(lines) * 14 + 12
         if y + height > _PAGE_HEIGHT - 42:
             new_page(False)
-        kind.draw(shape, [f"{number}."] , 10, margin, y, True, theme["colour"])
+        kind.draw(shape, [f"{number}."], 10, margin, y, True, theme["colour"])
         bottom = kind.draw(shape, lines, 11, margin + 28, y, False, _INK)
         y = max(bottom, y + 11) + 9
     shape.commit()
@@ -1208,10 +1225,7 @@ def _has_water_cycle_evidence(cards: list[Card]) -> bool:
     source = re.sub(r"\W+", " ", " ".join(f"{card.clue} {card.answer}" for card in cards).casefold())
     return (
         all(term in source for term in ("evaporation", "condensation", "precipitation", "water vapour"))
-        and (
-            "rivers carry water back" in source
-            or ("rainwater flows" in source and "over land" in source)
-        )
+        and ("rivers carry water back" in source or ("rainwater flows" in source and "over land" in source))
         and ("sun warms water" in source or "heat from the sun" in source)
     )
 
@@ -1232,8 +1246,16 @@ def _water_cycle_diagram(document: pymupdf.Document, kind: _Type) -> None:
     )
 
     nodes = [
-        (pymupdf.Rect(180, 135, 415, 245), "1  EVAPORATION", "Heat from the Sun changes liquid water into water vapour."),
-        (pymupdf.Rect(350, 325, 540, 445), "2  CONDENSATION", "Water vapour cools and forms tiny droplets around particles in the air."),
+        (
+            pymupdf.Rect(180, 135, 415, 245),
+            "1  EVAPORATION",
+            "Heat from the Sun changes liquid water into water vapour.",
+        ),
+        (
+            pymupdf.Rect(350, 325, 540, 445),
+            "2  CONDENSATION",
+            "Water vapour cools and forms tiny droplets around particles in the air.",
+        ),
         (pymupdf.Rect(180, 555, 415, 665), "3  PRECIPITATION", "Rain, snow and hail are forms of precipitation."),
         (pymupdf.Rect(55, 325, 245, 445), "4  COLLECTION", "Water gathers in rivers, lakes, oceans and underground."),
     ]
