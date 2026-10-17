@@ -955,6 +955,7 @@
 
           <input type="hidden" name="standard" value="8">
 
+          {% if show_games %}
           <fieldset>
             <legend>3. Choose your adventure</legend>
             <div class="game-grid">
@@ -981,6 +982,9 @@
               </label>
             </div>
           </fieldset>
+          {% else %}
+          <input type="hidden" name="output" value="study">
+          {% endif %}
 
           <p class="form-error" id="form-error" role="alert" hidden></p>
 
