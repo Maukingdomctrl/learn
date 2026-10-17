@@ -8,7 +8,7 @@
   <title>PDF to Printable Study Cards for Grade 8 | Learn</title>
   <meta
     name="description"
-    content="Turn a curriculum PDF into printable study cards for Grade 8 revision. Choose a Detective or Superhero game, preview your cards, and print. No sign-up."
+    content="Turn a curriculum PDF into printable study cards for Grade 8 revision. Preview your study pack and print. No sign-up."
   >
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://learn.mauforge.com/">
@@ -875,7 +875,7 @@
         <p class="intro">
           Less staring at notes. More figuring things out.
           Turn your curriculum PDF into printable question cards,
-          then solve a mystery or take on a superhero mission.
+          with an answer sheet to check yourself.
         </p>
 
         <ul class="benefits" aria-label="Features">
@@ -896,7 +896,7 @@
 
             <div class="sample sample-front">
               <div class="sample-top">
-                <span>Detective mode</span><span>Sample · 01</span>
+                <span>Biology</span><span>Sample · 01</span>
               </div>
               <p>Your cell needs energy. Which organelle is on the case?</p>
               <span class="sample-foot">Think it through. Then check your answer.</span>
@@ -955,6 +955,7 @@
 
           <input type="hidden" name="standard" value="8">
 
+          {% if show_games %}
           <fieldset>
             <legend>3. Choose your adventure</legend>
             <div class="game-grid">
@@ -981,6 +982,9 @@
               </label>
             </div>
           </fieldset>
+          {% else %}
+          <input type="hidden" name="output" value="lesson">
+          {% endif %}
 
           <p class="form-error" id="form-error" role="alert" hidden></p>
 
@@ -1035,10 +1039,10 @@
 
         <article class="step">
           <span class="step-number" aria-hidden="true">02</span>
-          <h3>Make it a mission</h3>
+          <h3>Preview it</h3>
           <p>
-            Pick Detective or Superhero. Preview your question cards
-            and check that the content matches your lesson.
+            Preview your study pack and check that the content
+            matches your lesson.
           </p>
         </article>
 
@@ -1338,8 +1342,8 @@
         controller = activeController;
 
         const data = new FormData(form);
-        const mode = String(data.get("output") || "detective");
-        const modeLabel = mode === "superhero" ? "Superhero" : "Detective";
+        const mode = String(data.get("output") || "lesson");
+        const modeLabel = { detective: "Detective", superhero: "Superhero" }[mode] || "study";
         let timedOut = false;
 
         previewButton.disabled = true;
@@ -1384,7 +1388,7 @@
           previewURL = URL.createObjectURL(blob);
           frame.src = previewURL;
           download.href = previewURL;
-          download.download = `learn_${mode}_game.pdf`;
+          download.download = mode === "lesson" ? "learn_teaching_plan.pdf" : `learn_${mode}_game.pdf`;
           download.hidden = false;
           status.textContent =
             "Your cards are ready. Check the questions and answers before printing. " +

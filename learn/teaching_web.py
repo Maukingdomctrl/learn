@@ -13,6 +13,9 @@ from .teaching_engine import create_teaching_lesson, extract_facts, render_print
 from .teaching_engine.visual_library import list_visuals
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
+# The Detective and Superhero game cards are hidden from the upload page until they are fixed; /generate still
+# makes them when asked, so turning this back on is the only change needed.
+SHOW_GAMES = False
 app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
@@ -25,7 +28,7 @@ def _page(name: str, **ctx) -> HTMLResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return _page("teaching_upload.html.j2")
+    return _page("teaching_upload.html.j2", show_games=SHOW_GAMES)
 
 
 @app.get("/healthz")

@@ -12,14 +12,13 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
 
     page = client.get("/").text
     assert "No account or API key needed" in page
-    assert "<strong>Detective</strong>" in page
-    assert "<strong>Superhero</strong>" in page
+    # The games are hidden from the page until they are fixed; the form asks for the lesson PDF instead.
+    assert "<strong>Detective</strong>" not in page and "<strong>Superhero</strong>" not in page
+    assert '<input type="hidden" name="output" value="lesson">' in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
     assert 'aria-controls="output-preview" hidden' in page
     assert 'id="preview-button"' in page
-    assert 'name="output" value="detective" checked' in page
-    assert 'name="output" value="superhero"' in page
     assert "Study Visual Library" in page
     assert "Preview before printing" in page
     with open(sample_pdf, "rb") as pdf_file:
@@ -132,3 +131,12 @@ def test_teaching_web_rejects_its_own_generated_card_pdf():
 
     with pytest.raises(ValueError, match="already a Learn-generated card PDF"):
         web._build_pdf(generated_pdf, "", "detective", 8)
+
+
+def test_turning_the_games_back_on_shows_both_choices(monkeypatch):
+    monkeypatch.setattr(web, "SHOW_GAMES", True)
+    page = TestClient(web.app).get("/").text
+
+    assert 'name="output" value="detective" checked' in page
+    assert 'name="output" value="superhero"' in page
+    assert 'name="output" value="lesson"' not in page
