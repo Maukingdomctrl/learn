@@ -1,5 +1,6 @@
 """Offline, source-grounded teaching scaffolds for extracted facts."""
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
@@ -78,44 +79,88 @@ def _kind(fact: Fact) -> str:
     return "source_statement"
 
 
+def _learning_prompts(fact: Fact) -> tuple[str, str, str, str]:
+    quote = fact.statement
+    number = next((mention.text for mention in fact.mentions if mention.kind in {"date", "number"}), None)
+    term = next((mention.text for mention in fact.mentions if mention.kind == "difficult_term"), None)
+    relation = max(
+        (mention.text for mention in fact.mentions if mention.kind == "relationship_cue"), key=len, default=None
+    )
+    if number:
+        explanation = (
+            f"Find {number} in the source. Put it beside the event or amount it belongs to, then explain what the "
+            "number tells you. Do not memorize it without its meaning."
+        )
+        visual = f"Draw a small timeline or quantity picture for {quote} and label it with the source's exact words."
+        link = "What event or amount does this number belong to? Point to the words that tell you."
+        check = f"With the source covered, explain what {number} tells you; uncover it and check the event or amount."
+    elif term:
+        explanation = (
+            f"Read how the source explains {term}. Say the meaning without using the term, then explain which words "
+            "in the source support your meaning."
+        )
+        visual = f"Draw one example of {term} using only the source's meaning; label the parts with source words."
+        link = f"Can you think of another example of {term}? Ask an adult to check it against the source."
+        check = f"Explain {term} in your own words, then compare your meaning with the source."
+    elif relation:
+        if relation.casefold() in {"is", "are", "was", "were"}:
+            expanded = re.search(
+                rf"\b{re.escape(relation)}\s+(?:in|on|at|near|from|to|through|into|part of)\b",
+                quote,
+                re.I,
+            )
+            if expanded:
+                relation = expanded.group()
+        left, right = quote.split(relation, 1)
+        explanation = (
+            f"The source links {left.strip()} with {right.strip().rstrip('.!?')} using “{relation}”. Draw both sides "
+            "and join them with an arrow labelled with that exact link. Explain what the arrow means."
+        )
+        visual = f"Make a labelled relationship sketch for: {quote}"
+        link = "What other example do you know of this kind of link? Keep it separate from what the source states."
+        check = f"Explain the link “{relation}” without looking, then check that both sides match the source."
+    else:
+        explanation = (
+            f"Read the source once. Find who or what acts, and the action or change the sentence describes. Draw the "
+            "action with arrows; explain what happens using the source words. Only give a cause if the source states it."
+        )
+        visual = f"Draw the action or change in this source idea and label it: {quote}"
+        link = "What familiar example helps you picture this? Mark it as your example, not as a fact from the source."
+        check = "Explain the idea with your drawing, then check each label against the source."
+    return explanation, visual, link, check
+
+
 def _make_fact_lesson(fact: Fact) -> FactTeaching:
     quote = fact.statement
+    explanation, visual, child_link, final_check = _learning_prompts(fact)
     return FactTeaching(
         fact_id=fact.id,
         source_statement=quote,
         source_unit_id=fact.source_unit_id,
         source_page=fact.page,
         kind=_kind(fact),
-        child_explanation=(
-            "Read the source idea together. In your own words, say what it tells you; keep the quoted source "
-            "nearby so its meaning is not changed."
-        ),
+        child_explanation=explanation,
         memory_link=(
-            "Memory scaffold, not a fact: picture the important words from this sentence as labels on a simple "
-            "drawing. Choose a different picture if this one does not help."
+            "Memory scaffold, not a fact: use the labelled drawing to remember the relationship or change. "
+            "Check every label against the source."
         ),
-        visual_brief=(
-            "Draw a small, simple picture for this sentence. Use only names, numbers, and relationships stated "
-            "in the source; label the drawing with the exact source words."
-        ),
-        child_makes_a_link="What picture, place, or personal connection would help you remember this source idea?",
+        visual_brief=visual,
+        child_makes_a_link=child_link,
         recall_rounds=[
             RecallRound(
                 support="full",
                 mode="look_and_tell",
-                prompt=f"Look at the source: {quote} Point to the words that carry its main idea and tell it back.",
+                prompt=f"Read the source: {quote} Use the drawing to explain the idea and point to its supporting words.",
             ),
             RecallRound(
                 support="light",
                 mode="draw_from_memory",
-                prompt="Use the key words as a cue. Sketch the idea, then compare your labels with the source.",
+                prompt="Use your sketch as a cue to explain the link or change. Then compare every label with the source.",
             ),
             RecallRound(
                 support="none",
                 mode="teach_a_friend",
-                prompt=(
-                    "With the source turned over, explain the idea in your own words. Then check it against the source."
-                ),
+                prompt=final_check,
             ),
         ],
     )

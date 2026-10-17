@@ -7,6 +7,7 @@ from pathlib import Path
 from ..extraction import choose_ocr, extract, pdf_page_count
 from ..grounding import parse_page_range
 from . import create_teaching_lesson, extract_facts
+from .cards import reject_generated_pdf
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -16,6 +17,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pages", default="", help="optional page range, e.g. 3-5 or 2,4")
     args = parser.parse_args(argv)
 
+    reject_generated_pdf(Path(args.pdf).read_bytes())
     page_range = parse_page_range(args.pages, pdf_page_count(args.pdf))
     ocr, ocr_name = choose_ocr("auto", None)
     source = extract(args.pdf, ocr, ocr_name, page_range)
