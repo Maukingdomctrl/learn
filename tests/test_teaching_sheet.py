@@ -281,3 +281,67 @@ def test_a_question_table_and_number_tables_make_the_right_cards():
     assert questions["Does correlation prove cause?"] == "No; multiple explanations may fit the same pattern."
     assert not any("Rainfall (mm)" in card.about or card.answer == "Jan" for card in cards)
     assert any(card.clue == "Rainfall range = 240 − 15 = ______" and card.answer == "225 mm" for card in cards)
+
+
+def _ruled_table_pdf() -> bytes:
+    """A bordered comparison table like a revision sheet's: wrapped cells ("~" breaks a line), a "—" and nine rows."""
+    rows = [
+        "Feature | London | Birmingham | Belfast | Cardiff",
+        "Country / Region | England (UK Capital) | West Midlands,~England | Northern Ireland | Wales",
+        "Status | Capital of UK &~England | Largest city outside~London | Capital of N. Ireland | Capital of Wales",
+        "River | River Thames | River Rea | River Lagan | —",
+        "Population Rank | Largest in UK | 2nd largest in UK~(outside London) | Largest in N.~Ireland | 11th in UK",
+        "Key Role | Political, economic &~cultural hub | Heart of Industrial~Revolution; steam~engine"
+        " | Shipbuilding~(Titanic) | Top coal port in~19th century",
+        "Landmark | Financial centre of~Europe | Birmingham~Hippodrome | Titanic Belfast~Museum"
+        " | Wales Millennium~Centre",
+        "Economy | Finance, innovation,~culture | Industry, technology,~culture | Industry, aerospace,~arts"
+        " | Retail, finance,~media",
+        "Special Note | Covers SE England | Grew to prominence in~18th century | Pop. ~286,000 (2011)"
+        " | Made city 1905;~capital 1955",
+    ]
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((50, 40), "COMPARATIVE TABLE", fontsize=12)
+    widths, y = [80, 110, 110, 100, 100], 60
+    for row in rows:
+        cells = [cell.strip().replace("~", "\n") for cell in row.split("|")]
+        height = 12 + 9 * max(cell.count("\n") + 1 for cell in cells)
+        x = 40
+        for width, text in zip(widths, cells, strict=True):
+            box = pymupdf.Rect(x, y, x + width, y + height)
+            page.draw_rect(box, color=(0, 0, 0), width=0.7)
+            page.insert_textbox(box + (4, 3, -4, -2), text, fontsize=7.5)
+            x += width
+        y += height
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_a_bordered_table_is_read_whole_from_its_drawn_grid():
+    source_pdf = _ruled_table_pdf()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    tables = [item.table for item in sheet.items if item.kind == "table"]
+
+    assert len(tables) == 1
+    assert tables[0].header == ("Feature", "London", "Birmingham", "Belfast", "Cardiff")
+    first = ("Country / Region", "England (UK Capital)", "West Midlands, England", "Northern Ireland", "Wales")
+    assert tables[0].rows[0] == first
+    assert len(tables[0].rows) == 8 and tables[0].rows[-1][0] == "Special Note"
+    # No piece of the table leaks out as a point of its own ("England", "18th century").
+    assert not [item.text for item in sheet.items if item.kind in {"point", "heading", "topic"}]
+
+
+def test_a_table_the_line_reader_breaks_up_is_read_from_its_borders():
+    """The UK cities sheet's comparison table wraps cells over several lines; the line reader used to keep three rows
+    and leak the rest as fragments ("RBS HQ", "Centre; Capital since") that became nonsense cards."""
+    sheet = _read("uk-cities-comparative-table.pdf")[3]
+    tables = [item.table for item in sheet.items if item.kind == "table" and item.page == 3]
+    cards = plan_cards(sheet)
+
+    assert len(tables) == 1
+    assert tables[0].header == ("Feature", "London", "Birmingham", "Belfast", "Edinburgh", "Cardiff")
+    assert [row[0] for row in tables[0].rows][-1] == "Special Note" and len(tables[0].rows) == 8
+    assert not [item.text for item in sheet.items if item.page == 3 and item.kind in {"point", "heading"}]
+    assert not any(card.answer in {"Status", "River"} or "RBS HQ" in card.clue for card in cards)
