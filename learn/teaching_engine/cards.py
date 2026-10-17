@@ -15,6 +15,7 @@ import pymupdf
 
 from .facts import BULLETS, REVIEW_CUES, FactInventory, split_sentences
 from .sheet import GENERIC_HEADING, Item, Sheet, names_topic, read_sheet, summary_parts
+from .thinking import comparisons, display_name, is_section, think
 
 GAP = "______"
 _PAGE_WIDTH = 595.28
@@ -712,6 +713,11 @@ def _point_cards(
     for piece in pieces:
         if _named_process(piece) is not None:
             continue
+        thought = think(piece, heading.name if heading else "")
+        if thought is not None:  # the sentence gives a reason, a result, a definition or a list: ask for that
+            question, clue, answer = thought.question, thought.clue, thought.answer
+            cards.append(_card(thought.kind, question, clue, answer, item, about, source=piece))
+            continue
         joined = _joined_process_card(item) if piece == item.text else None
         if joined is not None:
             cards.append(joined)
@@ -745,7 +751,7 @@ def _point_cards(
             cards.append(_card("gap", _ask(kind, standard), clue, answer, item, about, source=piece))
             continue
         if heading is not None and not _MATH.search(piece):
-            if heading.person or not _ABSTRACT_TOPIC.search(heading.name):
+            if heading.person or not (_ABSTRACT_TOPIC.search(heading.name) or is_section(heading.name)):
                 hidden = _hide_name(piece, heading.name)
                 if len(hidden.replace(GAP, "").split()) >= 3:
                     question = _ask("who_about" if heading.person else "what_about", standard)
@@ -780,7 +786,13 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             answers.setdefault((item.group, item.number), item.text)
     answer_groups = {group for group, _ in answers}
     # Sibling topics the sheet names ("LONDON", "BIRMINGHAM", ...) let a riddle ask "Which one is it: ...?"
-    names = list(dict.fromkeys(h.name for h in headings.values() if not h.person and len(h.name.split()) <= 4))
+    names = list(
+        dict.fromkeys(
+            display_name(h.name)
+            for h in headings.values()
+            if not h.person and len(h.name.split()) <= 4 and not is_section(h.name)
+        )
+    )
     choices = ""
     if 2 <= len(names) <= 6:
         choices = ", ".join(names[:-1]) + " or " + names[-1]
@@ -836,6 +848,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             heading = next((h for h in headings.values() if h.name.casefold() == name.casefold()), None)
             person = heading.person if heading else bool(_PERSON_TITLE.match(name))
             question = _ask("who_about" if person else "what_about", standard)
+            if choices and not person and display_name(name).casefold() in choices.casefold():
+                question = _ask("sort", standard, choices)
             cards.append(_card("summary", question, _hide_name(rest, name), name, item))
         elif item.kind == "question":
             text = _QUESTION_LABEL.sub("", item.text)
@@ -851,9 +865,32 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             cards.extend(_table_cards(item, standard))
         elif item.kind == "tip" and (tip := _tip_card(item, standard)) is not None:
             cards.append(tip)
+    cards.extend(_compare_topic_cards(items, headings, pieces, standard))
     cards.extend(_picture_cards(sheet, headings, standard))
     cards = [card for card in cards if _readable(card.clue) and _readable(card.answer)]
     return _without_repeats(cards)
+
+
+def _compare_topic_cards(
+    items: list[Item], headings: dict[str, Heading], pieces: dict[int, list[str]], standard: int
+) -> list[Card]:
+    """One card per label the sheet prints under several topics, asking how they differ."""
+    points = [
+        (headings[item.topic].name, piece)
+        for item in items
+        if item.kind == "point" and item.topic in headings
+        for piece in pieces.get(id(item), [])
+    ]
+    first = {headings[item.topic].name: item for item in items if item.kind == "point" and item.topic in headings}
+    cards = []
+    for comparison in comparisons(points):
+        names = [name for name, _ in comparison.values]
+        clue = "\n".join(display_name(name) for name in names)
+        answer = "\n".join(f"{display_name(name)}: {value}" for name, value in comparison.values)
+        question = f"How are they different? Compare their {comparison.label.lower()}."
+        claims = " ".join(value for _, value in comparison.values)
+        cards.append(_card("compare", question, clue, answer, first[names[0]], about="Compare", source=claims))
+    return cards
 
 
 _RIDDLES_PER_ANSWER = 3

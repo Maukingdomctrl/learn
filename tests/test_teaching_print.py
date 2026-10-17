@@ -150,7 +150,7 @@ def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
     assert "The city hosted the Olympic Games in ______." in cards_page
     assert "Which year fits the gap?" in cards_page
     assert "Situated on the River Thames in southeastern England." in cards_page
-    assert "Which one is it: LONDON or BELFAST?" in cards_page
+    assert "Which one is it: London or Belfast?" in cards_page
     assert "2012" not in cards_page and "286,000" not in cards_page
     assert answer_sheet.startswith("ANSWER SHEET")
     for answer in ("LONDON", "2012", "BELFAST", "286,000", "p. 2"):
@@ -498,8 +498,9 @@ def test_finish_cards_cut_before_a_phrase_and_never_inside_brackets():
 
     assert [(card.clue, card.answer) for card in cards] == [
         ("Dead animals are decomposed …", "… by bacteria and fungi in the soil."),
-        ("Plants are still a useful sink because …", "… photosynthesis is faster than respiration."),
+        ("Plants are still a useful sink.", "Photosynthesis is faster than respiration."),
     ]
+    assert cards[1].question == "Why? Give the reason."
 
 
 def test_printing_keeps_formula_symbols_without_changing_the_source_fact():
@@ -579,7 +580,7 @@ def test_riddles_name_the_sheets_topics_as_choices_and_stop_after_three_per_answ
     ]
     riddles = [card for card in _cards(rows) if card.kind == "riddle"]
 
-    assert all(card.question == "Which one is it: LONDON or CARDIFF?" for card in riddles)
+    assert all(card.question == "Which one is it: London or Cardiff?" for card in riddles)
     assert [card.answer for card in riddles].count("LONDON") == 3
     assert [card.answer for card in riddles].count("CARDIFF") == 1
 
