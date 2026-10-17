@@ -704,7 +704,9 @@ def _vocabulary(pieces: list[str]) -> bool:
     return len(found) >= 2 and len(found) >= 0.6 * len(pieces) and len({label for label, _ in found}) == len(found)
 
 
-def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int) -> list[Card]:
+def _point_cards(
+    item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int, choices: str = ""
+) -> list[Card]:
     cards = []
     about = heading.name if heading else item.context
     for piece in pieces:
@@ -747,6 +749,8 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
                 hidden = _hide_name(piece, heading.name)
                 if len(hidden.replace(GAP, "").split()) >= 3:
                     question = _ask("who_about" if heading.person else "what_about", standard)
+                    if choices and not heading.person:
+                        question = _ask("sort", standard, choices)
                     cards.append(_card("riddle", question, hidden, heading.name, item, source=piece))
                 continue
             cloze = _key_cloze(piece)
@@ -775,6 +779,11 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
         if item.kind == "answer" and item.number:
             answers.setdefault((item.group, item.number), item.text)
     answer_groups = {group for group, _ in answers}
+    # Sibling topics the sheet names ("LONDON", "BIRMINGHAM", ...) let a riddle ask "Which one is it: ...?"
+    names = list(dict.fromkeys(h.name for h in headings.values() if not h.person and len(h.name.split()) <= 4))
+    choices = ""
+    if 2 <= len(names) <= 6:
+        choices = ", ".join(names[:-1]) + " or " + names[-1]
     pieces = {id(item): _pieces(item.text) for item in items if item.kind == "point"}
     cards: list[Card] = []
     consumed: set[int] = set()
@@ -821,7 +830,7 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 for piece in pieces[id(other)][:1]
             ]
             terms = heading is None and (_vocabulary(pieces[id(item)]) or _vocabulary(siblings))
-            cards.extend(_point_cards(item, heading, pieces[id(item)], terms, standard))
+            cards.extend(_point_cards(item, heading, pieces[id(item)], terms, standard, choices))
         elif item.kind == "summary":
             name, rest = summary_parts(item.text)
             heading = next((h for h in headings.values() if h.name.casefold() == name.casefold()), None)
@@ -843,7 +852,37 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
         elif item.kind == "tip" and (tip := _tip_card(item, standard)) is not None:
             cards.append(tip)
     cards.extend(_picture_cards(sheet, headings, standard))
-    return [card for card in cards if _readable(card.clue) and _readable(card.answer)]
+    cards = [card for card in cards if _readable(card.clue) and _readable(card.answer)]
+    return _without_repeats(cards)
+
+
+_RIDDLES_PER_ANSWER = 3
+
+
+def _words(text: str) -> set[str]:
+    return {word for word in re.findall(r"[a-z0-9]+", text.casefold()) if len(word) > 2}
+
+
+def _without_repeats(cards: list[Card]) -> list[Card]:
+    """Drop cards that ask for the same answer from the same words again, and long runs of one riddle answer."""
+    kept: list[Card] = []
+    riddles: dict[str, int] = {}
+    for card in cards:
+        answer = card.answer.strip().casefold()
+        if card.kind == "riddle":
+            riddles[answer] = riddles.get(answer, 0) + 1
+            if riddles[answer] > _RIDDLES_PER_ANSWER:
+                continue
+        words = _words(card.clue) | _words(card.answer)
+        repeat = card.kind != "picture" and any(
+            answer
+            and other.answer.strip().casefold() == answer
+            and len(words & (_words(other.clue) | _words(other.answer))) >= 0.6 * max(1, min(len(words), 12))
+            for other in kept
+        )
+        if not repeat:
+            kept.append(card)
+    return kept
 
 
 def _picture_cards(sheet: Sheet, headings: dict[str, Heading], standard: int) -> list[Card]:
@@ -1027,35 +1066,65 @@ def _cut_lines(shape, count: int) -> None:
     shape.finish(color=_CUT, width=0.5, dashes="[3 3] 0")
 
 
-def _practice_prompt(card: Card) -> tuple[str, str]:
+_BLANK = "________________"
+_SHORT_ANSWER_WORDS = 4
+# A name inside a sentence: capitalised words (with "of", "the", "and" between them), not the sentence's first word.
+_NAME = re.compile(r"(?<![.!?–—:-]\s)(?<!^)\b[A-Z][\w'’-]+(?:\s+(?:of\s+|the\s+|and\s+|de\s+)?[A-Z][\w'’-]+)*")
+
+
+def _short(answer: str) -> bool:
+    return 0 < len(answer.split()) <= _SHORT_ANSWER_WORDS and not re.search(r"[.!?]\s", answer)
+
+
+def _short_target(text: str, bold: tuple[str, ...] = (), exclude: str = "") -> str:
+    """The short thing worth blanking in a sentence: a bold term, then a date or number, then a name.
+
+    ``exclude`` is what the card already asks for, so the fill-in tests a different fact from the same sentence.
+    """
+    candidates = [
+        phrase
+        for phrase in sorted(bold, key=len, reverse=True)
+        if re.search(rf"(?<!\w){re.escape(phrase)}(?!\w)", text)
+    ]
+    for pattern in (_FULL_DATE, _YEAR, _QUANTITY, _CENTURY):
+        candidates += [match.group() for match in pattern.finditer(text)]
+    candidates += sorted((match.group() for match in _NAME.finditer(text)), key=len, reverse=True)
+    skip = exclude.casefold()
+    for candidate in candidates:
+        found = candidate.casefold()
+        if _short(candidate) and not (skip and (skip in found or found in skip)):
+            return candidate
+    return ""
+
+
+def _sentence_with(text: str, target: str) -> str:
+    return next((sentence for sentence in split_sentences(text) if target in sentence), text)
+
+
+def _practice_prompt(card: Card, bold: tuple[str, ...] = ()) -> tuple[str, str]:
+    """A fill-in-the-blank for the card whose answer is a word, name, year or number; ("", "") when there is none."""
     clue = card.clue.strip()
     answer = card.answer.strip()
-    blank = "________________"
-    if GAP in clue:
-        return clue.replace(GAP, blank), answer
     if card.kind == "teach":
         label = re.search(r"this\s+(change|movement|process)", card.question, re.I)
         if label:
-            return f"{clue}\nThis {label[1]} is called {blank}.", answer
+            return f"{clue}\nThis {label[1]} is called {_BLANK}.", answer
     if card.kind == "learn":
-        text = answer
-        preferred = (
-            "water vapour",
-            "liquid water",
-            "tiny liquid droplets",
-            "precipitation",
-            "oceans",
-            "rain",
-            "snow",
-            "hail",
-        )
-        for target in preferred:
-            match = re.search(rf"\b{re.escape(target)}\b", text, re.I)
+        for target in ("water vapour", "liquid water", "tiny liquid droplets", "precipitation", "oceans"):
+            match = re.search(rf"\b{re.escape(target)}\b", answer, re.I)
             if match:
-                return f"{text[: match.start()]}{blank}{text[match.end() :]}", match.group()
-    if answer and re.search(rf"\b{re.escape(answer)}\b", clue, re.I):
-        return re.sub(rf"\b{re.escape(answer)}\b", blank, clue, count=1, flags=re.I), answer
-    return f"{card.question.rstrip('?').rstrip('.')} {blank}.", answer
+                return f"{answer[: match.start()]}{_BLANK}{answer[match.end() :]}", match.group()
+    # Blank a short term the card does not already ask for: in the answer's sentence when the answer is long,
+    # else in the clue with the card's own answer put back.
+    if _short(answer):
+        text, exclude = clue.replace(GAP, answer), answer
+    else:
+        text, exclude = answer, ""
+    target = _short_target(text, bold, exclude) if GAP not in text else ""
+    if target:
+        sentence = _sentence_with(text, target)
+        return sentence.replace(target, _BLANK, 1), target
+    return "", ""
 
 
 def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
@@ -1121,38 +1190,31 @@ def _practice_reinforcement(card: Card) -> tuple[str, str]:
     return "Explain this fact in your own words.", answer
 
 
-def _practice_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
-    practice_cards = []
-    for card in cards:
-        prompt, answer = _practice_prompt(card)
-        question, explanation = _practice_reinforcement(card)
-        practice_cards.append(
-            Card(
-                "cloze",
-                question,
-                prompt,
-                answer,
-                card.page,
-                card.unit_ids,
-                "Fill in the blank",
-                (*card.checks, f"Follow-up answer: {explanation}"),
-            )
-        )
-    sheets = (len(practice_cards) + _CARDS_PER_PAGE - 1) // _CARDS_PER_PAGE
-    for sheet in range(sheets):
-        group = practice_cards[sheet * _CARDS_PER_PAGE : (sheet + 1) * _CARDS_PER_PAGE]
-        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
-        kind.prepare(page)
-        shape = page.new_shape()
-        title = f"FILL IN THE BLANKS  ·  SHEET {sheet + 1} OF {sheets}"
-        kind.draw(shape, [kind.printable(title, True)], 7.5, _LEFT, 17, True, _MUTED)
-        note = "Cut along the dashed lines. Write the missing name, year or key word."
-        kind.draw(shape, [kind.printable(note)], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
-        _cut_lines(shape, len(group))
-        first = sheet * _CARDS_PER_PAGE + 1
-        for position, card in enumerate(group):
-            _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
-        shape.commit()
+def _practice_page(
+    document: pymupdf.Document, kind: _Type, numbered: list[tuple[int, Card]], theme: dict, sheet: int, sheets: int
+) -> None:
+    """The fill-in-the-blanks for one sheet of cards, printed right after it; each keeps its card's number."""
+    page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+    kind.prepare(page)
+    shape = page.new_shape()
+    title = f"FILL IN THE BLANKS  ·  FOR SHEET {sheet} OF {sheets}"
+    kind.draw(shape, [kind.printable(title, True)], 7.5, _LEFT, 17, True, _MUTED)
+    note = "Write one word, name or number in each blank. Same numbers as the cards."
+    kind.draw(shape, [kind.printable(note)], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
+    _cut_lines(shape, len(numbered))
+    for position, (number, card) in enumerate(numbered):
+        _draw_card(page, shape, kind, card, number, _card_box(position), theme)
+    shape.commit()
+
+
+def _fill_ins(cards: list[Card], bold: tuple[str, ...]) -> list[tuple[int, Card, str]]:
+    found = []
+    for number, card in enumerate(cards, start=1):
+        prompt, answer = _practice_prompt(card, bold)
+        if prompt:
+            cloze = Card("cloze", "Fill in the blank.", prompt, answer, card.page, card.unit_ids)
+            found.append((number, cloze, answer))
+    return found
 
 
 def _header(shape, kind: _Type, theme: dict, sheet: int, sheets: int, first: int, last: int) -> None:
@@ -1162,7 +1224,7 @@ def _header(shape, kind: _Type, theme: dict, sheet: int, sheets: int, first: int
     kind.draw(shape, [note], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
 
 
-def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: tuple[str, ...]) -> None:
+def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: tuple[str, ...], fill_ins=()) -> None:
     margin, width = 46.0, _PAGE_WIDTH - 92.0
     page = shape = None
     y = 0.0
@@ -1198,21 +1260,15 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
         if checks:
             bottom = kind.draw(shape, checks, 8, margin + 32, bottom + 1, False, _ORANGE)
         y = bottom + 7
-    if cards:
+    if fill_ins:
         if y + 38 > _PAGE_HEIGHT - 40:
             new_page(False)
         y = kind.draw(shape, ["FILL-IN-THE-BLANK ANSWERS"], 12, margin + 32, y + 5, True, theme["colour"]) + 8
-        for number, card in enumerate(cards, start=1):
-            _, answer = _practice_prompt(card)
-            question, explanation = _practice_reinforcement(card)
-            blank_lines = kind.wrap(kind.printable(f"Blank: {answer}", True), 9.5, width - 70, True)
-            follow_up_lines = kind.wrap(kind.printable(f"{question} {explanation}", True), 9.5, width - 70, True)
-            lines = [*blank_lines, *follow_up_lines]
-            if y + len(lines) * 11.6 + 6 > _PAGE_HEIGHT - 40:
+        for number, _, answer in fill_ins:
+            if y + 18 > _PAGE_HEIGHT - 40:
                 new_page(False)
             kind.draw(shape, [str(number)], 9.5, 0, y, True, theme["colour"], align_right=margin + 22)
-            bottom = kind.draw(shape, lines, 9.5, margin + 32, y, True, _INK)
-            y = bottom + 6
+            y = kind.draw(shape, [kind.printable(answer, True)], 9.5, margin + 32, y, True, _INK) + 6
     for note in notes:
         lines = kind.wrap(kind.printable(note), 8.5, width - 32)
         if y + len(lines) * 10.4 + 8 > _PAGE_HEIGHT - 40:
@@ -1293,13 +1349,18 @@ def _water_cycle_diagram(document: pymupdf.Document, kind: _Type) -> None:
 
 
 def render_cards_pdf(
-    cards: list[Card], game_mode: str = "detective", standard: int = 8, notes: tuple[str, ...] = ()
+    cards: list[Card],
+    game_mode: str = "detective",
+    standard: int = 8,
+    notes: tuple[str, ...] = (),
+    bold: tuple[str, ...] = (),
 ) -> bytes:
-    """Print the cards eight to an A4 page, fronts only, then the answer sheet and any notes for the adult."""
+    """Print each sheet of eight cards followed by its fill-in-the-blanks, then the answer sheet and notes."""
     theme = _THEMES[game_mode]
     kind = _Type()
     document = pymupdf.open()
     sheets = (len(cards) + _CARDS_PER_PAGE - 1) // _CARDS_PER_PAGE
+    fill_ins = _fill_ins(cards, bold)
     for sheet in range(sheets):
         group = cards[sheet * _CARDS_PER_PAGE : (sheet + 1) * _CARDS_PER_PAGE]
         page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
@@ -1311,8 +1372,10 @@ def render_cards_pdf(
         for position, card in enumerate(group):
             _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
         shape.commit()
-    _practice_pages(document, kind, cards, theme)
-    _answer_pages(document, kind, cards, theme, notes)
+        numbered = [(number, cloze) for number, cloze, _ in fill_ins if first <= number < first + len(group)]
+        if numbered:
+            _practice_page(document, kind, numbered, theme, sheet + 1, sheets)
+    _answer_pages(document, kind, cards, theme, notes, fill_ins)
     if _has_water_cycle_evidence(cards):
         _water_cycle_diagram(document, kind)
     document.set_metadata(
@@ -1400,4 +1463,4 @@ def render_printable_cards_pdf(
         "no card. Check that page by eye."
         for page in lost
     )
-    return render_cards_pdf(cards, game_mode, standard, notes)
+    return render_cards_pdf(cards, game_mode, standard, notes, sheet.bold)

@@ -1,3 +1,4 @@
+import re
 import sys
 from pathlib import Path
 from time import perf_counter
@@ -141,14 +142,15 @@ def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
     assert len(pages) == 3
     assert cards_page.startswith("DETECTIVE CASE FILE")
     assert pages[1].startswith("FILL IN THE BLANKS")
+    # Each fill-in blanks a different short fact from its card's sentence, never the card's own answer.
     assert pages[1].count("Fill in the blank") == 5
-    assert "Which number fits the gap?" in pages[1]
+    assert "LONDON – Capital of the ________________ & England" in pages[1].replace(" - ", " – ")
     dash = "–" if _HAS_EXTENDED_PDF_FONT else "-"
     assert f"______ {dash} Capital of the United Kingdom & England" in cards_page
     assert "The city hosted the Olympic Games in ______." in cards_page
     assert "Which year fits the gap?" in cards_page
     assert "Situated on the River Thames in southeastern England." in cards_page
-    assert "What is this about?" in cards_page
+    assert "Which one is it: LONDON or BELFAST?" in cards_page
     assert "2012" not in cards_page and "286,000" not in cards_page
     assert answer_sheet.startswith("ANSWER SHEET")
     for answer in ("LONDON", "2012", "BELFAST", "286,000", "p. 2"):
@@ -321,12 +323,9 @@ def test_four_weak_water_cycle_cards_become_explain_and_connect_prompts():
     assert pages[1].startswith("FILL IN THE BLANKS")
     assert "This movement is called ________________." in pages[1]
     assert "forms of ________________." in pages[1]
-    assert "What does the water cycle describe?" in pages[1]
-    assert "What happens to liquid water during evaporation?" in pages[1]
-    assert "Imagine a puddle in sunshine." in pages[1]
     assert pages[2].startswith("ANSWER SHEET")
     assert "FILL-IN-THE-BLANK ANSWERS" in pages[2]
-    assert "Blank: water vapour" in pages[2]
+    assert "water vapour" in pages[2].split("FILL-IN-THE-BLANK ANSWERS")[1]
 
 
 def test_abstract_topic_titles_and_unreadable_process_lines_are_not_printed_as_cards():
@@ -565,3 +564,62 @@ def test_without_the_font_package_cards_fall_back_to_safe_ascii_symbols(monkeypa
 
     assert "Grass -> Grasshopper -> ______ -> Snake" in pages[0]
     assert "Frog" in pages[-1]
+
+
+def test_riddles_name_the_sheets_topics_as_choices_and_stop_after_three_per_answer():
+    rows = [
+        (1, "1. LONDON – Capital of the United Kingdom & England"),
+        (1, "• Situated on the River Thames in southeastern England."),
+        (1, "• One of the world's preeminent cities and a hub of a cultural network."),
+        (1, "• Metropolitan area covers much of southeastern England."),
+        (1, "• Continues to serve as the financial centre of Europe."),
+        (1, "• Major influence in popular culture worldwide."),
+        (1, "2. CARDIFF – Capital of Wales"),
+        (1, "• Lies where three rivers meet the sea."),
+    ]
+    riddles = [card for card in _cards(rows) if card.kind == "riddle"]
+
+    assert all(card.question == "Which one is it: LONDON or CARDIFF?" for card in riddles)
+    assert [card.answer for card in riddles].count("LONDON") == 3
+    assert [card.answer for card in riddles].count("CARDIFF") == 1
+
+
+def test_a_fact_asked_again_from_the_same_words_prints_once():
+    from learn.teaching_engine.cards import Card, _without_repeats
+
+    first = Card("gap", "Which year fits the gap?", "Cardiff was proclaimed capital of Wales in ______.", "1955", 1)
+    again = Card("question", "Fill the gap.", "Cardiff was proclaimed the capital of Wales in ______.", "1955", 3)
+    other = Card("gap", "Which year fits the gap?", "The national stadium opened in ______.", "1955", 1)
+
+    assert _without_repeats([first, again, other]) == [first, other]
+    assert _without_repeats([first, other]) == [first, other]
+
+
+def test_fill_in_answers_never_just_repeat_the_answer():
+    rows = [
+        (1, "1. LONDON – Capital of the United Kingdom & England"),
+        (1, "• Situated on the River Thames in southeastern England."),
+        (1, "2. BELFAST – Capital of Northern Ireland"),
+        (1, "• Population about 286,000 (2011 census)."),
+    ]
+    answers = _page_texts(render_printable_cards_pdf(extract_facts(_units(rows))))[-1]
+
+    fill_ins = answers.split("FILL-IN-THE-BLANK ANSWERS")[1]
+    assert "Explain this fact" not in answers
+    assert all(len(line.split()) <= 4 for line in re.split(r"\s\d+\s", f" {fill_ins} ") if line.strip())
+    assert "United Kingdom" in fill_ins and "2011" in fill_ins
+
+
+def test_fill_ins_blank_the_sheets_bold_terms_and_follow_their_own_card_sheet():
+    source_pdf = (SAMPLES / "history-sheet.pdf").read_bytes()
+    inventory = extract_facts(extract(source_pdf).units)
+    sheet = read_sheet(inventory, source_pdf)
+
+    assert "Doctrine of Lapse" in sheet.bold and "Mangal Pandey" in sheet.bold
+    pages = _page_texts(render_printable_cards_pdf(inventory, source_pdf))
+    assert pages[0].startswith("DETECTIVE CASE FILE · SHEET 1 OF 2")
+    assert pages[1].startswith("FILL IN THE BLANKS · FOR SHEET 1 OF 2")
+    assert pages[2].startswith("DETECTIVE CASE FILE · SHEET 2 OF 2")
+    assert "Lord Dalhousie's ________________ annexed" in pages[1]
+    fill_ins = pages[-1].split("FILL-IN-THE-BLANK ANSWERS")[1]
+    assert "Doctrine of Lapse" in fill_ins
