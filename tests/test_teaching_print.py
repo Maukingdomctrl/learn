@@ -565,3 +565,31 @@ def test_without_the_font_package_cards_fall_back_to_safe_ascii_symbols(monkeypa
 
     assert "Grass -> Grasshopper -> ______ -> Snake" in pages[0]
     assert "Frog" in pages[-1]
+
+
+def test_fill_in_answers_never_just_repeat_the_answer():
+    rows = [
+        (1, "1. LONDON – Capital of the United Kingdom & England"),
+        (1, "• Situated on the River Thames in southeastern England."),
+        (1, "2. BELFAST – Capital of Northern Ireland"),
+        (1, "• Population about 286,000 (2011 census)."),
+    ]
+    answers = _page_texts(render_printable_cards_pdf(extract_facts(_units(rows))))[-1]
+
+    assert "Blank: LONDON" in answers
+    assert "Explain this fact in your own words. LONDON" not in answers
+
+
+def test_headers_printed_on_every_page_are_dropped_but_numbered_questions_stay():
+    from learn.teaching_engine.sheet import _Paragraph, _without_running_lines
+
+    paragraphs = [
+        _Paragraph("GEOGRAPHY | Rivers and drainage", 1, []),
+        _Paragraph("Practice source | Page 1 of 2", 1, []),
+        _Paragraph("Question 1", 1, []),
+        _Paragraph("GEOGRAPHY | Rivers and drainage", 2, []),
+        _Paragraph("Practice source | Page 2 of 2", 2, []),
+        _Paragraph("Question 2", 2, []),
+    ]
+
+    assert [p.text for p in _without_running_lines(paragraphs)] == ["Question 1", "Question 2"]

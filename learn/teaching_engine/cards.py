@@ -1207,6 +1207,8 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
             question, explanation = _practice_reinforcement(card)
             blank_lines = kind.wrap(kind.printable(f"Blank: {answer}", True), 9.5, width - 70, True)
             follow_up_lines = kind.wrap(kind.printable(f"{question} {explanation}", True), 9.5, width - 70, True)
+            if explanation.strip().casefold() == answer.strip().casefold():
+                follow_up_lines = []  # "Explain this fact in your own words. LONDON" only repeats the blank's answer
             lines = [*blank_lines, *follow_up_lines]
             if y + len(lines) * 11.6 + 6 > _PAGE_HEIGHT - 40:
                 new_page(False)
