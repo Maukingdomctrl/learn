@@ -31,6 +31,7 @@ _ORANGE = (0.69, 0.33, 0.10)
 _THEMES = {
     "detective": {"title": "DETECTIVE CASE FILE", "colour": (0.13, 0.36, 0.27), "tint": (0.91, 0.95, 0.92)},
     "superhero": {"title": "SUPERHERO POWER-UP GAME", "colour": (0.32, 0.25, 0.62), "tint": (0.93, 0.92, 0.98)},
+    "study": {"title": "STUDY CARDS", "colour": (0.09, 0.24, 0.20), "tint": (0.93, 0.95, 0.91)},
 }
 _ABSTRACT_TOPIC = re.compile(
     r"\b(?:cycle|process|system|stage|stages|step|steps|change|changes|evaporation|condensation|"
@@ -1207,6 +1208,8 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
             question, explanation = _practice_reinforcement(card)
             blank_lines = kind.wrap(kind.printable(f"Blank: {answer}", True), 9.5, width - 70, True)
             follow_up_lines = kind.wrap(kind.printable(f"{question} {explanation}", True), 9.5, width - 70, True)
+            if explanation.strip().casefold() == answer.strip().casefold():
+                follow_up_lines = []  # "Explain this fact in your own words. LONDON" only repeats the blank's answer
             lines = [*blank_lines, *follow_up_lines]
             if y + len(lines) * 11.6 + 6 > _PAGE_HEIGHT - 40:
                 new_page(False)
@@ -1380,7 +1383,7 @@ def render_printable_cards_pdf(
 ) -> bytes:
     """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them."""
     if game_mode not in _THEMES:
-        raise ValueError("Choose either Detective or Superhero game mode.")
+        raise ValueError("Choose study cards, Detective or Superhero.")
     if standard not in {7, 8, 9}:
         raise ValueError("Choose ICSE Standard 7, 8, or 9.")
     if source_pdf:
