@@ -141,7 +141,9 @@ def test_cards_print_the_question_only_and_the_answers_on_a_separate_sheet():
     assert len(pages) == 3
     assert cards_page.startswith("DETECTIVE CASE FILE")
     assert pages[1].startswith("FILL IN THE BLANKS")
-    assert pages[1].count("Fill in the blank") == 5
+    # The riddle has no words to blank, so it gets no "What is this about ______" fill-in.
+    assert pages[1].count("Fill in the blank") == 4
+    assert "What is this about ________________" not in pages[1]
     assert "Which number fits the gap?" in pages[1]
     dash = "–" if _HAS_EXTENDED_PDF_FONT else "-"
     assert f"______ {dash} Capital of the United Kingdom & England" in cards_page
@@ -593,3 +595,16 @@ def test_headers_printed_on_every_page_are_dropped_but_numbered_questions_stay()
     ]
 
     assert [p.text for p in _without_running_lines(paragraphs)] == ["Question 1", "Question 2"]
+
+
+def test_a_chapter_title_is_not_a_riddle_answer():
+    rows = [
+        (1, "Ratios Compare Quantities"),
+        (1, "1. LONDON – Capital of the United Kingdom & England"),
+        (1, "• Situated on the River Thames in southeastern England."),
+    ]
+    named = _cards(rows)
+    title_only = _cards([(1, "1. RATIOS COMPARE QUANTITIES"), (1, "• Equivalent ratios have the same value.")])
+
+    assert any(card.kind == "riddle" and card.answer == "LONDON" for card in named)
+    assert title_only and not any(card.answer == "RATIOS COMPARE QUANTITIES" for card in title_only)
