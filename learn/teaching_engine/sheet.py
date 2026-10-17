@@ -146,7 +146,6 @@ class Picture:
 class Sheet:
     items: tuple[Item, ...]
     pictures: tuple[Picture, ...] = ()
-    bold: tuple[str, ...] = ()  # short words and names printed in bold inside ordinary lines: the sheet's key terms
 
 
 @dataclass
@@ -274,27 +273,6 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
                 break
     lines.sort(key=lambda line: (round(line.y0, 0), line.x0))
     return lines
-
-
-def _bold_phrases(page: pymupdf.Page) -> list[str]:
-    """Runs of bold words (one to four) inside lines that are not bold all through, as headings are."""
-    found = []
-    for block in page.get_text("dict")["blocks"]:
-        for raw in block.get("lines", []):
-            spans = [span for span in raw["spans"] if span["text"].strip()]
-            bold = ["bold" in span["font"].casefold() or span["flags"] & 16 for span in spans]
-            if not spans or all(bold):
-                continue
-            run: list[str] = []
-            for span, is_bold in [*zip(spans, bold, strict=True), (None, False)]:
-                if is_bold:
-                    run.append(span["text"])
-                    continue
-                phrase = " ".join(" ".join(run).split()).strip(" ,;:.–-()")
-                if phrase and 1 <= len(phrase.split()) <= 4 and re.search(r"[A-Za-z0-9]", phrase):
-                    found.append(phrase)
-                run = []
-    return found
 
 
 def _is_furniture(line: _Line, height: float) -> bool:
@@ -798,7 +776,6 @@ def read_sheet(inventory: FactInventory, source_pdf: bytes | None = None, pages:
         return Sheet(tuple(_classify(_inventory_paragraphs(inventory, pages))))
     paragraphs: list[_Paragraph] = []
     pictures: list[Picture] = []
-    bold: list[str] = []
     with pymupdf.open(stream=source_pdf, filetype="pdf") as document:
         for page in document:
             pno = page.number + 1
@@ -810,21 +787,4 @@ def read_sheet(inventory: FactInventory, source_pdf: bytes | None = None, pages:
             )
             paragraphs.extend(found or _inventory_paragraphs(inventory, {pno}))
             pictures.extend(_page_pictures(document, page, pno))
-            bold.extend(_bold_phrases(page))
-    paragraphs = _without_running_lines(paragraphs)
-    return Sheet(tuple(_classify(paragraphs)), tuple(pictures), tuple(dict.fromkeys(bold)))
-
-
-def _running_key(text: str) -> str:
-    """Page numbers aside, a header reads the same on every page; numbered questions do not."""
-    return re.sub(r"\bpage\s+\d+(?:\s+of\s+\d+)?", "page #", " ".join(text.casefold().split()))
-
-
-def _without_running_lines(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
-    """Drop page headers and footers: short lines printed on two or more pages ("Page 1 of 2" counts as one)."""
-    pages: dict[str, set[int]] = {}
-    for paragraph in paragraphs:
-        if len(paragraph.text.split()) <= 14:
-            pages.setdefault(_running_key(paragraph.text), set()).add(paragraph.page)
-    running = {key for key, found in pages.items() if len(found) >= 2}
-    return [paragraph for paragraph in paragraphs if _running_key(paragraph.text) not in running]
+    return Sheet(tuple(_classify(paragraphs)), tuple(pictures))

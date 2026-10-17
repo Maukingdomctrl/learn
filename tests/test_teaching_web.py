@@ -12,13 +12,14 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
 
     page = client.get("/").text
     assert "No account or API key needed" in page
-    # The games are hidden from the page until they are fixed; the form asks for plain study cards instead.
-    assert "<strong>Detective</strong>" not in page and "<strong>Superhero</strong>" not in page
-    assert '<input type="hidden" name="output" value="study">' in page
+    assert "<strong>Detective</strong>" in page
+    assert "<strong>Superhero</strong>" in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
     assert 'aria-controls="output-preview" hidden' in page
     assert 'id="preview-button"' in page
+    assert 'name="output" value="detective" checked' in page
+    assert 'name="output" value="superhero"' in page
     assert "Study Visual Library" in page
     assert "Preview before printing" in page
     with open(sample_pdf, "rb") as pdf_file:
@@ -97,7 +98,7 @@ def test_teaching_web_rejects_unknown_game_mode(sample_pdf):
         )
 
     assert response.status_code == 200
-    assert "Choose study cards, Detective, Superhero, or lesson PDF." in response.text
+    assert "Choose Detective, Superhero, or lesson PDF." in response.text
 
 
 def test_teaching_web_rejects_bad_file_and_page_range(sample_pdf):
@@ -131,24 +132,3 @@ def test_teaching_web_rejects_its_own_generated_card_pdf():
 
     with pytest.raises(ValueError, match="already a Learn-generated card PDF"):
         web._build_pdf(generated_pdf, "", "detective", 8)
-
-
-def test_turning_the_games_back_on_shows_both_choices(monkeypatch):
-    monkeypatch.setattr(web, "SHOW_GAMES", True)
-    page = TestClient(web.app).get("/").text
-
-    assert 'name="output" value="detective" checked' in page
-    assert 'name="output" value="superhero"' in page
-    assert 'name="output" value="study"' not in page
-
-
-def test_the_page_default_makes_plain_study_cards(sample_pdf):
-    client = TestClient(web.app)
-    with open(sample_pdf, "rb") as pdf_file:
-        response = client.post(
-            "/generate", files={"pdf": ("c.pdf", pdf_file, "application/pdf")}, data={"output": "study"}
-        )
-
-    assert response.headers["content-disposition"] == 'attachment; filename="learn_study_cards.pdf"'
-    text = pymupdf.open(stream=response.content, filetype="pdf")[0].get_text()
-    assert text.startswith("STUDY CARDS") and "DETECTIVE" not in text
