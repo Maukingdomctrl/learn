@@ -121,8 +121,9 @@ def _learning_prompts(fact: Fact) -> tuple[str, str, str, str]:
         check = f"Explain the link “{relation}” without looking, then check that both sides match the source."
     else:
         explanation = (
-            f"Read the source once. Find who or what acts, and the action or change the sentence describes. Draw the "
-            "action with arrows; explain what happens using the source words. Only give a cause if the source states it."
+            "Read the source once. Find who or what acts, and the action or change the sentence describes. Draw the "
+            "action with arrows; explain what happens using the source words. "
+            "Only give a cause if the source states it."
         )
         visual = f"Draw the action or change in this source idea and label it: {quote}"
         link = "What familiar example helps you picture this? Mark it as your example, not as a fact from the source."
@@ -150,12 +151,16 @@ def _make_fact_lesson(fact: Fact) -> FactTeaching:
             RecallRound(
                 support="full",
                 mode="look_and_tell",
-                prompt=f"Read the source: {quote} Use the drawing to explain the idea and point to its supporting words.",
+                prompt=(
+                    f"Read the source: {quote} Use the drawing to explain the idea and point to its supporting words."
+                ),
             ),
             RecallRound(
                 support="light",
                 mode="draw_from_memory",
-                prompt="Use your sketch as a cue to explain the link or change. Then compare every label with the source.",
+                prompt=(
+                    "Use your sketch as a cue to explain the link or change. Then compare every label with the source."
+                ),
             ),
             RecallRound(
                 support="none",

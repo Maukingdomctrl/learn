@@ -192,14 +192,16 @@ def test_non_person_topic_facts_become_specific_recall_cards_not_topic_riddles()
 
     assert all(card.question != "What is this about?" for card in cards)
     assert all(card.answer != "THE WATER CYCLE" for card in cards)
-    assert any(card.clue == "Some liquid water changes into water vapour and rises." and card.answer == "evaporation" for card in cards)
+    assert any(
+        card.clue == "Some liquid water changes into water vapour and rises." and card.answer == "evaporation"
+        for card in cards
+    )
     learning = {card.question: card.answer for card in cards if card.kind == "learn"}
     assert learning["Imagine a puddle in sunshine. What happens to its water?"] == (
         "Heat from the Sun changes liquid water into water vapour."
     )
     assert any(
-        card.kind == "learn" and card.question == "How do plants add water vapour to the water cycle?"
-        for card in cards
+        card.kind == "learn" and card.question == "How do plants add water vapour to the water cycle?" for card in cards
     )
     assert any(card.kind == "recall" and card.answer == "As moist air rises, it cools." for card in cards)
     assert any(
@@ -226,7 +228,9 @@ def test_named_process_cards_keep_the_explanation_with_the_name():
     ]
 
     cards = _cards(rows)
-    process_cards = [card for card in cards if card.answer in {"water cycle", "evaporation", "transpiration", "condensation"}]
+    process_cards = [
+        card for card in cards if card.answer in {"water cycle", "evaporation", "transpiration", "condensation"}
+    ]
     assert [(card.clue, card.answer) for card in process_cards] == [
         ("Water moves continuously between Earth's surface and atmosphere.", "water cycle"),
         ("Some liquid water changes into water vapour and rises.", "evaporation"),
@@ -254,7 +258,7 @@ def test_water_cycle_cards_prompt_prediction_cause_and_connection():
 
     assert [card.question for card in learning] == [
         "Imagine a puddle in sunshine. What happens to its water?",
-            "Why do tiny water droplets form as moist air rises and cools?",
+        "Why do tiny water droplets form as moist air rises and cools?",
         "What can fall from clouds as precipitation? Name the forms in your sheet.",
         "After rain falls on land, where can the water go next?",
     ]
