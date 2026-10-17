@@ -353,6 +353,31 @@ def _find_table(lines: list[_Line], right: float) -> tuple[Table, list[_Line]] |
     return None
 
 
+def _ruled_tables(page: pymupdf.Page, lines: list[_Line]) -> list[tuple[Table, list[_Line]]]:
+    """Tables printed with ruled cell borders, read by PyMuPDF from the borders themselves.
+
+    Wrapped cell text ("West Midlands," over "England") and empty-looking columns defeat the line-position reader in
+    ``_find_table``; the drawn grid does not. Tables without borders still go to ``_find_table``.
+    """
+    try:
+        found = page.find_tables().tables
+    except Exception:  # an unusual drawing must never stop the sheet from being read
+        return []
+    tables = []
+    for grid in found:
+        cells = [[" ".join((cell or "").split()) for cell in row] for row in grid.extract()]
+        cells = [row for row in cells if any(row)]
+        filled = [column for column in range(len(cells[0]) if cells else 0) if any(row[column] for row in cells)]
+        cells = [[row[column] for column in filled] for row in cells]  # border-only columns at the edges
+        if len(cells) < 3 or len(cells[0]) < 3 or sum(bool(cell) for cell in cells[0]) < 3:
+            continue
+        box = pymupdf.Rect(grid.bbox)
+        members = [line for line in lines if pymupdf.Point((line.x0 + line.x1) / 2, (line.y0 + line.y1) / 2) in box]
+        if members:
+            tables.append((Table(header=tuple(cells[0]), rows=tuple(map(tuple, cells[1:]))), members))
+    return tables
+
+
 def _find_timeline(lines: list[_Line]) -> tuple[Table, list[_Line]] | None:
     """Three or more years printed in a row, each with a short label centred above or below it."""
     bands = _bands(lines)
@@ -391,6 +416,16 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
         tables.append(found)
         used = {id(line) for line in found[1]}
         remaining = [line for line in remaining if id(line) not in used]
+    # Where cells of a bordered table were left over as loose lines, the line reader lost the grid; read that table
+    # from its drawn borders instead.
+    for ruled, members in _ruled_tables(page, content):
+        inside = {id(line) for line in members}
+        leaked = sum(id(line) in inside for line in remaining)
+        if leaked < max(3, 0.25 * len(inside)):
+            continue  # the line reader kept the table together; a stray caption inside the border is no reason
+        tables = [table for table in tables if not inside & {id(line) for line in table[1]}]
+        tables.append((ruled, members))
+        remaining = [line for line in remaining if id(line) not in inside]
 
     gaps = [
         b.y0 - a.y1
