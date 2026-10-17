@@ -134,10 +134,38 @@ def aspect(piece: str, topic: str) -> Thought | None:
     return Thought("aspect", question, named[0].upper() + named[1:], _sentence(body[0].upper() + body[1:]))
 
 
+_TERM_DEFINITION = re.compile(
+    r"^(?:An?|The)\s+(?P<term>[a-z][\w'’-]*(?:\s+[a-z][\w'’-]*){0,2})\s+(?:is|are)\s+"
+    r"(?P<meaning>[a-z].+?)\.?$"
+)
+
+
+def term_definition(piece: str) -> Thought | None:
+    """ "A watershed is higher land that separates …" → shows the meaning and asks for the term: "watershed"."""
+    match = _TERM_DEFINITION.match(piece.strip())
+    if match is None or len(match["meaning"].split()) < 4:
+        return None
+    meaning = match["meaning"].strip()
+    meaning = re.sub(r"^(?:a|an|the)\s+", "", meaning, count=1)
+    return Thought("term", "What is it called?", _sentence(meaning[0].upper() + meaning[1:]), match["term"])
+
+
+_INSTRUCTION = re.compile(
+    r"^(?:Trace|Explain|Describe|Name|List|State|Draw|Write|Compare|Discuss|Give|Find|Label|Mark|Look|Read|Answer|"
+    r"Complete|Fill|Match|Identify|Show|Think)\b"
+)
+
+
+def is_instruction(piece: str) -> bool:
+    """A task the sheet sets ("Explain how …"), not a fact to learn."""
+    return bool(_INSTRUCTION.match(piece.strip()))
+
+
 def think(piece: str, topic: str = "") -> Thought | None:
     """The best question for a sentence's job, or None when it is a plain fact for the other card types."""
     return (
-        labelled_list(piece, topic)
+        term_definition(piece)
+        or labelled_list(piece, topic)
         or aspect(piece, topic)
         or reason(piece)
         or result(piece)

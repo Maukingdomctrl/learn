@@ -811,4 +811,20 @@ def read_sheet(inventory: FactInventory, source_pdf: bytes | None = None, pages:
             paragraphs.extend(found or _inventory_paragraphs(inventory, {pno}))
             pictures.extend(_page_pictures(document, page, pno))
             bold.extend(_bold_phrases(page))
+    paragraphs = _without_running_lines(paragraphs)
     return Sheet(tuple(_classify(paragraphs)), tuple(pictures), tuple(dict.fromkeys(bold)))
+
+
+def _running_key(text: str) -> str:
+    """Page numbers aside, a header reads the same on every page; numbered questions do not."""
+    return re.sub(r"\bpage\s+\d+(?:\s+of\s+\d+)?", "page #", " ".join(text.casefold().split()))
+
+
+def _without_running_lines(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
+    """Drop page headers and footers: short lines printed on two or more pages ("Page 1 of 2" counts as one)."""
+    pages: dict[str, set[int]] = {}
+    for paragraph in paragraphs:
+        if len(paragraph.text.split()) <= 14:
+            pages.setdefault(_running_key(paragraph.text), set()).add(paragraph.page)
+    running = {key for key, found in pages.items() if len(found) >= 2}
+    return [paragraph for paragraph in paragraphs if _running_key(paragraph.text) not in running]

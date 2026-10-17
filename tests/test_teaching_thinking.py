@@ -85,3 +85,38 @@ def test_a_label_printed_under_two_topics_becomes_one_comparison():
 
 def test_a_plain_fact_is_left_for_the_other_card_types():
     assert think("The Tata Iron and Steel Company was set up at Jamshedpur in 1907.", "IRON AND STEEL") is None
+
+
+def test_a_glossary_sentence_shows_the_meaning_and_asks_for_the_term():
+    from learn.teaching_engine.thinking import term_definition
+
+    thought = term_definition("A watershed is higher land that separates neighbouring drainage basins.")
+
+    assert thought.question == "What is it called?"
+    assert thought.clue == "Higher land that separates neighbouring drainage basins."
+    assert thought.answer == "watershed"
+    assert term_definition("The river is long.") is None
+    assert term_definition("Erosion is stronger on the outer bank of a bend.") is None
+
+
+def test_tasks_the_sheet_sets_are_not_facts():
+    from learn.teaching_engine.thinking import is_instruction
+
+    assert is_instruction("Explain how a watershed can affect where rainwater travels.")
+    assert is_instruction("Trace the sequence: source, tributary, mouth.")
+    assert not is_instruction("Tributaries join a larger river.")
+
+
+def test_headers_printed_on_every_page_are_dropped_but_numbered_questions_stay():
+    from learn.teaching_engine.sheet import _Paragraph, _without_running_lines
+
+    paragraphs = [
+        _Paragraph("GEOGRAPHY | Rivers and drainage", 1, []),
+        _Paragraph("Practice source | Page 1 of 2", 1, []),
+        _Paragraph("Question 1", 1, []),
+        _Paragraph("GEOGRAPHY | Rivers and drainage", 2, []),
+        _Paragraph("Practice source | Page 2 of 2", 2, []),
+        _Paragraph("Question 2", 2, []),
+    ]
+
+    assert [p.text for p in _without_running_lines(paragraphs)] == ["Question 1", "Question 2"]

@@ -618,9 +618,9 @@ def test_fill_ins_blank_the_sheets_bold_terms_and_follow_their_own_card_sheet():
 
     assert "Doctrine of Lapse" in sheet.bold and "Mangal Pandey" in sheet.bold
     pages = _page_texts(render_printable_cards_pdf(inventory, source_pdf))
-    assert pages[0].startswith("DETECTIVE CASE FILE · SHEET 1 OF 2")
-    assert pages[1].startswith("FILL IN THE BLANKS · FOR SHEET 1 OF 2")
-    assert pages[2].startswith("DETECTIVE CASE FILE · SHEET 2 OF 2")
+    assert pages[0].startswith("DETECTIVE CASE FILE · SHEET 1 OF 3")
+    assert pages[1].startswith("FILL IN THE BLANKS · FOR SHEET 1 OF 3")
+    assert pages[2].startswith("DETECTIVE CASE FILE · SHEET 2 OF 3")
     assert "Lord Dalhousie's ________________ annexed" in pages[1]
     fill_ins = pages[-1].split("FILL-IN-THE-BLANK ANSWERS")[1]
     assert "Doctrine of Lapse" in fill_ins

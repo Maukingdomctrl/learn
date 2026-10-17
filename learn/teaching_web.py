@@ -13,8 +13,8 @@ from .teaching_engine import create_teaching_lesson, extract_facts, render_print
 from .teaching_engine.visual_library import list_visuals
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
-# The Detective and Superhero game cards are hidden from the upload page until they are fixed; /generate still
-# makes them when asked, so turning this back on is the only change needed.
+# The Detective and Superhero choices are hidden from the upload page, which makes plain study cards instead;
+# /generate still makes the games when asked, so turning this back on is the only change needed.
 SHOW_GAMES = False
 app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
@@ -65,15 +65,15 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         pdf_bytes = render_teaching_pdf(lesson, source.warnings)
         filename = "learn_teaching_plan.pdf"
     else:
-        if output not in {"detective", "superhero"}:
-            raise ValueError("Choose Detective, Superhero, or lesson PDF.")
+        if output not in {"study", "detective", "superhero"}:
+            raise ValueError("Choose study cards, Detective, Superhero, or lesson PDF.")
         try:
             pdf_bytes = render_printable_cards_pdf(
                 inventory, source_pdf=data, game_mode=output, pages=page_range, standard=standard
             )
         except ValueError:
             raise
-        filename = f"learn_{output}_game.pdf"
+        filename = "learn_study_cards.pdf" if output == "study" else f"learn_{output}_game.pdf"
 
     return pdf_bytes, filename
 

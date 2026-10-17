@@ -15,7 +15,7 @@ import pymupdf
 
 from .facts import BULLETS, REVIEW_CUES, FactInventory, split_sentences
 from .sheet import GENERIC_HEADING, Item, Sheet, names_topic, read_sheet, summary_parts
-from .thinking import comparisons, display_name, is_section, think
+from .thinking import comparisons, display_name, is_instruction, is_section, think
 
 GAP = "______"
 _PAGE_WIDTH = 595.28
@@ -32,6 +32,7 @@ _ORANGE = (0.69, 0.33, 0.10)
 _THEMES = {
     "detective": {"title": "DETECTIVE CASE FILE", "colour": (0.13, 0.36, 0.27), "tint": (0.91, 0.95, 0.92)},
     "superhero": {"title": "SUPERHERO POWER-UP GAME", "colour": (0.32, 0.25, 0.62), "tint": (0.93, 0.92, 0.98)},
+    "study": {"title": "STUDY CARDS", "colour": (0.09, 0.24, 0.20), "tint": (0.93, 0.95, 0.91)},
 }
 _ABSTRACT_TOPIC = re.compile(
     r"\b(?:cycle|process|system|stage|stages|step|steps|change|changes|evaporation|condensation|"
@@ -373,6 +374,12 @@ def _key_cloze(text: str) -> tuple[str, str] | None:
     return f"{text[: match.start('answer')]}{GAP}{match['end']}", match["answer"]
 
 
+_NOT_A_SUBJECT = re.compile(
+    r"^(?:near|if|in|on|at|when|as|after|before|while)\b|,|\b(?:includes?|may|might|is|are|was|were|has|have)\b",
+    re.I,
+)
+
+
 def _recall_question(text: str) -> str | None:
     patterns = (
         (
@@ -411,6 +418,9 @@ def _recall_question(text: str) -> str | None:
     )
     for pattern, template in patterns:
         match = re.match(pattern, text, re.I)
+        subject = (match.groupdict().get("subject") or "") if match else ""
+        if subject and (len(subject.split()) > 5 or _NOT_A_SUBJECT.search(subject)):
+            continue  # "a river system includes a main river …" or "near its upper course, a river" is no subject
         if match:
             values = {
                 key: value.rstrip(" .")[:1].lower() + value.rstrip(" .")[1:]
@@ -711,7 +721,7 @@ def _point_cards(
     cards = []
     about = heading.name if heading else item.context
     for piece in pieces:
-        if _named_process(piece) is not None:
+        if _named_process(piece) is not None or is_instruction(piece):
             continue
         thought = think(piece, heading.name if heading else "")
         if thought is not None:  # the sentence gives a reason, a result, a definition or a list: ask for that
@@ -751,7 +761,8 @@ def _point_cards(
             cards.append(_card("gap", _ask(kind, standard), clue, answer, item, about, source=piece))
             continue
         if heading is not None and not _MATH.search(piece):
-            if heading.person or not (_ABSTRACT_TOPIC.search(heading.name) or is_section(heading.name)):
+            named = heading.person or bool(heading.after.strip(" –—-:"))  # "LONDON – Capital of …" names a thing
+            if named and not (_ABSTRACT_TOPIC.search(heading.name) or is_section(heading.name)):
                 hidden = _hide_name(piece, heading.name)
                 if len(hidden.replace(GAP, "").split()) >= 3:
                     question = _ask("who_about" if heading.person else "what_about", standard)
@@ -767,7 +778,8 @@ def _point_cards(
             if recall_question is not None:
                 cards.append(_card("recall", "Answer in your own words.", recall_question, piece, item, source=piece))
                 continue
-            continue
+            if _ABSTRACT_TOPIC.search(heading.name):
+                continue  # process sheets have their own cards; a cut sentence would repeat them
         finished = _finish(piece)
         if finished is not None:
             cards.append(_card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece))
@@ -790,7 +802,7 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
         dict.fromkeys(
             display_name(h.name)
             for h in headings.values()
-            if not h.person and len(h.name.split()) <= 4 and not is_section(h.name)
+            if not h.person and len(h.name.split()) <= 4 and not is_section(h.name) and h.after.strip(" –—-:")
         )
     )
     choices = ""
@@ -1480,7 +1492,7 @@ def render_printable_cards_pdf(
 ) -> bytes:
     """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them."""
     if game_mode not in _THEMES:
-        raise ValueError("Choose either Detective or Superhero game mode.")
+        raise ValueError("Choose study cards, Detective or Superhero.")
     if standard not in {7, 8, 9}:
         raise ValueError("Choose ICSE Standard 7, 8, or 9.")
     if source_pdf:
