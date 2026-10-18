@@ -409,3 +409,43 @@ def test_split_justified_lines_and_sideways_margin_text_leave_the_paragraph_whol
         "and they sell the grain in the town markets that sit along the old trade roads near the river."
     )
     assert not [text for text in texts if "Pasts and Present" in text]
+
+
+def _wrapped_round_a_picture_pdf() -> bytes:
+    """A paragraph wrapped round a picture (its left edge moves, its right edge holds), and a caption beside it."""
+    document = pymupdf.open()
+    page = document.new_page()
+
+    def right_aligned(y: float, text: str) -> None:
+        page.insert_text((530 - pymupdf.get_text_length(text, fontsize=12), y), text, fontsize=12)
+
+    right_aligned(60, "Farmers in the river plains grew rice and wheat on the rich")
+    right_aligned(77, "soil that the floods left behind,")
+    right_aligned(94, "and they paid one part of the")
+    right_aligned(111, "harvest to the ruler as land")
+    page.insert_text((60, 120), "Fig. 1. A copper plate that recorded a gift of land", fontsize=10)
+    right_aligned(128, "revenue that kept")
+    page.insert_text((80, 131), "to a temple.", fontsize=10)  # boxes taller than the caption's line spacing
+    page.insert_text((160, 145), "his army strong and paid for", fontsize=12)  # a justified line split at a wide gap
+    right_aligned(145, "the high forts that guarded")
+    page.insert_text((160, 162), "the borders well.", fontsize=12)
+    page.insert_text(
+        (160, 196), "Traders carried the grain on boats down the river to the ports on the coast.", fontsize=12
+    )
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_text_wrapped_round_a_picture_and_its_caption_each_stay_whole():
+    source_pdf = _wrapped_round_a_picture_pdf()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    texts = [item.text for item in sheet.items]
+
+    assert (
+        "Farmers in the river plains grew rice and wheat on the rich soil that the floods left behind, and they paid "
+        "one part of the harvest to the ruler as land revenue that kept his army strong and paid for the high forts "
+        "that guarded the borders well."
+    ) in texts
+    assert "Fig. 1. A copper plate that recorded a gift of land to a temple." in texts
+    assert texts[-1].startswith("Traders carried")

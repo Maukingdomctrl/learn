@@ -517,6 +517,21 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
     current: _Paragraph | None = None
     early = right - max(80.0, 0.18 * (right - left))
     for line in remaining:
+        # A caption printed beside a paragraph interleaves with its lines; the paragraph still takes its next line.
+        earlier = [paragraph for paragraph in paragraphs[-4:] if paragraph is not current]
+        resumed = next(
+            (
+                paragraph
+                for paragraph in reversed(earlier)
+                if abs(paragraph.size - line.size) <= 0.3
+                and current is not None
+                and abs(current.size - line.size) > 0.75
+                and _continues(paragraph, line, gap_limit, right, early)
+            ),
+            None,
+        )
+        if resumed is not None and not (current is not None and _continues(current, line, gap_limit, right, early)):
+            current = resumed
         if current is not None and _continues(current, line, gap_limit, right, early):
             current.text = join_lines(current.text, line.text)
             current.lines.append(line)
@@ -536,14 +551,24 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
     return paragraphs
 
 
+def _wraps(last: _Line, line: _Line) -> bool:
+    """Text wrapped round a picture: the left edge moves, but the sentence runs on under the same right edge."""
+    return abs(line.x1 - last.x1) <= 0.5 * line.size and line.text[:1].islower() and not _ends_sentence(last.text)
+
+
 def _continues(paragraph: _Paragraph, line: _Line, gap_limit: float, right: float, early: float) -> bool:
     last, first = paragraph.lines[-1], paragraph.lines[0]
     if line.bullet or _MARKER.match(line.text) or _TIP.match(line.text) or abs(line.size - paragraph.size) > 0.75:
         return False
     if _ends_sentence(last.text) and line.text.endswith(":") and line.x1 < early:
         return False  # "… after they have died." then "When animals are alive:" heads what follows
-    if line.y0 < last.y1 - 2 or line.y0 - last.y1 > gap_limit:
+    # Lines may overlap a little when their boxes are taller than the line spacing; a line on the same baseline may not.
+    if (line.y0 < last.y1 - 2 and line.y0 - last.y0 < 0.6 * (last.y1 - last.y0)) or line.y0 - last.y1 > gap_limit:
         return False
+    if _wraps(last, line):
+        return True
+    if any(abs(earlier.x0 - line.x0) <= 3 for earlier in paragraph.lines[1:]):
+        first = line  # back under the left edge of the lines above, after text wrapped round a picture
     if line.x0 < first.x0 - 3:
         indented_first = (
             len(paragraph.lines) == 1
@@ -556,7 +581,9 @@ def _continues(paragraph: _Paragraph, line: _Line, gap_limit: float, right: floa
     if line.x0 > first.x0 + 40:
         return False
     # A line that stops well short of the margin was ended on purpose: a formula, a list line, a heading.
-    if last.x1 < early and not _CONTINUES_AFTER.search(last.text):
+    # Narrow text (a caption, a box) has its own right edge: a lower-case line no wider than the last runs on from it.
+    narrow = line.text[:1].islower() and not _ends_sentence(last.text) and line.x1 <= last.x1 + 3
+    if last.x1 < early and not _CONTINUES_AFTER.search(last.text) and not narrow:
         return False
     # A short line that ends a sentence closes its paragraph.
     return not (_ends_sentence(last.text) and last.x1 < right - 40 and line.text[:1].isupper())
