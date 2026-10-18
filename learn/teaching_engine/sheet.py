@@ -213,6 +213,9 @@ def _upper_ratio(text: str) -> float:
     return sum(char.isupper() for char in letters) / len(letters) if len(letters) >= 4 else 0.0
 
 
+_CHAPTER = re.compile(r"^(?:chapter|unit|lesson)\b", re.I)
+
+
 def _section_kind(text: str) -> str:
     return next((kind for kind, pattern in _SECTION_KINDS if pattern.search(text)), "")
 
@@ -733,6 +736,23 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         kind = _section_kind(body)
         upper = _upper_ratio(body) >= 0.75 and len(body) <= 120 and not paragraph.bullet
         words = len(body.split())
+        # A questions section ends at the next chapter, or where ordinary prose resumes: a textbook prints
+        # "Questions and activities" at the end of one chapter and the next chapter's text follows.
+        chapter = bool(_CHAPTER.match(body)) or (
+            bool(body_size) and paragraph.size >= body_size * 1.6 and _heading_like(body) and words <= 12
+        )
+        prose = (
+            not marker
+            and words >= 15
+            and _ends_sentence(body)
+            and not body.rstrip().endswith("?")
+            and not _QUESTION_START.match(body)
+            and (not body_size or abs(paragraph.size - body_size) <= body_size * 0.1)
+        )
+        if section == "questions" and answering is None and (chapter or prose):
+            section, group, topic, context = "", "", "", ""
+        elif chapter and section in {"answers", "qa"} and answering is None:
+            section, group, topic, context = "", "", "", ""
         sized = bool(body_size) and paragraph.size >= body_size * 1.12 and words <= 12
         heading = _heading_like(body) and not paragraph.bullet
         shaped = heading and (upper or sized or (_title_case(body) and not marker) or (words <= 4 and not marker))

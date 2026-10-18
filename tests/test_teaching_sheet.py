@@ -345,3 +345,38 @@ def test_a_table_the_line_reader_breaks_up_is_read_from_its_borders():
     assert [row[0] for row in tables[0].rows][-1] == "Special Note" and len(tables[0].rows) == 8
     assert not [item.text for item in sheet.items if item.page == 3 and item.kind in {"point", "heading"}]
     assert not any(card.answer in {"Status", "River"} or "RBS HQ" in card.clue for card in cards)
+
+
+def _two_chapter_pdf() -> bytes:
+    """Chapter 1 ends with "Questions and activities"; chapter 2 follows with a large title and prose."""
+    document = pymupdf.open()
+    page = document.new_page()
+    y = 60
+
+    def write(text: str, size: float, gap: float = 6) -> None:
+        nonlocal y
+        page.insert_text((50, y), text, fontsize=size)
+        y += size + gap
+
+    write("Rivers carry water from the hills to the sea and shape the land along the way.", 12)
+    write("Questions and activities", 16, 10)
+    write("1. Name two rivers that flow into the Bay of Bengal.", 12)
+    write("2. Why do rivers bend more in their middle course?", 12, 18)
+    write("CHAPTER", 16)
+    write("Reshaping the Map", 30, 14)
+    write("The Delhi Sultanate was founded in 1206 and ruled much of north India for three centuries.", 12)
+    write("Its sultans built forts, mosques and markets, and collected taxes from the farmers of the land.", 12)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_a_new_chapter_ends_the_questions_section_of_the_last_one():
+    source_pdf = _two_chapter_pdf()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    questions = [item.text for item in sheet.items if item.kind == "question"]
+    points = [item.text for item in sheet.items if item.kind == "point"]
+
+    assert len(questions) == 2
+    assert any("Delhi Sultanate was founded in 1206" in text for text in points)
+    assert any("collected taxes" in text for text in points)
