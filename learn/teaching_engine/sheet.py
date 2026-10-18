@@ -37,6 +37,8 @@ _INLINE_ANSWER = re.compile(r"\s*[—–-]{1,2}\s*Ans(?:wer)?\s*[:.\-–—]\s*|
 _WRITE_IN = re.compile(r"[\s_.…]*")  # an answer line left empty to write on
 # "Complete the name: United ______.  Answer: ________": a line left to write the answer on makes it a question.
 _ASKS_FOR_ANSWER = re.compile(r"\bAns(?:wer)?\s*:\s*[_.…]{3,}\s*$")
+# One pair of an answer key: "3—B", "3. B", "3: (b)", "3 B" in a key table.
+_KEY_PAIR = re.compile(r"(?<![\w.])(\d{1,3})\s*[—–\-:.)]?\s*\(?([A-Ha-h])\)?(?![\w'’])")
 _NUMBERED_ANSWER = re.compile(r"(?P<marker>\d{1,3}[.)])\s+(?P<answer>\S.*)")
 _LEADING_ANSWER = re.compile(r"^(?:[—–-]{1,2}\s*)?Ans(?:wer)?\s*[:.\-–—]\s*")
 _SUMMARY = re.compile(r"^(?P<name>[^=]{2,80}?)\s+=\s+(?P<rest>\S.*)$")
@@ -129,6 +131,7 @@ class Item:
     topic: str = ""  # text of the topic heading a point belongs to
     context: str = ""  # the sub-heading above an item, such as "Four main stages"
     answer: str = ""  # a question's answer; a model answer printed under it keeps one line per point
+    options: tuple[str, ...] = ()  # a multiple-choice question's options, in order: A, B, C, D
     table: Table | None = None
     top: float = 0.0  # position on the page, when read from the PDF layout
     bottom: float = 0.0
@@ -807,6 +810,8 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
     # A model-answer sheet prints "Question 3" on its own line, then the question, then the answer's points.
     asked, asked_size = "", 0.0
     answering: int | None = None  # the question whose model answer is being read
+    option_lines: set[int] = set()  # paragraphs that are a question's options
+    questions_seen = 0
 
     def add(kind: str, paragraph: _Paragraph, text: str, marker: str = "", note: str = "", **extra) -> None:
         text = text.strip()
@@ -828,8 +833,38 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         )
 
     for index, paragraph in enumerate(paragraphs):
+        if len(items) > questions_seen and items[-1].kind == "question":
+            # A new question: its options may follow its "?" ("… independent? A 1857") and the next lines.
+            asked_item = items[-1]
+            tail = re.search(r"\?\s+(?=\(?[Aa][.)]\s|A\s)", asked_item.text)
+            run = asked_item.text[tail.end() :] if tail and _option_run(asked_item.text[tail.end() :], 1) else ""
+            question = asked_item.text[: tail.end()].strip() if run else asked_item.text
+            ahead = index
+            while ahead < len(paragraphs) and paragraphs[ahead].table is None:
+                longer = f"{run} {' '.join(paragraphs[ahead].text.split())}".strip()
+                if len(_option_run(longer, 1)) <= len(_option_run(run, 1)):
+                    break
+                run, ahead = longer, ahead + 1
+            if len(found := _option_run(run)) >= 2:
+                items[-1] = Item(**{**asked_item.__dict__, "text": question, "options": tuple(found)})
+                option_lines.update(range(index, ahead))
+        questions_seen = len(items)
+        if index in option_lines:
+            continue  # "(b) Infiltration": one of the options of the question above
+        keyed = _key_pairs(paragraph.text) if paragraph.table is None else []
+        if keyed:
+            # "1—B; 2—C; 3—A" or "Answers: 1. B 2. B 3. C": an answer key, whatever section it is printed in.
+            started, answering = True, None
+            for number, letter in keyed:
+                add("answer", paragraph, letter, f"{number}.")
+            continue
         if paragraph.table is not None:
             started, topic, answering = True, "", None
+            rows = [row for row in (paragraph.table.header, *paragraph.table.rows) if any(cell.strip() for cell in row)]
+            if rows and all(len(row) == 2 and _KEY_PAIR.fullmatch(" ".join(row).strip()) for row in rows):
+                for number, letter in (_KEY_PAIR.fullmatch(" ".join(row).strip()).groups() for row in rows):
+                    add("answer", paragraph, letter.upper(), f"{number}.")  # a key table: question number, letter
+                continue
             cells = [cell for row in (paragraph.table.header, *paragraph.table.rows) for cell in row if cell.strip()]
             numbered = [_NUMBERED_ANSWER.fullmatch(cell.strip()) for cell in cells]
             if section == "answers" and numbered and all(numbered):
@@ -990,7 +1025,50 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
             add("question", paragraph, question, marker, note, answer=answer)
         elif section != "table":  # loose text around a table is usually a stray cell
             add("point", paragraph, body, marker, note)
-    return items
+    return _with_options(items)
+
+
+def _key_pairs(text: str) -> list[tuple[str, str]]:
+    """The (question number, option letter) pairs of an answer key line; [] for any other line."""
+    pairs = list(_KEY_PAIR.finditer(text))
+    rest = re.sub(r"^[^:]{0,40}:", "", _KEY_PAIR.sub(" ", text).strip())  # a label such as "Answers:" or "MCQ:"
+    if len(pairs) < 3 or re.sub(r"[\s;,.|]", "", rest):
+        return []
+    return [(pair[1], pair[2].upper()) for pair in pairs]
+
+
+def _option_run(text: str, least: int = 2) -> list[str]:
+    """The options of "A. Coal  B. Sunlight  C. Petroleum" (or "(a)", "a)", "A 1857"): all the text, A first."""
+    text = " ".join(text.split())
+    for style in (r"\({}\)", r"{}\)", r"{}\.", r"{}(?= )"):
+        cuts = []
+        for letter in "abcdefgh":
+            pattern = style.format(letter.upper() if style == r"{}(?= )" else f"[{letter}{letter.upper()}]")
+            found = re.compile(r"(?:^|(?<= ))" + pattern + r" ?").search(text, cuts[-1].end() if cuts else 0)
+            if found is None or (not cuts and found.start() != 0):
+                break
+            cuts.append(found)
+        if len(cuts) >= least:
+            ends = [cut.start() for cut in cuts[1:]] + [len(text)]
+            options = [text[cut.end() : end].strip() for cut, end in zip(cuts, ends, strict=True)]
+            if all(options):
+                return options
+    return []
+
+
+def _with_options(items: list[Item]) -> list[Item]:
+    """Options a model-answer sheet joined to its question become the question's options, not its answer."""
+    result: list[Item] = []
+    skipping = ""
+    for item in items:
+        if skipping and item.kind == "point" and " ".join(f"{item.marker} {item.text}".split()) in skipping:
+            continue  # an option line, already one of the question's options
+        skipping = ""
+        if item.kind == "question" and not item.options and (options := _option_run(item.answer)):
+            skipping = " ".join(item.answer.split())
+            item = Item(**{**item.__dict__, "options": tuple(options), "answer": ""})
+        result.append(item)
+    return result
 
 
 def _split_answer(text: str) -> tuple[str, str]:

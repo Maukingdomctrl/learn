@@ -12,6 +12,7 @@ import pytest
 
 from learn.extraction import extract, text_block_units
 from learn.teaching_engine import extract_facts, render_printable_cards_pdf
+from learn.teaching_engine import sheet as sheet_module
 from learn.teaching_engine.cards import GAP, plan_cards
 from learn.teaching_engine.sheet import read_sheet
 
@@ -585,3 +586,87 @@ def test_write_in_answer_lines_are_not_gaps_and_an_answer_key_in_columns_answers
         ("Answer it.", "Which organ of government carries out the laws?", "Executive"),
         ("Answer it.", "What is a system with two legislative chambers called?", "Bicameral"),
     ]
+
+
+def _multiple_choice_pdf(key: str) -> bytes:
+    """Multiple-choice questions with options on one line, one per line and in "A 1857" style, then a key."""
+    document = pymupdf.open()
+    page = document.new_page()
+    lines = [
+        (16, "Water cycle quiz"),
+        (10, "Choose the right option for each question."),
+        (11, "1. Which process turns water vapour into tiny droplets?"),
+        (11, "A. Evaporation    B. Condensation    C. Infiltration    D. Runoff"),
+        (11, "2. Which term describes water soaking into the ground?"),
+        (11, "(a) Runoff"),
+        (11, "(b) Infiltration"),
+        (11, "(c) Transpiration"),
+        (11, "3. In which year did India become independent?"),
+        (11, "A 1857"),
+        (11, "B 1947"),
+        (11, "C 1950"),
+        (16, "Answer Key"),
+    ]
+    y = 50
+    for size, text in lines:
+        page.insert_text((60, y), text, fontsize=size)
+        y += size + 12
+    page.insert_text((60, y), key, fontsize=11)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+@pytest.mark.parametrize("key", ["1-B; 2-B; 3-B", "Answers: 1. B 2. B 3. B", "1 (b), 2 (b), 3 (b)"])
+def test_multiple_choice_cards_show_their_options_and_answer_with_the_right_one(key):
+    source_pdf = _multiple_choice_pdf(key)
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+
+    assert [(card.question, card.clue.split("\n"), card.answer) for card in cards] == [
+        (
+            "Choose the right option.",
+            [
+                "Which process turns water vapour into tiny droplets?",
+                "A. Evaporation",
+                "B. Condensation",
+                "C. Infiltration",
+                "D. Runoff",
+            ],
+            "B. Condensation",
+        ),
+        (
+            "Choose the right option.",
+            ["Which term describes water soaking into the ground?", "A. Runoff", "B. Infiltration", "C. Transpiration"],
+            "B. Infiltration",
+        ),
+        (
+            "Choose the right option.",
+            ["In which year did India become independent?", "A. 1857", "B. 1947", "C. 1950"],
+            "B. 1947",
+        ),
+    ]
+    printed = render_printable_cards_pdf(extract_facts(extract(source_pdf).units), source_pdf)
+    with pymupdf.open(stream=printed, filetype="pdf") as document:
+        text = "".join(page.get_text() for page in document)
+    assert "FILL IN THE BLANKS" not in text  # a blank among the options would give the right one away
+
+
+def test_a_sentence_with_numbers_and_letters_is_not_an_answer_key():
+    assert sheet_module._key_pairs("Rooms 1 A, 2 B and 3 C are on the first floor.") == []
+    assert sheet_module._key_pairs("MCQ: 3—B; 4—A; 5—C") == [("3", "B"), ("4", "A"), ("5", "C")]
+
+
+def test_a_sentence_starting_with_a_after_a_question_is_not_an_option():
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((60, 60), "1. Who founded the city of Delhi as a capital?", fontsize=11)
+    page.insert_text(
+        (60, 90), "A few decades later, the sultans expanded their territories further south.", fontsize=11
+    )
+    source_pdf = document.tobytes()
+    document.close()
+
+    items = read_sheet(extract_facts(extract(source_pdf).units), source_pdf).items
+
+    assert not any(item.options for item in items)
+    assert any("expanded their territories" in item.text for item in items)
