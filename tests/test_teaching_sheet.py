@@ -544,3 +544,44 @@ def test_qr_codes_and_page_backgrounds_are_not_pictures_to_ask_about():
 
     assert len(sheet.pictures) == len(pictures)
     assert [picture.is_code for picture in sheet.pictures] == [name == "code" for name in pictures]
+
+
+def _one_word_quiz_pdf() -> bytes:
+    """Numbered questions with an answer line to write on, then an answer key printed in two columns."""
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((60, 50), "Class VIII History", fontsize=16)
+    page.insert_text((60, 70), "6 questions | Answer each in ONE word", fontsize=10)
+    questions = (
+        "1. Which movement revived classical learning in Europe?   Answer: __________",
+        "2. What uprising against British rule began in India in 1857?   Answer: __________",
+        "3. Complete the name: United ______.   Answer: __________",
+        "4. Which organ of government interprets the laws?   Answer: __________",
+        "5. Which organ of government carries out the laws?   Answer: __________",
+        "6. What is a system with two legislative chambers called?   Answer: __________",
+    )
+    for row, text in enumerate(questions):
+        page.insert_text((60, 110 + 24 * row), text, fontsize=10)
+    page = document.new_page()
+    page.insert_text((250, 60), "Answer Key", fontsize=16)
+    for index, answer in enumerate(
+        ("1. Renaissance", "2. Revolt", "3. Nations", "4. Judiciary", "5. Executive", "6. Bicameral")
+    ):
+        page.insert_text((70 + 233 * (index % 2), 100 + 23 * (index // 2)), answer, fontsize=10)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_write_in_answer_lines_are_not_gaps_and_an_answer_key_in_columns_answers_them():
+    source_pdf = _one_word_quiz_pdf()
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+
+    assert [(card.question, card.clue, card.answer) for card in cards] == [
+        ("Answer it.", "Which movement revived classical learning in Europe?", "Renaissance"),
+        ("Answer it.", "What uprising against British rule began in India in 1857?", "Revolt"),
+        ("Fill the gap.", f"Complete the name: United {GAP}.", "Nations"),
+        ("Answer it.", "Which organ of government interprets the laws?", "Judiciary"),
+        ("Answer it.", "Which organ of government carries out the laws?", "Executive"),
+        ("Answer it.", "What is a system with two legislative chambers called?", "Bicameral"),
+    ]
