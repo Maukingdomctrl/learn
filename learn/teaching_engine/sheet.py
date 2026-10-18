@@ -535,15 +535,19 @@ def _split_inline(paragraph: _Paragraph) -> list[_Paragraph]:
 
 
 def _page_pictures(source: bytes, page: pymupdf.Page, pno: int) -> list[Picture]:
+    """Where pictures are printed, from the page's drawing log.
+
+    The log names each image placement without decoding the image; asking PyMuPDF for image rectangles decodes every
+    photo and map, which on a long illustrated chapter takes more memory than the free host has.
+    """
     pictures: list[Picture] = []
-    seen: set[int] = set()
-    for info in page.get_images(full=True):
-        xref = info[0]
-        placements = [rect for rect in page.get_image_rects(xref) if rect.width >= 24 and rect.height >= 24]
-        if xref <= 0 or not placements or xref in seen:
+    seen: set[tuple[int, ...]] = set()
+    for kind, box in page.get_bboxlog():
+        rect = pymupdf.Rect(box) & page.rect
+        key = tuple(round(value) for value in rect)
+        if "image" not in kind or rect.width < 24 or rect.height < 24 or key in seen:
             continue
-        seen.add(xref)  # the same embedded image printed twice is one picture
-        rect = max(placements, key=lambda rect: rect.width * rect.height)
+        seen.add(key)
         pictures.append(Picture(pno, tuple(rect), source))
     return pictures
 
