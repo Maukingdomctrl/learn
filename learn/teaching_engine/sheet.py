@@ -11,7 +11,7 @@ nothing is reworded.
 
 import re
 from dataclasses import dataclass, field
-from hashlib import sha256
+from functools import cached_property
 from itertools import pairwise
 from statistics import median
 
@@ -137,9 +137,23 @@ class Item:
 
 @dataclass(frozen=True)
 class Picture:
+    """A picture printed on the sheet. Its image is drawn only when a card asks for it.
+
+    Drawing every photo and map of a long chapter up front took most of the time and memory of reading the sheet,
+    yet only pictures beside a named topic ever reach a card.
+    """
+
     page: int
     rect: tuple[float, float, float, float]
-    image: bytes
+    source: bytes = field(repr=False, compare=False)  # the sheet's PDF, shared, never copied
+
+    @cached_property
+    def image(self) -> bytes:
+        with pymupdf.open(stream=self.source, filetype="pdf") as document:
+            clip = pymupdf.Rect(self.rect)
+            return (
+                document[self.page - 1].get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=clip, alpha=False).tobytes("png")
+            )
 
 
 @dataclass(frozen=True)
@@ -215,7 +229,9 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
     units = [(rect + (-1, -1, 1, 1), unit_id) for rect, unit_id in text_block_units(page, pno)]
     lines: list[_Line] = []
     lone_bullets: list[pymupdf.Rect] = []
-    for block in page.get_text("dict", sort=True)["blocks"]:
+    # Text only: the default "dict" also copies every image's pixels, which a long illustrated chapter cannot afford.
+    text_only = pymupdf.TEXTFLAGS_DICT & ~pymupdf.TEXT_PRESERVE_IMAGES
+    for block in page.get_text("dict", sort=True, flags=text_only)["blocks"]:
         if block.get("type") != 0:
             continue
         for raw in block["lines"]:
@@ -418,7 +434,9 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
         remaining = [line for line in remaining if id(line) not in used]
     # Where cells of a bordered table were left over as loose lines, the line reader lost the grid; read that table
     # from its drawn borders instead.
-    for ruled, members in _ruled_tables(page, content):
+    # Only on a page where the line reader found a table: reading the borders of every map and drawing in a long
+    # illustrated chapter costs more time and memory than the free host has.
+    for ruled, members in _ruled_tables(page, content) if tables else []:
         inside = {id(line) for line in members}
         leaked = sum(id(line) in inside for line in remaining)
         if leaked < max(3, 0.25 * len(inside)):
@@ -516,23 +534,17 @@ def _split_inline(paragraph: _Paragraph) -> list[_Paragraph]:
     return parts
 
 
-def _page_pictures(document: pymupdf.Document, page: pymupdf.Page, pno: int) -> list[Picture]:
+def _page_pictures(source: bytes, page: pymupdf.Page, pno: int) -> list[Picture]:
     pictures: list[Picture] = []
-    seen: set[str] = set()
+    seen: set[int] = set()
     for info in page.get_images(full=True):
         xref = info[0]
         placements = [rect for rect in page.get_image_rects(xref) if rect.width >= 24 and rect.height >= 24]
-        if xref <= 0 or not placements:
+        if xref <= 0 or not placements or xref in seen:
             continue
+        seen.add(xref)  # the same embedded image printed twice is one picture
         rect = max(placements, key=lambda rect: rect.width * rect.height)
-        try:
-            image = page.get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=rect, alpha=False).tobytes("png")
-        except Exception:
-            continue
-        digest = sha256(image).hexdigest()
-        if digest not in seen:
-            seen.add(digest)
-            pictures.append(Picture(pno, tuple(rect), image))
+        pictures.append(Picture(pno, tuple(rect), source))
     return pictures
 
 
@@ -821,7 +833,7 @@ def read_sheet(inventory: FactInventory, source_pdf: bytes | None = None, pages:
                 _layout_paragraphs(page, pno, lines) if sum(len(line.text) for line in lines) >= MIN_PAGE_CHARS else []
             )
             paragraphs.extend(found or _inventory_paragraphs(inventory, {pno}))
-            pictures.extend(_page_pictures(document, page, pno))
+            pictures.extend(_page_pictures(source_pdf, page, pno))
     return Sheet(tuple(_classify(_without_running_lines(paragraphs))), tuple(pictures))
 
 
