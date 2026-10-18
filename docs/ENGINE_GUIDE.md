@@ -70,6 +70,22 @@ for card in plan_cards(read_sheet(extract_facts(extract(pdf).units), pdf)):
 EOF
 ```
 
+## Testing on many sheets at once
+
+To see how the engine does on a whole folder of PDFs (hundreds or thousands), without changing it:
+
+```bash
+python -m learn.teaching_engine.batch_report path/to/sheets --out card_report
+```
+
+It reads every PDF in the folder and its subfolders, offline and with no AI. It writes:
+
+- `card_report/summary.md`: totals, the most common problems, and the worst 20 sheets
+- `card_report/sheets.csv`: one row per PDF, with card counts, flags, time taken and any error
+- `card_report/cards.csv`: every card with its flags, to open in Excel and filter
+
+Flags mark likely problems: `vague` ("What is this about?"), `title_answer`, `long_answer`, `fragment` and `repeat`. They check a card's shape only, so read a sample of flagged and unflagged cards by eye. Keep the PDFs out of the repo.
+
 ## The safest way to improve it: real sheets as tests
 
 Every rule change helps one sheet and can quietly hurt another. To stop that:
