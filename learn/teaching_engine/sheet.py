@@ -44,6 +44,9 @@ _LABELLED_QUESTION = re.compile(
     r"(?:\s+(?:\S+\s+)?(?:note|Note|Explanation|Reason|Why)\s*:.*)?$",
     re.DOTALL,
 )
+_ANSWER_TO = re.compile(
+    r"Answer\s+(?:to|for)\s+(?:Question|Q)\.?\s*(?P<number>\d{1,3})\s*[:.\-–—]\s*(?P<answer>\S.*)", re.I | re.S
+)
 # One pair of an answer key: "3—B", "3. B", "3: (b)", "3 B" in a key table.
 _KEY_PAIR = re.compile(r"(?<![\w.])(\d{1,3})\s*[—–\-:.)]?\s*\(?([A-Ha-h])\)?(?![\w'’])")
 _NUMBERED_ANSWER = re.compile(r"(?P<marker>\d{1,3}[.)])\s+(?P<answer>\S.*)")
@@ -864,6 +867,12 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
             started, answering = True, None
             add("question", paragraph, labelled["question"], answer=labelled["answer"].strip(), options=tuple(options))
             continue
+        answer_to = _ANSWER_TO.match(paragraph.text.strip()) if paragraph.table is None else None
+        if answer_to:
+            # "Answer to Question 1: …", printed apart from its question (on the next page, or after all of them).
+            started, answering = True, None
+            add("answer", paragraph, answer_to["answer"], f"{answer_to['number']}.")
+            continue
         keyed = _key_pairs(paragraph.text) if paragraph.table is None else []
         if keyed:
             # "1—B; 2—C; 3—A" or "Answers: 1. B 2. B 3. C": an answer key, whatever section it is printed in.
@@ -1116,7 +1125,35 @@ def read_sheet(inventory: FactInventory, source_pdf: bytes | None = None, pages:
             )
             paragraphs.extend(found or _inventory_paragraphs(inventory, {pno}))
             pictures.extend(_page_pictures(source_pdf, page, pno))
-    return Sheet(tuple(_classify(_without_running_lines(paragraphs))), tuple(pictures))
+    return Sheet(tuple(_classify(_across_pages(_without_running_lines(paragraphs)))), tuple(pictures))
+
+
+def _across_pages(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
+    """Join a paragraph that a page break cut mid-sentence to its rest at the top of the next page.
+
+    The page's last paragraph must stop without a full stop and the next page's text start in lower case, in the same
+    type; a short heading such as "Reading passage (continued)" between them stays where it is.
+    """
+    joined: list[_Paragraph] = []
+    for paragraph in paragraphs:
+        before = [other for other in joined if other.page == paragraph.page - 1 and other.table is None]
+        between = [other for other in joined if other.page == paragraph.page]
+        cut = before[-1] if before and joined[-len(between) - 1] is before[-1] else None
+        if (
+            cut is not None
+            and paragraph.table is None
+            and len(between) <= 1
+            and all(len(other.text.split()) <= 6 and not _ends_sentence(other.text) for other in between)
+            and paragraph.text[:1].islower()
+            and not _ends_sentence(cut.text)
+            and not cut.bullet
+            and abs(cut.size - paragraph.size) <= 0.3
+        ):
+            cut.text = join_lines(cut.text, paragraph.text)
+            cut.units.extend(unit for unit in paragraph.units if unit not in cut.units)
+            continue
+        joined.append(paragraph)
+    return joined
 
 
 def _running_key(text: str) -> str:
@@ -1128,7 +1165,8 @@ def _without_running_lines(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
     """Drop page headers and footers: short lines printed on two or more pages ("Page 1 of 2" counts as one)."""
     pages: dict[str, set[int]] = {}
     for paragraph in paragraphs:
-        if len(paragraph.text.split()) <= 14:
+        if paragraph.table is None and len(paragraph.text.split()) <= 14:
             pages.setdefault(_running_key(paragraph.text), set()).add(paragraph.page)
     running = {key for key, found in pages.items() if len(found) >= 2}
-    return [paragraph for paragraph in paragraphs if _running_key(paragraph.text) not in running]
+    # A table has no text of its own: tables on two pages are not a running header.
+    return [p for p in paragraphs if p.table is not None or _running_key(p.text) not in running]
