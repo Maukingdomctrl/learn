@@ -51,6 +51,7 @@ _QUESTIONS = {
     "century": ("Which century goes in the gap?", "Which century fits the gap?", "Supply the missing century."),
     "finish": ("How does it end?", "Finish the sentence.", "Complete the statement."),
     "question": ("Answer it.", "Answer it.", "Answer as you would in the exam."),
+    "choose": ("Choose the right one.", "Choose the right option.", "Select the correct option."),
     "fill": ("Fill the gap.", "Fill the gap.", "Complete the statement."),
     "compare": ("What is each one's {}?", "What is each one's {}?", "State the {} of each."),
     "tip": ("Say the whole tip.", "Say the rest of the tip.", "Recall the complete memory tip."),
@@ -890,7 +891,13 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 answer = answer[len(item.text) :].strip()
             if not answer and _open_task(text):
                 continue  # "What do you think …? Discuss in groups." has no answer to check
-            question = _ask("fill" if GAP in clue else "question", standard)
+            if item.options:
+                letters = "ABCDEFGH"[: len(item.options)]
+                options = (f"{letter}. {option}" for letter, option in zip(letters, item.options, strict=True))
+                clue = "\n".join([clue, *options])
+                if len(answer) == 1 and answer.upper() in letters:
+                    answer = f"{answer.upper()}. {item.options[letters.index(answer.upper())]}"  # "B. Condensation"
+            question = _ask("choose" if item.options else "fill" if GAP in clue else "question", standard)
             cards.append(_card("question", question, clue, answer, item, "Practice question", answer or item.text))
         elif item.kind == "table" and item.table is not None:
             cards.extend(_table_cards(item, standard))
@@ -1114,6 +1121,8 @@ def _practice_prompt(card: Card) -> tuple[str, str]:
 
 def _has_blank(card: Card) -> bool:
     """A fill-in card only when the blank stands for words left out of the card, not after its own question."""
+    if card.question in _QUESTIONS["choose"]:
+        return False  # hiding the right option among the others would give it away
     prompt, _ = _practice_prompt(card)
     return not prompt.startswith(card.question.rstrip("?").rstrip("."))
 
