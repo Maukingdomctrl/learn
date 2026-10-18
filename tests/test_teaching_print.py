@@ -659,3 +659,28 @@ def test_a_long_sentence_asks_for_a_name_in_it_instead_of_its_second_half():
     )
     assert any(clue.startswith("The old fort stood") for clue in finishes)  # a short ending stays a sentence to finish
     assert any(clue.startswith("Evaluation:") for clue in finishes)
+
+
+def test_an_answer_key_answers_only_the_questions_before_it():
+    rows = [
+        (1, "Practice (no answers here):"),
+        (1, "1. Find the area of a field 9 m by 4 m."),
+        (1, "2. Find the area of a field 12 m by 5 m."),
+        (2, "Questions"),
+        (2, "1. What is the capital of India?"),
+        (2, "2. Which river flows through Kolkata?"),
+        (2, "Answers"),
+        (2, "1. New Delhi"),
+        (2, "2. The Hooghly"),
+        (3, "Questions"),
+        (3, "1. Who wrote the national anthem?"),
+    ]
+    answers = {card.clue: card.answer for card in _cards(rows) if card.kind == "question"}
+
+    assert answers == {
+        "Find the area of a field 9 m by 4 m.": "",
+        "Find the area of a field 12 m by 5 m.": "",
+        "What is the capital of India?": "New Delhi",
+        "Which river flows through Kolkata?": "The Hooghly",
+        "Who wrote the national anthem?": "",  # printed after the key, so the key does not answer it
+    }

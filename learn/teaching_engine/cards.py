@@ -828,11 +828,22 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
     headings = {
         item.text: parse_heading(item.text) for item in items if item.kind == "topic" and names_topic(item.text)
     }
-    answers: dict[tuple[str, str], str] = {}
-    for item in items:
+    # An answer key answers the questions printed before it, and only the last question with each number: a
+    # question that comes after the key, or a "Question 1" followed by another "Question 1", is not its question.
+    keyed: dict[tuple[str, str], list[tuple[int, str]]] = {}
+    asked: dict[tuple[str, str], list[int]] = {}
+    for position, item in enumerate(items):
         if item.kind == "answer" and item.number:
-            answers.setdefault((item.group, item.number), item.text)
-    answer_groups = {group for group, _ in answers}
+            keyed.setdefault((item.group, item.number), []).append((position, item.text))
+        elif item.kind == "question" and item.number:
+            asked.setdefault((item.group, item.number), []).append(position)
+
+    def answer_for(key: tuple[str, str], position: int) -> str:
+        at, text = next(((at, text) for at, text in keyed.get(key, []) if at > position), (0, ""))
+        later = asked.get((items[position].group, key[1]), [])
+        return "" if any(position < other < at for other in later) else text
+
+    answer_groups = {group for group, _ in keyed}
     pieces = {id(item): _pieces(item.text) for item in items if item.kind == "point"}
     cards: list[Card] = []
     consumed: set[int] = set()
@@ -889,9 +900,9 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
         elif item.kind == "question":
             text = _QUESTION_LABEL.sub("", item.text)
             clue = re.sub(r"_{3,}|\.{5,}|…{2,}", GAP, text)
-            answer = item.answer or answers.get((item.group, item.number), "")
+            answer = item.answer or answer_for((item.group, item.number), index)
             if not answer and len(answer_groups) == 1:
-                answer = answers.get((next(iter(answer_groups)), item.number), "")
+                answer = answer_for((next(iter(answer_groups)), item.number), index)
             if answer.casefold().startswith(item.text.casefold()):
                 answer = answer[len(item.text) :].strip()
             if not answer and _open_task(text):
