@@ -168,3 +168,39 @@ def test_the_home_page_links_a_blank_card_sheet_drawn_like_the_printed_cards():
     assert "STUDY CARDS" in cards and "BLANK SHEET" in cards
     assert all(str(number) in cards for number in range(1, 9))
     assert "ANSWER SHEET" in answers
+
+
+def _scanned_pdf(pages: int) -> bytes:
+    """Pages that are only a picture of text, as a scanner or phone camera makes them."""
+    document = pymupdf.open()
+    for _ in range(pages):
+        picture = pymupdf.Pixmap(pymupdf.csGRAY, pymupdf.IRect(0, 0, 60, 80), False)
+        picture.clear_with(230)
+        page = document.new_page()
+        page.insert_image(page.rect, pixmap=picture)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_scanned_pages_are_read_with_ocr_and_limited_to_what_the_host_can_read_in_time(monkeypatch):
+    texts = iter(
+        [
+            "Rivers carry water from the hills to the sea and shape the land along the way.",
+            "The Ganga rises in the Himalayas and flows east to the Bay of Bengal.",
+        ]
+    )
+    monkeypatch.setattr(web, "choose_ocr", lambda setting, llm: (lambda png: next(texts), "fake"))
+    monkeypatch.setattr(web, "MAX_SCANNED_PAGES", 2)
+    client = TestClient(web.app)
+
+    def upload(pdf: bytes):
+        return client.post("/generate", data={"output": "study"}, files={"pdf": ("scan.pdf", pdf, "application/pdf")})
+
+    response = upload(_scanned_pdf(2))
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert "Ganga" in "".join(page.get_text() for page in pymupdf.open(stream=response.content, filetype="pdf"))
+
+    refused = upload(_scanned_pdf(3))
+    assert refused.headers["content-type"].startswith("text/html")
+    assert "3 of the selected pages are scanned images, and up to 2 can be read" in refused.text

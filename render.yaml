@@ -1,11 +1,7 @@
 services:
   - type: web
     name: learn-teaching-engine
-    runtime: python
+    runtime: docker
     plan: free
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.13.5
-    buildCommand: pip install -r requirements-teaching.txt
-    startCommand: uvicorn learn.teaching_web:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz

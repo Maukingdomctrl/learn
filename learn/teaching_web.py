@@ -7,13 +7,16 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .extraction import ExtractionError, choose_ocr, extract, pdf_page_count
+from .extraction import MIN_PAGE_CHARS, ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
 from .teaching_engine import create_teaching_lesson, extract_facts, render_printable_cards_pdf, render_teaching_pdf
 from .teaching_engine.cards import render_blank_cards_pdf
 from .teaching_engine.visual_library import list_visuals
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
+# Reading a scanned page (OCR) takes several seconds on the free host; more than this would pass the browser's
+# two-minute wait. Pages with their own text are not counted.
+MAX_SCANNED_PAGES = 8
 # The Detective and Superhero choices are hidden from the upload page, which makes the same cards titled
 # "STUDY CARDS"; /generate still makes the games when asked, so turning this back on is the only change needed.
 SHOW_GAMES = False
@@ -63,6 +66,11 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         raise ValueError("This is already a Learn-generated card PDF. Upload the original curriculum PDF instead.")
     page_range = parse_page_range(pages.strip()[:50], pdf_page_count(data))
     ocr, ocr_name = choose_ocr("auto", None)
+    if ocr is not None and len(scanned := _scanned_pages(data, page_range)) > MAX_SCANNED_PAGES:
+        raise ValueError(
+            f"{len(scanned)} of the selected pages are scanned images, and up to {MAX_SCANNED_PAGES} can be read "
+            f"at a time. Choose fewer pages, for example {scanned[0]}-{scanned[MAX_SCANNED_PAGES - 1]}."
+        )
     source = extract(data, ocr, ocr_name, page_range)
 
     if not source.units:
@@ -87,6 +95,16 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         filename = "learn_study_cards.pdf" if output == "study" else f"learn_{output}_game.pdf"
 
     return pdf_bytes, filename
+
+
+def _scanned_pages(data: bytes, page_range: set[int] | None) -> list[int]:
+    """The selected pages with almost no text of their own, which only OCR can read."""
+    with pymupdf.open(stream=data, filetype="pdf") as document:
+        return [
+            page.number + 1
+            for page in document
+            if (page_range is None or page.number + 1 in page_range) and len(page.get_text().strip()) < MIN_PAGE_CHARS
+        ]
 
 
 def _process_upload(pdf: UploadFile, pages: str, output: str, standard: int, inline: bool) -> Response:
