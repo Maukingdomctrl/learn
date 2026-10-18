@@ -37,6 +37,13 @@ _INLINE_ANSWER = re.compile(r"\s*[—–-]{1,2}\s*Ans(?:wer)?\s*[:.\-–—]\s*|
 _WRITE_IN = re.compile(r"[\s_.…]*")  # an answer line left empty to write on
 # "Complete the name: United ______.  Answer: ________": a line left to write the answer on makes it a question.
 _ASKS_FOR_ANSWER = re.compile(r"\bAns(?:wer)?\s*:\s*[_.…]{3,}\s*$")
+# A question printed as labelled parts in one paragraph; a note or explanation after the answer is left out.
+_LABELLED_QUESTION = re.compile(
+    r"(?:^|\s)(?:Question|Clue|Q)\s*[:.]\s*(?P<question>.+?)\s+(?:Options|Choices|Suspects)\s*:\s*(?P<options>.+?)\s+"
+    r"(?:Correct answer|Answer|Ans|Verdict)\s*[:.]\s*(?P<answer>.+?)"
+    r"(?:\s+(?:\S+\s+)?(?:note|Note|Explanation|Reason|Why)\s*:.*)?$",
+    re.DOTALL,
+)
 # One pair of an answer key: "3—B", "3. B", "3: (b)", "3 B" in a key table.
 _KEY_PAIR = re.compile(r"(?<![\w.])(\d{1,3})\s*[—–\-:.)]?\s*\(?([A-Ha-h])\)?(?![\w'’])")
 _NUMBERED_ANSWER = re.compile(r"(?P<marker>\d{1,3}[.)])\s+(?P<answer>\S.*)")
@@ -851,6 +858,12 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         questions_seen = len(items)
         if index in option_lines:
             continue  # "(b) Infiltration": one of the options of the question above
+        labelled = _LABELLED_QUESTION.search(paragraph.text) if paragraph.table is None else None
+        if labelled and (options := _option_run(re.sub(r"\s+[·|•]\s+", " ", labelled["options"]))):
+            # "Clue: … Suspects: A. … · B. … Verdict: B. … Note: …": one question with its options and answer.
+            started, answering = True, None
+            add("question", paragraph, labelled["question"], answer=labelled["answer"].strip(), options=tuple(options))
+            continue
         keyed = _key_pairs(paragraph.text) if paragraph.table is None else []
         if keyed:
             # "1—B; 2—C; 3—A" or "Answers: 1. B 2. B 3. C": an answer key, whatever section it is printed in.

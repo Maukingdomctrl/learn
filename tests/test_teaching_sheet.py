@@ -670,3 +670,25 @@ def test_a_sentence_starting_with_a_after_a_question_is_not_an_option():
 
     assert not any(item.options for item in items)
     assert any("expanded their territories" in item.text for item in items)
+
+
+def test_a_question_printed_as_labelled_parts_of_one_paragraph_keeps_its_options_and_answer():
+    document = pymupdf.open()
+    page = document.new_page()
+    case = (
+        "CASE 01: The Misty Mirror Clue: Which process turns water vapour into droplets? Suspects: A. Evaporation "
+        "· B. Condensation · C. Runoff Verdict: B. Condensation Detective's note: Cooling vapour turns to liquid."
+    )
+    page.insert_textbox(pymupdf.Rect(60, 60, 540, 200), case, fontsize=11)
+    source_pdf = document.tobytes()
+    document.close()
+
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+
+    assert [(card.question, card.clue.split("\n"), card.answer) for card in cards] == [
+        (
+            "Choose the right option.",
+            ["Which process turns water vapour into droplets?", "A. Evaporation", "B. Condensation", "C. Runoff"],
+            "B. Condensation",
+        )
+    ]
