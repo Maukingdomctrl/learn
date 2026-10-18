@@ -505,3 +505,42 @@ def test_a_question_inside_a_paragraph_is_not_a_sentence_to_finish():
     cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
 
     assert cards and all("carvings" not in card.clue + card.answer for card in cards)
+
+
+def _gray_image(size: int, shade) -> bytes:
+    """A square greyscale PNG whose pixel at (x, y) has the value shade(x, y)."""
+    samples = bytes(shade(x, y) for y in range(size) for x in range(size))
+    return pymupdf.Pixmap(pymupdf.csGRAY, size, size, samples, False).tobytes("png")
+
+
+def _code(x: int, y: int) -> int:
+    """Black and white squares inside a white border, like a QR code."""
+    if not 8 <= x < 92 or not 8 <= y < 92:
+        return 255
+    return 0 if ((x - 8) // 6 * 7 + (y - 8) // 6 * 3) % 5 < 2 else 255
+
+
+def test_qr_codes_and_page_backgrounds_are_not_pictures_to_ask_about():
+    pictures = {
+        "code": _gray_image(100, _code),
+        "shaded": _gray_image(100, lambda x, y: (x + y) * 255 // 198),  # a photo: greys, no hard edges
+        "rings": _gray_image(
+            100, lambda x, y: 255 if (r := ((x - 50) ** 2 + (y - 50) ** 2) ** 0.5) > 46 else int(r) // 4 % 2 * 255
+        ),
+        "tiles": _gray_image(100, lambda x, y: 100 if (x // 10 + y // 10) % 2 else 200),  # straight edges, but grey
+        "block": _gray_image(100, lambda x, y: 0 if 30 <= x < 70 and 30 <= y < 70 else 255),  # too few edges
+    }
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_image(page.rect, stream=_gray_image(20, lambda x, y: 250))  # a background under the whole page
+    for index, name in enumerate(pictures):
+        left, top = 60 + 160 * (index % 3), 100 + 130 * (index // 3)
+        page.insert_image(pymupdf.Rect(left, top, left + 100, top + 100), stream=pictures[name])
+    page.insert_text((60, 400), "Rivers carry water from the hills to the sea and shape the land.", fontsize=12)
+    source_pdf = document.tobytes()
+    document.close()
+
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+
+    assert len(sheet.pictures) == len(pictures)
+    assert [picture.is_code for picture in sheet.pictures] == [name == "code" for name in pictures]

@@ -55,6 +55,7 @@ _QUESTIONS = {
     "compare": ("What is each one's {}?", "What is each one's {}?", "State the {} of each."),
     "tip": ("Say the whole tip.", "Say the rest of the tip.", "Recall the complete memory tip."),
     "term": ("What is it called?", "What is it called?", "Name the term described."),
+    "name": ("Which name goes in the gap?", "Which name fits the gap?", "Supply the missing name."),
     "word": ("Which word goes in the gap?", "Which term fits the gap?", "Supply the missing term."),
     "equation": ("What goes in the gap?", "What goes in the gap?", "Complete it."),
     "chain": ("What goes in the gap?", "What comes in the gap?", "Supply the missing step."),
@@ -361,6 +362,30 @@ def _finish(text: str) -> tuple[str, str] | None:
     ]
     shown = min(natural or middle, key=lambda index: abs(index - 0.45 * len(words)))
     return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
+
+
+FINISH_WORDS = 6  # the most words a "Finish the sentence" answer may have
+# A name: capitalised words, joined by "of", "the" or "and" ("Battle of Panipat", "Bay of Bengal").
+_NAME = re.compile(
+    r"(?<![\w'’-])[A-Z][\w'’-]*[a-z\u00C0-\u024F\u1E00-\u1EFF](?:\s+(?:(?:of|the|and)\s+)?[A-Z][\w'’-]*[a-z])*(?!\w)"
+)
+
+
+def _name_gap(text: str, about: str = "") -> tuple[str, str] | None:
+    """The longest name printed in a sentence, hidden: never its first word, a figure number or a name said twice."""
+    first = re.match(r"\W*(?:[^\s:]+(?:\s+[^\s:]+){0,2}:\s+)?\S+", text)  # "Evaluation: Friction, …" starts at Friction
+    names = []
+    for match in _NAME.finditer(text):
+        name = match.group()
+        if first is not None and match.start() < first.end():
+            continue  # a capital at the start of a sentence marks the sentence, not a name
+        if name.casefold() in {"fig", "i"} or text.count(name) > 1 or (about and name.casefold() in about.casefold()):
+            continue
+        names.append(match)
+    if not names:
+        return None
+    match = max(names, key=lambda found: len(found.group().split()))
+    return f"{text[: match.start()]}{GAP}{text[match.end() :]}", match.group()
 
 
 def _key_cloze(text: str) -> tuple[str, str] | None:
@@ -780,7 +805,14 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
                 continue
         finished = _finish(piece)
         if finished is not None:
-            cards.append(_card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece))
+            named = _name_gap(piece, about) if len(finished[1].split()) - 1 > FINISH_WORDS else None
+            if named is not None:
+                # Half a long sentence is a hard answer to check; a name printed in it is one word or a few.
+                cards.append(_card("gap", _ask("name", standard), named[0], named[1], item, about, source=piece))
+            else:
+                cards.append(
+                    _card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece)
+                )
     return cards
 
 
@@ -889,7 +921,7 @@ def _picture_cards(sheet: Sheet, headings: dict[str, Heading], standard: int) ->
             (min(bottom, end) - max(top, start), topic) for page, start, end, topic in spans if page == picture.page
         ]
         overlap, topic = max(overlaps, key=lambda pair: pair[0], default=(0.0, None))
-        if topic is None or overlap <= 0:
+        if topic is None or overlap <= 0 or picture.is_code:
             continue
         heading = headings[topic.text]
         question = _ask("who" if heading.person else "what", standard)

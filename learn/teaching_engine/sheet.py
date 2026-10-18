@@ -155,6 +155,34 @@ class Picture:
                 document[self.page - 1].get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=clip, alpha=False).tobytes("png")
             )
 
+    @cached_property
+    def is_code(self) -> bool:
+        """A QR code: square-ish, almost only pure black on white, its edges straight up and down from row to row.
+
+        A photo or a map has greys and colours; a seal, a drawing or lettering has curved edges.
+        """
+        x0, y0, x1, y1 = self.rect
+        if not 0.6 <= (x1 - x0) / max(y1 - y0, 1.0) <= 1.6 or max(x1 - x0, y1 - y0) > 300:
+            return False
+        with pymupdf.open(stream=self.source, filetype="pdf") as document:
+            pixmap = document[self.page - 1].get_pixmap(
+                matrix=pymupdf.Matrix(3, 3), clip=pymupdf.Rect(self.rect), colorspace=pymupdf.csGRAY, alpha=False
+            )
+        width, pixels = pixmap.width, pixmap.samples
+        if width < 2 or not pixels:
+            return False
+        dark = sum(value < 80 for value in pixels) / len(pixels)
+        light = sum(value > 175 for value in pixels) / len(pixels)
+        if dark < 0.15 or light < 0.5 or dark + light < 0.85:
+            return False
+        rows = [pixels[top : top + width] for top in range(0, len(pixels) - width + 1, 2 * width)]
+        edges = [{x for x in range(1, width) if (row[x] < 128) != (row[x - 1] < 128)} for row in rows]
+        found = sum(len(row) for row in edges[:-1])
+        if found < 8 * (len(edges) - 1):
+            return False  # too few black and white changes along a row for the squares of a code
+        straight = sum(any(x + step in below for step in (-1, 0, 1)) for row, below in pairwise(edges) for x in row)
+        return straight >= 0.75 * found
+
 
 @dataclass(frozen=True)
 class Sheet:
@@ -669,6 +697,8 @@ def _page_pictures(source: bytes, page: pymupdf.Page, pno: int) -> list[Picture]
         key = tuple(round(value) for value in rect)
         if "image" not in kind or rect.width < 24 or rect.height < 24 or key in seen:
             continue
+        if rect.get_area() >= 0.6 * page.rect.get_area():
+            continue  # a background printed under the whole page: its "picture" is the page itself
         seen.add(key)
         pictures.append(Picture(pno, tuple(rect), source))
     return pictures
