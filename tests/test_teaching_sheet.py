@@ -380,3 +380,32 @@ def test_a_new_chapter_ends_the_questions_section_of_the_last_one():
     assert len(questions) == 2
     assert any("Delhi Sultanate was founded in 1206" in text for text in points)
     assert any("collected taxes" in text for text in points)
+
+
+def _justified_page_pdf() -> bytes:
+    """A justified paragraph whose middle line the PDF split at a wide word gap, and a title printed up the margin."""
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((50, 60), "Farmers in the river plains grow rice and wheat on the rich soil that", fontsize=11)
+    page.insert_text((50, 75), "floods leave behind every", fontsize=11)
+    page.insert_text((210, 75), "year, and they sell the grain in the town", fontsize=11)
+    page.insert_text((50, 90), "markets that sit along the old trade roads near the river.", fontsize=11)
+    page.insert_text(
+        (50, 120), "Traders carried the grain on boats down the river to the ports on the coast.", fontsize=11
+    )
+    page.insert_text((20, 140), "Our Pasts and Present Lives", fontsize=9, rotate=90)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_split_justified_lines_and_sideways_margin_text_leave_the_paragraph_whole():
+    source_pdf = _justified_page_pdf()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    texts = [item.text for item in sheet.items]
+
+    assert texts[0] == (
+        "Farmers in the river plains grow rice and wheat on the rich soil that floods leave behind every year, "
+        "and they sell the grain in the town markets that sit along the old trade roads near the river."
+    )
+    assert not [text for text in texts if "Pasts and Present" in text]

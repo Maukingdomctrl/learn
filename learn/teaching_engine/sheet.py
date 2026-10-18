@@ -239,8 +239,8 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
             continue
         for raw in block["lines"]:
             spans = [span for span in raw["spans"] if span["text"].strip()]
-            if not spans:
-                continue
+            if not spans or abs(raw["dir"][0]) < 0.5:
+                continue  # sideways text (a running title printed up the margin) would cut through the paragraphs
             # A dingbat font at the start of a line draws its bullet; inside the text it stands in for a letter the
             # main font lacked (some PDF makers print a box instead of "₃" or "₹"), so that letter is lost.
             chunks, dingbat_bullet = [], False
@@ -292,6 +292,61 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
                 break
     lines.sort(key=lambda line: (round(line.y0, 0), line.x0))
     return lines
+
+
+def _join_justified(lines: list[_Line]) -> list[_Line]:
+    """Put back together a justified line that PDF text extraction split at its widened word gaps.
+
+    "Akbar | also | instituted" printed on one baseline becomes "Akbar also instituted" when the pieces together
+    span exactly the width of a whole line just above or below them. Cells of a table, side by side on one row, do not
+    line up with a single full-width line, so they stay apart.
+    """
+    rows: list[list[_Line]] = []
+    for line in lines:
+        last = rows[-1][-1] if rows else None
+        if (
+            last is not None
+            and abs(line.y0 - last.y0) <= 1.5
+            and abs(line.size - last.size) <= 0.3
+            and 0 < line.x0 - last.x1 <= 8 * line.size
+            and not line.bullet
+        ):
+            rows[-1].append(line)
+        else:
+            rows.append([line])
+    whole = [row[0] for row in rows if len(row) == 1]
+    joined: list[_Line] = []
+    for row in rows:
+        if len(row) == 1:
+            joined.append(row[0])
+            continue
+        first, final = row[0], row[-1]
+        nearby = [
+            other
+            for other in whole
+            if abs(other.x0 - first.x0) <= 2
+            and abs(other.x1 - final.x1) <= 2
+            and abs(other.size - first.size) <= 0.3
+            and 0 < abs(other.y0 - first.y0) <= 4 * (first.y1 - first.y0)
+        ]
+        # Text wrapped beside a picture is narrower than a whole line: a fragment still continues the line when it
+        # starts in lower case after one that does not end a sentence, under the same left margin as its neighbours.
+        margin = any(
+            abs(other.x0 - first.x0) <= 2 and 0 < abs(other.y0 - first.y0) <= 4 * (first.y1 - first.y0)
+            for other in lines
+            if other is not first
+        )
+        flowing = all(piece.text[:1].islower() and not _ends_sentence(before.text) for before, piece in pairwise(row))
+        if not nearby and not (margin and flowing):
+            joined.extend(row)
+            continue
+        text = " ".join(line.text for line in row)
+        units = tuple(dict.fromkeys(unit for line in row for unit in line.units))
+        top, bottom = min(piece.y0 for piece in row), max(piece.y1 for piece in row)
+        merged = _Line(text, first.x0, top, final.x1, bottom, first.size, units)
+        merged.bullet = first.bullet
+        joined.append(merged)
+    return joined
 
 
 def _is_furniture(line: _Line, height: float) -> bool:
@@ -447,6 +502,7 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
         tables = [table for table in tables if not inside & {id(line) for line in table[1]}]
         tables.append((ruled, members))
         remaining = [line for line in remaining if id(line) not in inside]
+    remaining = _join_justified(remaining)  # after the tables: their cells are meant to stay apart
 
     gaps = [
         b.y0 - a.y1
