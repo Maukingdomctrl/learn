@@ -1343,7 +1343,7 @@
 
         const data = new FormData(form);
         const mode = String(data.get("output") || "detective");
-        const modeLabel = mode === "superhero" ? "Superhero" : "Detective";
+        const modeLabel = { detective: "Detective", superhero: "Superhero" }[mode] || "study";
         let timedOut = false;
 
         previewButton.disabled = true;
@@ -1388,7 +1388,7 @@
           previewURL = URL.createObjectURL(blob);
           frame.src = previewURL;
           download.href = previewURL;
-          download.download = `learn_${mode}_game.pdf`;
+          download.download = mode === "study" ? "learn_study_cards.pdf" : `learn_${mode}_game.pdf`;
           download.hidden = false;
           status.textContent =
             "Your cards are ready. Check the questions and answers before printing. " +
