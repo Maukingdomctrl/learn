@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .extraction import ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
 from .teaching_engine import create_teaching_lesson, extract_facts, render_printable_cards_pdf, render_teaching_pdf
+from .teaching_engine.cards import render_blank_cards_pdf
 from .teaching_engine.visual_library import list_visuals
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
@@ -34,6 +35,16 @@ def index():
 @app.get("/healthz")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/blank-cards")
+def blank_cards():
+    """An empty sheet of study cards, drawn like the printed ones, to fill in by hand."""
+    return Response(
+        content=render_blank_cards_pdf(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="learn_blank_study_cards.pdf"'},
+    )
 
 
 @app.get("/library", response_class=HTMLResponse)

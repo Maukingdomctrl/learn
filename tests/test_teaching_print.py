@@ -22,7 +22,7 @@ from learn.teaching_engine import (
     render_teaching_pdf,
 )
 from learn.teaching_engine.cards import _CARD_HEIGHT, _CARD_WIDTH, _LEFT, _TOP, GAP, plan_cards, render_cards_pdf
-from learn.teaching_engine.sheet import read_sheet
+from learn.teaching_engine.sheet import Picture, read_sheet
 
 SAMPLES = Path(__file__).parents[1] / "cards" / "sample"
 
@@ -608,3 +608,53 @@ def test_a_chapter_title_is_not_a_riddle_answer():
 
     assert any(card.kind == "riddle" and card.answer == "LONDON" for card in named)
     assert title_only and not any(card.answer == "RATIOS COMPARE QUANTITIES" for card in title_only)
+
+
+def test_activities_and_questions_in_the_text_do_not_become_fact_cards():
+    rows = [
+        (1, "Question 1: What causes evaporation?"),
+        (1, "Question 2: What do you think the cartoon is trying to express? Discuss in groups."),
+        (1, "Question 3: What does this tell you about the two processes?"),
+        (1, "The Marathas built a chain of forts along the western coast to guard their ports."),
+        (1, "Look closely at the map and mark the forts on your copy of it."),
+        (1, "Find out more about the navy of the Marathas from old records."),
+    ]
+    cards = _cards(rows)
+    questions = [card.clue for card in cards if card.kind == "question"]
+    others = " ".join(card.clue + " " + card.answer for card in cards if card.kind != "question")
+
+    assert questions == ["What causes evaporation?", "What does this tell you about the two processes?"]
+    assert "western coast" in others
+    assert not any(words in others for words in ("your copy", "Find out more"))
+
+
+def test_a_qr_code_beside_a_named_topic_is_not_a_picture_card(monkeypatch):
+    source_pdf = (SAMPLES / "people-sheet.pdf").read_bytes()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    monkeypatch.setattr(Picture, "is_code", property(lambda picture: picture.rect == sheet.pictures[0].rect))
+
+    pictures = [card.answer for card in plan_cards(sheet) if card.kind == "picture"]
+
+    assert pictures == ["ISHWAR CHANDRA VIDYASAGAR", "JYOTIRAO PHULE"]
+
+
+def test_a_long_sentence_asks_for_a_name_in_it_instead_of_its_second_half():
+    rows = [
+        (1, "After the death of his father in 1530, the young prince struggled to hold the empire of the Mughals."),
+        (1, "Akbar later expanded and stabilised the empire through alliances with the Rajput kings of the north."),
+        (1, "Evaluation: Friction, timing delays and uneven surfaces all change the results of a careful test."),
+        (1, "Plants remove more CO2 from the air than they put back, as UNESCO reports say every single year."),
+        (1, "The Ganga rises in the cold hills, and the Ganga then flows east across the wide plains to the sea."),
+        (1, "The old fort stood high above the Krishna."),
+    ]
+    cards = {card.clue: (card.question, card.answer) for card in _cards(rows)}
+
+    named = {answer for question, answer in cards.values() if question == "Which name fits the gap?"}
+    finishes = [clue for clue, (question, _) in cards.items() if question == "Finish the sentence."]
+
+    assert named == {"Mughals", "Rajput"}  # not a first word, a word after a label, capitals only, or a name said twice
+    assert all(
+        answer not in clue for clue, (question, answer) in cards.items() if question == "Which name fits the gap?"
+    )
+    assert any(clue.startswith("The old fort stood") for clue in finishes)  # a short ending stays a sentence to finish
+    assert any(clue.startswith("Evaluation:") for clue in finishes)

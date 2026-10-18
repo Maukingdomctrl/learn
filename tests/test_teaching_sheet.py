@@ -449,3 +449,98 @@ def test_text_wrapped_round_a_picture_and_its_caption_each_stay_whole():
     ) in texts
     assert "Fig. 1. A copper plate that recorded a gift of land to a temple." in texts
     assert texts[-1].startswith("Traders carried")
+
+
+def _map_page_pdf() -> bytes:
+    """Paragraphs round a map: place names side by side in small type, an axis of years, a caption, small notes."""
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text(
+        (60, 60), "The Marathas built a chain of forts along the western coast to guard their", fontsize=12
+    )
+    page.insert_text((60, 77), "ports, and their navy kept the trade routes of the Arabian Sea open.", fontsize=12)
+    for x, place in ((80, "Raigad"), (200, "Sindhudurg"), (330, "Arabian Sea")):
+        page.insert_text((x, 160), place, fontsize=8)
+    for x, year in ((80, "1650"), (180, "1700"), (280, "1750")):
+        page.insert_text((x, 220), year, fontsize=8)
+    page.insert_text((300, 245), "1720", fontsize=12)  # a number on its own, in the page's type
+    page.insert_text((60, 260), "Fig. 3. Forts of the Konkan coast", fontsize=8)
+    page.insert_text((60, 280), "The forts had thick walls.", fontsize=8)  # small sentences side by side are kept
+    page.insert_text((300, 280), "The navy had fast boats.", fontsize=8)
+    page.insert_text((60, 120), "Sea forts", fontsize=12)  # headings side by side, in the page's type
+    page.insert_text((300, 120), "Hill forts", fontsize=12)
+    page.insert_text((60, 300), "Ships from Arabia brought horses to these busy ports", fontsize=6)
+    page.insert_text((300, 300), "and the forts kept watch over every ship that came", fontsize=6)
+    page.insert_text((60, 320), "Shivaji was crowned at Raigad in 1674 and ruled until his death in 1680.", fontsize=12)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_map_labels_and_chart_axis_numbers_are_left_out():
+    source_pdf = _map_page_pdf()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    texts = [item.text for item in sheet.items]
+
+    assert not {"Raigad", "Sindhudurg", "Arabian Sea", "1650", "1700", "1750", "1720"} & set(texts)
+    assert "Fig. 3. Forts of the Konkan coast" in texts  # a caption labels nothing beside it
+    assert {"The forts had thick walls.", "The navy had fast boats."} <= set(texts)
+    assert {"Sea forts", "Hill forts"} <= set(texts)
+    assert sum(text.startswith(("Ships from Arabia", "and the forts kept")) for text in texts) == 2
+    assert any(text.startswith("The Marathas built") for text in texts)
+    assert any(text.startswith("Shivaji was crowned") for text in texts)
+    assert all(card.answer not in {"1650", "1700", "1750", "1720"} for card in plan_cards(sheet))
+
+
+def test_a_question_inside_a_paragraph_is_not_a_sentence_to_finish():
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((60, 60), "The Hoysalas built many temples of soft stone across their kingdom.", fontsize=12)
+    page.insert_text(
+        (60, 77), "In Fig. 2.14, which carvings of dancers and animals can be seen on its walls?", fontsize=12
+    )
+    source_pdf = document.tobytes()
+    document.close()
+
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+
+    assert cards and all("carvings" not in card.clue + card.answer for card in cards)
+
+
+def _gray_image(size: int, shade) -> bytes:
+    """A square greyscale PNG whose pixel at (x, y) has the value shade(x, y)."""
+    samples = bytes(shade(x, y) for y in range(size) for x in range(size))
+    return pymupdf.Pixmap(pymupdf.csGRAY, size, size, samples, False).tobytes("png")
+
+
+def _code(x: int, y: int) -> int:
+    """Black and white squares inside a white border, like a QR code."""
+    if not 8 <= x < 92 or not 8 <= y < 92:
+        return 255
+    return 0 if ((x - 8) // 6 * 7 + (y - 8) // 6 * 3) % 5 < 2 else 255
+
+
+def test_qr_codes_and_page_backgrounds_are_not_pictures_to_ask_about():
+    pictures = {
+        "code": _gray_image(100, _code),
+        "shaded": _gray_image(100, lambda x, y: (x + y) * 255 // 198),  # a photo: greys, no hard edges
+        "rings": _gray_image(
+            100, lambda x, y: 255 if (r := ((x - 50) ** 2 + (y - 50) ** 2) ** 0.5) > 46 else int(r) // 4 % 2 * 255
+        ),
+        "tiles": _gray_image(100, lambda x, y: 100 if (x // 10 + y // 10) % 2 else 200),  # straight edges, but grey
+        "block": _gray_image(100, lambda x, y: 0 if 30 <= x < 70 and 30 <= y < 70 else 255),  # too few edges
+    }
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_image(page.rect, stream=_gray_image(20, lambda x, y: 250))  # a background under the whole page
+    for index, name in enumerate(pictures):
+        left, top = 60 + 160 * (index % 3), 100 + 130 * (index // 3)
+        page.insert_image(pymupdf.Rect(left, top, left + 100, top + 100), stream=pictures[name])
+    page.insert_text((60, 400), "Rivers carry water from the hills to the sea and shape the land.", fontsize=12)
+    source_pdf = document.tobytes()
+    document.close()
+
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+
+    assert len(sheet.pictures) == len(pictures)
+    assert [picture.is_code for picture in sheet.pictures] == [name == "code" for name in pictures]

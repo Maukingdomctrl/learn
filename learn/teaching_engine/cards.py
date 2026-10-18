@@ -55,6 +55,7 @@ _QUESTIONS = {
     "compare": ("What is each one's {}?", "What is each one's {}?", "State the {} of each."),
     "tip": ("Say the whole tip.", "Say the rest of the tip.", "Recall the complete memory tip."),
     "term": ("What is it called?", "What is it called?", "Name the term described."),
+    "name": ("Which name goes in the gap?", "Which name fits the gap?", "Supply the missing name."),
     "word": ("Which word goes in the gap?", "Which term fits the gap?", "Supply the missing term."),
     "equation": ("What goes in the gap?", "What goes in the gap?", "Complete it."),
     "chain": ("What goes in the gap?", "What comes in the gap?", "Supply the missing step."),
@@ -361,6 +362,30 @@ def _finish(text: str) -> tuple[str, str] | None:
     ]
     shown = min(natural or middle, key=lambda index: abs(index - 0.45 * len(words)))
     return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
+
+
+FINISH_WORDS = 6  # the most words a "Finish the sentence" answer may have
+# A name: capitalised words, joined by "of", "the" or "and" ("Battle of Panipat", "Bay of Bengal").
+_NAME = re.compile(
+    r"(?<![\w'’-])[A-Z][\w'’-]*[a-z\u00C0-\u024F\u1E00-\u1EFF](?:\s+(?:(?:of|the|and)\s+)?[A-Z][\w'’-]*[a-z])*(?!\w)"
+)
+
+
+def _name_gap(text: str, about: str = "") -> tuple[str, str] | None:
+    """The longest name printed in a sentence, hidden: never its first word, a figure number or a name said twice."""
+    first = re.match(r"\W*(?:[^\s:]+(?:\s+[^\s:]+){0,2}:\s+)?\S+", text)  # "Evaluation: Friction, …" starts at Friction
+    names = []
+    for match in _NAME.finditer(text):
+        name = match.group()
+        if first is not None and match.start() < first.end():
+            continue  # a capital at the start of a sentence marks the sentence, not a name
+        if name.casefold() in {"fig", "i"} or text.count(name) > 1 or (about and name.casefold() in about.casefold()):
+            continue
+        names.append(match)
+    if not names:
+        return None
+    match = max(names, key=lambda found: len(found.group().split()))
+    return f"{text[: match.start()]}{GAP}{text[match.end() :]}", match.group()
 
 
 def _key_cloze(text: str) -> tuple[str, str] | None:
@@ -705,11 +730,26 @@ def _vocabulary(pieces: list[str]) -> bool:
     return len(found) >= 2 and len(found) >= 0.6 * len(pieces) and len({label for label, _ in found}) == len(found)
 
 
+# An activity or an opinion asked of the class, not a question with one answer to check.
+_ACTIVITY = re.compile(
+    r"\b(?:let's|let us|find out|discuss|imagine|in groups|(?:do|did|have|can) you (?:think|know|ever|find))\b",
+    re.IGNORECASE,
+)
+_TO_THE_READER = re.compile(r"\b(?:you|your|yourself)\b", re.IGNORECASE)
+
+
+def _open_task(text: str) -> bool:
+    """An activity for the class ("Discuss in groups.", "What do you think …?")."""
+    return bool(_ACTIVITY.search(text))
+
+
 def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int) -> list[Card]:
     cards = []
     about = heading.name if heading else item.context
     for piece in pieces:
-        if _named_process(piece) is not None:
+        # A question or a word to the reader printed in the text is not a fact to finish or fill in.
+        asks = _open_task(piece) or bool(_TO_THE_READER.search(piece)) or piece.endswith("?")
+        if asks or _named_process(piece) is not None:
             continue
         joined = _joined_process_card(item) if piece == item.text else None
         if joined is not None:
@@ -765,7 +805,14 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
                 continue
         finished = _finish(piece)
         if finished is not None:
-            cards.append(_card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece))
+            named = _name_gap(piece, about) if len(finished[1].split()) - 1 > FINISH_WORDS else None
+            if named is not None:
+                # Half a long sentence is a hard answer to check; a name printed in it is one word or a few.
+                cards.append(_card("gap", _ask("name", standard), named[0], named[1], item, about, source=piece))
+            else:
+                cards.append(
+                    _card("finish", _ask("finish", standard), finished[0], finished[1], item, about, source=piece)
+                )
     return cards
 
 
@@ -841,6 +888,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 answer = answers.get((next(iter(answer_groups)), item.number), "")
             if answer.casefold().startswith(item.text.casefold()):
                 answer = answer[len(item.text) :].strip()
+            if not answer and _open_task(text):
+                continue  # "What do you think …? Discuss in groups." has no answer to check
             question = _ask("fill" if GAP in clue else "question", standard)
             cards.append(_card("question", question, clue, answer, item, "Practice question", answer or item.text))
         elif item.kind == "table" and item.table is not None:
@@ -872,7 +921,7 @@ def _picture_cards(sheet: Sheet, headings: dict[str, Heading], standard: int) ->
             (min(bottom, end) - max(top, start), topic) for page, start, end, topic in spans if page == picture.page
         ]
         overlap, topic = max(overlaps, key=lambda pair: pair[0], default=(0.0, None))
-        if topic is None or overlap <= 0:
+        if topic is None or overlap <= 0 or picture.is_code:
             continue
         heading = headings[topic.text]
         question = _ask("who" if heading.person else "what", standard)
@@ -1331,6 +1380,43 @@ def render_cards_pdf(
     document.set_metadata(
         {"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"}
     )
+    if kind.embedded:
+        document.subset_fonts()
+    result = document.tobytes(garbage=4, deflate=True)
+    document.close()
+    return result
+
+
+def render_blank_cards_pdf() -> bytes:
+    """A page of eight empty study cards, drawn like the printed ones, and a blank answer sheet to write on."""
+    theme, kind = _THEMES["study"], _Type()
+    document = pymupdf.open()
+    page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+    kind.prepare(page)
+    shape = page.new_shape()
+    left = f"{theme['title']}  ·  BLANK SHEET  ·  CARDS 1–{_CARDS_PER_PAGE}"
+    kind.draw(shape, [kind.printable(left, True)], 7.5, _LEFT, 17, True, _MUTED)
+    note = kind.printable("Write a clue on each card and its question in the strip. Cut along the dashed lines.")
+    kind.draw(shape, [note], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
+    _cut_lines(shape, _CARDS_PER_PAGE)
+    blank = Card("blank", "", "", "", 0)
+    for position in range(_CARDS_PER_PAGE):
+        _draw_card(page, shape, kind, blank, position + 1, _card_box(position), theme)
+    shape.commit()
+
+    margin = 46.0
+    page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+    kind.prepare(page)
+    shape = page.new_shape()
+    y = kind.draw(shape, ["ANSWER SHEET"], 15, margin, 34, True, theme["colour"])
+    y = kind.draw(shape, [kind.printable("Keep this page away from the cards.")], 8, margin, y + 2, False, _MUTED) + 30
+    for number in range(1, _CARDS_PER_PAGE + 1):
+        kind.draw(shape, [str(number)], 10, 0, y - 10, True, theme["colour"], align_right=margin + 22)
+        shape.draw_line((margin + 32, y + 2), (_PAGE_WIDTH - margin, y + 2))
+        shape.finish(color=_CUT, width=0.6)
+        y += 40
+    shape.commit()
+    document.set_metadata({"title": "Learn blank study cards", "author": "Learn Teaching Engine"})
     if kind.embedded:
         document.subset_fonts()
     result = document.tobytes(garbage=4, deflate=True)

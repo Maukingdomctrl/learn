@@ -155,6 +155,34 @@ class Picture:
                 document[self.page - 1].get_pixmap(matrix=pymupdf.Matrix(2, 2), clip=clip, alpha=False).tobytes("png")
             )
 
+    @cached_property
+    def is_code(self) -> bool:
+        """A QR code: square-ish, almost only pure black on white, its edges straight up and down from row to row.
+
+        A photo or a map has greys and colours; a seal, a drawing or lettering has curved edges.
+        """
+        x0, y0, x1, y1 = self.rect
+        if not 0.6 <= (x1 - x0) / max(y1 - y0, 1.0) <= 1.6 or max(x1 - x0, y1 - y0) > 300:
+            return False
+        with pymupdf.open(stream=self.source, filetype="pdf") as document:
+            pixmap = document[self.page - 1].get_pixmap(
+                matrix=pymupdf.Matrix(3, 3), clip=pymupdf.Rect(self.rect), colorspace=pymupdf.csGRAY, alpha=False
+            )
+        width, pixels = pixmap.width, pixmap.samples
+        if width < 2 or not pixels:
+            return False
+        dark = sum(value < 80 for value in pixels) / len(pixels)
+        light = sum(value > 175 for value in pixels) / len(pixels)
+        if dark < 0.15 or light < 0.5 or dark + light < 0.85:
+            return False
+        rows = [pixels[top : top + width] for top in range(0, len(pixels) - width + 1, 2 * width)]
+        edges = [{x for x in range(1, width) if (row[x] < 128) != (row[x - 1] < 128)} for row in rows]
+        found = sum(len(row) for row in edges[:-1])
+        if found < 8 * (len(edges) - 1):
+            return False  # too few black and white changes along a row for the squares of a code
+        straight = sum(any(x + step in below for step in (-1, 0, 1)) for row, below in pairwise(edges) for x in row)
+        return straight >= 0.75 * found
+
 
 @dataclass(frozen=True)
 class Sheet:
@@ -540,7 +568,7 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
             continue
         current = _Paragraph(line.text, pno, list(line.units), line.bullet, line.size, line.y0, line.y1, lines=[line])
         paragraphs.append(current)
-    paragraphs = [part for paragraph in paragraphs for part in _split_inline(paragraph)]
+    paragraphs = _without_labels([part for paragraph in paragraphs for part in _split_inline(paragraph)])
     for table, members in tables:
         units: list[str] = []
         for line in members:
@@ -549,6 +577,42 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
         paragraphs.append(_Paragraph("", pno, units, top=top, bottom=bottom, table=table))
     paragraphs.sort(key=lambda paragraph: paragraph.top)
     return paragraphs
+
+
+_BARE_NUMBER = re.compile(r"[\d.,]+")
+LABEL_WORDS = 8
+
+
+def _without_labels(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
+    """Drop the words printed inside a map, chart or timeline: they label a picture and are not sentences to learn.
+
+    A bare number ("1520" on a chart's axis) is never a fact on its own. A label is a few words in a smaller type than
+    the page's text, with no full stop, printed level with another such label.
+    """
+    weights: dict[float, int] = {}
+    for paragraph in paragraphs:
+        weights[paragraph.size] = weights.get(paragraph.size, 0) + len(paragraph.text)
+    body = max(weights, key=weights.__getitem__, default=0.0)
+
+    def small_words(paragraph: _Paragraph) -> bool:
+        return (
+            paragraph.size < body - 0.5
+            and len(paragraph.text.split()) <= LABEL_WORDS
+            and not _ends_sentence(paragraph.text)
+        )
+
+    candidates = [paragraph for paragraph in paragraphs if small_words(paragraph)]
+    small = {id(paragraph) for paragraph in candidates}
+
+    def label(paragraph: _Paragraph) -> bool:
+        if _BARE_NUMBER.fullmatch(paragraph.text.strip()):
+            return True
+        return id(paragraph) in small and any(
+            other is not paragraph and other.top < paragraph.bottom and paragraph.top < other.bottom
+            for other in candidates
+        )
+
+    return [paragraph for paragraph in paragraphs if paragraph.table is not None or not label(paragraph)]
 
 
 def _wraps(last: _Line, line: _Line) -> bool:
@@ -633,6 +697,8 @@ def _page_pictures(source: bytes, page: pymupdf.Page, pno: int) -> list[Picture]
         key = tuple(round(value) for value in rect)
         if "image" not in kind or rect.width < 24 or rect.height < 24 or key in seen:
             continue
+        if rect.get_area() >= 0.6 * page.rect.get_area():
+            continue  # a background printed under the whole page: its "picture" is the page itself
         seen.add(key)
         pictures.append(Picture(pno, tuple(rect), source))
     return pictures
