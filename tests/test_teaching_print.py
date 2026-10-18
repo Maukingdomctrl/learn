@@ -608,3 +608,21 @@ def test_a_chapter_title_is_not_a_riddle_answer():
 
     assert any(card.kind == "riddle" and card.answer == "LONDON" for card in named)
     assert title_only and not any(card.answer == "RATIOS COMPARE QUANTITIES" for card in title_only)
+
+
+def test_activities_and_questions_in_the_text_do_not_become_fact_cards():
+    rows = [
+        (1, "Question 1: What causes evaporation?"),
+        (1, "Question 2: What do you think the cartoon is trying to express? Discuss in groups."),
+        (1, "Question 3: What does this tell you about the two processes?"),
+        (1, "The Marathas built a chain of forts along the western coast to guard their ports."),
+        (1, "Look closely at the map and mark the forts on your copy of it."),
+        (1, "Find out more about the navy of the Marathas from old records."),
+    ]
+    cards = _cards(rows)
+    questions = [card.clue for card in cards if card.kind == "question"]
+    others = " ".join(card.clue + " " + card.answer for card in cards if card.kind != "question")
+
+    assert questions == ["What causes evaporation?", "What does this tell you about the two processes?"]
+    assert "western coast" in others
+    assert not any(words in others for words in ("your copy", "Find out more"))

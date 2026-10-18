@@ -705,11 +705,26 @@ def _vocabulary(pieces: list[str]) -> bool:
     return len(found) >= 2 and len(found) >= 0.6 * len(pieces) and len({label for label, _ in found}) == len(found)
 
 
+# An activity or an opinion asked of the class, not a question with one answer to check.
+_ACTIVITY = re.compile(
+    r"\b(?:let's|let us|find out|discuss|imagine|in groups|(?:do|did|have|can) you (?:think|know|ever|find))\b",
+    re.IGNORECASE,
+)
+_TO_THE_READER = re.compile(r"\b(?:you|your|yourself)\b", re.IGNORECASE)
+
+
+def _open_task(text: str) -> bool:
+    """An activity for the class ("Discuss in groups.", "What do you think …?")."""
+    return bool(_ACTIVITY.search(text))
+
+
 def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int) -> list[Card]:
     cards = []
     about = heading.name if heading else item.context
     for piece in pieces:
-        if _named_process(piece) is not None:
+        # A question or a word to the reader printed in the text is not a fact to finish or fill in.
+        asks = _open_task(piece) or bool(_TO_THE_READER.search(piece)) or piece.endswith("?")
+        if asks or _named_process(piece) is not None:
             continue
         joined = _joined_process_card(item) if piece == item.text else None
         if joined is not None:
@@ -841,6 +856,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 answer = answers.get((next(iter(answer_groups)), item.number), "")
             if answer.casefold().startswith(item.text.casefold()):
                 answer = answer[len(item.text) :].strip()
+            if not answer and _open_task(text):
+                continue  # "What do you think …? Discuss in groups." has no answer to check
             question = _ask("fill" if GAP in clue else "question", standard)
             cards.append(_card("question", question, clue, answer, item, "Practice question", answer or item.text))
         elif item.kind == "table" and item.table is not None:

@@ -490,3 +490,18 @@ def test_map_labels_and_chart_axis_numbers_are_left_out():
     assert any(text.startswith("The Marathas built") for text in texts)
     assert any(text.startswith("Shivaji was crowned") for text in texts)
     assert all(card.answer not in {"1650", "1700", "1750", "1720"} for card in plan_cards(sheet))
+
+
+def test_a_question_inside_a_paragraph_is_not_a_sentence_to_finish():
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((60, 60), "The Hoysalas built many temples of soft stone across their kingdom.", fontsize=12)
+    page.insert_text(
+        (60, 77), "In Fig. 2.14, which carvings of dancers and animals can be seen on its walls?", fontsize=12
+    )
+    source_pdf = document.tobytes()
+    document.close()
+
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+
+    assert cards and all("carvings" not in card.clue + card.answer for card in cards)
