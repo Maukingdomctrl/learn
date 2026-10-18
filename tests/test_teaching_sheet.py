@@ -692,3 +692,62 @@ def test_a_question_printed_as_labelled_parts_of_one_paragraph_keeps_its_options
             "B. Condensation",
         )
     ]
+
+
+def _continued_pdf() -> bytes:
+    """Three pages with a running header: a paragraph and a question cut by page breaks, and a table on each page."""
+    document = pymupdf.open()
+    rows = {
+        2: (
+            ("Sample", "Look", "Use"),
+            ("Metal strip", "Shiny and grey", "Bend gently"),
+            ("Glass rod", "Clear and hard", "Bend gently"),
+            ("Wood piece", "Grain is visible", "Press lightly"),
+            ("Rubber strip", "Dull and dark", "Pull gently"),
+        ),
+        3: (
+            ("Cotton", "Soft, absorbent", "Clothing and towels"),
+            ("Steel", "Strong, hard", "Tools and structures"),
+            ("Clay", "Mouldable when wet", "Pots and bricks"),
+            ("Glass", "Transparent, rigid", "Windows and jars"),
+        ),
+    }
+    for number in (1, 2, 3):
+        page = document.new_page()
+        page.insert_text((60, 40), "Class 8 Science - Chapter 3", fontsize=9)
+        if number == 1:
+            page.insert_text(
+                (60, 90), "A fair test keeps the method the same, so that a difference in the result", fontsize=11
+            )
+            page.insert_text((60, 106), "comes from the material itself and not from", fontsize=11)
+        if number == 2:
+            page.insert_text((60, 70), "Reading (continued)", fontsize=11)
+            page.insert_text((60, 90), "a change in the way the test was done.", fontsize=11)
+            page.insert_text((60, 120), "Question 1: Why should the same method be used for both samples?", fontsize=11)
+        if number == 3:
+            page.insert_text((60, 90), "Answer to Question 1: It makes the comparison fair.", fontsize=11)
+        for row, cells in enumerate(rows.get(number, ())):
+            for column, cell in enumerate(cells):
+                page.insert_text((60 + 160 * column, 170 + 20 * row), cell, fontsize=10)
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_page_breaks_keep_paragraphs_answers_and_tables_together():
+    source_pdf = _continued_pdf()
+    sheet = read_sheet(extract_facts(extract(source_pdf).units), source_pdf)
+    texts = [item.text for item in sheet.items]
+    cards = plan_cards(sheet)
+    asked = {card.clue: card.answer for card in cards if card.kind == "question"}
+    rows = {(card.question, card.clue): card.answer for card in cards if card.kind == "row"}
+
+    assert (
+        "A fair test keeps the method the same, so that a difference in the result comes from the material itself "
+        "and not from a change in the way the test was done."
+    ) in texts
+    assert not any("Chapter 3" in text for text in texts)  # the running header is still left out
+    assert asked == {"Why should the same method be used for both samples?": "It makes the comparison fair."}
+    assert rows[("Which sample is it?", "Shiny and grey")] == "Metal strip"
+    assert not any(clue == "Bend gently" for _, clue in rows)  # in two rows, so it names neither
+    assert rows[("Which one is it?", "Soft, absorbent")] == "Cotton"  # a table printed without its header row

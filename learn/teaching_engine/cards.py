@@ -378,8 +378,8 @@ def _name_gap(text: str, about: str = "") -> tuple[str, str] | None:
     names = []
     for match in _NAME.finditer(text):
         name = match.group()
-        if first is not None and match.start() < first.end():
-            continue  # a capital at the start of a sentence marks the sentence, not a name
+        if (first is not None and match.start() < first.end()) or text[: match.start()].endswith(": "):
+            continue  # a capital at the start of a sentence, or after a colon, marks the sentence, not a name
         if name.casefold() in {"fig", "i"} or text.count(name) > 1 or (about and name.casefold() in about.casefold()):
             continue
         names.append(match)
@@ -685,6 +685,9 @@ def _row_cards(item: Item, standard: int) -> list[Card]:
         if len(words) <= 3
         else ""
     )
+    if any("," in cell for cell in header):
+        # Column labels have no commas: this "header" is the first row of a table printed without one.
+        header, rows, noun = ("",) * len(header), (header, *rows), "one"
     columns = [
         column
         for column in range(1, len(header))
@@ -697,6 +700,8 @@ def _row_cards(item: Item, standard: int) -> list[Card]:
             cell = row[column].strip()
             if not name or len(cell.split()) < 2 or _numeric(cell):
                 continue
+            if sum(other[column].strip().casefold() == cell.casefold() for other in rows) > 1:
+                continue  # "Bend gently" in several rows points to none of them
             question = _ask("which", standard, noun) if noun else _ask("what_about", standard)
             cards.append(_card("row", question, _hide_name(cell, name), name, item, header[column].strip(), cell))
     return cards

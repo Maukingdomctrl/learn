@@ -646,6 +646,7 @@ def test_a_long_sentence_asks_for_a_name_in_it_instead_of_its_second_half():
         (1, "Plants remove more CO2 from the air than they put back, as UNESCO reports say every single year."),
         (1, "The Ganga rises in the cold hills, and the Ganga then flows east across the wide plains to the sea."),
         (1, "The old fort stood high above the Krishna."),
+        (1, "The method is the same each time for a reason: To compare two materials fairly, keep every test alike."),
     ]
     cards = {card.clue: (card.question, card.answer) for card in _cards(rows)}
 
