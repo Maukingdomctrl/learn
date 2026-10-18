@@ -540,7 +540,7 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
             continue
         current = _Paragraph(line.text, pno, list(line.units), line.bullet, line.size, line.y0, line.y1, lines=[line])
         paragraphs.append(current)
-    paragraphs = [part for paragraph in paragraphs for part in _split_inline(paragraph)]
+    paragraphs = _without_labels([part for paragraph in paragraphs for part in _split_inline(paragraph)])
     for table, members in tables:
         units: list[str] = []
         for line in members:
@@ -549,6 +549,42 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
         paragraphs.append(_Paragraph("", pno, units, top=top, bottom=bottom, table=table))
     paragraphs.sort(key=lambda paragraph: paragraph.top)
     return paragraphs
+
+
+_BARE_NUMBER = re.compile(r"[\d.,]+")
+LABEL_WORDS = 8
+
+
+def _without_labels(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
+    """Drop the words printed inside a map, chart or timeline: they label a picture and are not sentences to learn.
+
+    A bare number ("1520" on a chart's axis) is never a fact on its own. A label is a few words in a smaller type than
+    the page's text, with no full stop, printed level with another such label.
+    """
+    weights: dict[float, int] = {}
+    for paragraph in paragraphs:
+        weights[paragraph.size] = weights.get(paragraph.size, 0) + len(paragraph.text)
+    body = max(weights, key=weights.__getitem__, default=0.0)
+
+    def small_words(paragraph: _Paragraph) -> bool:
+        return (
+            paragraph.size < body - 0.5
+            and len(paragraph.text.split()) <= LABEL_WORDS
+            and not _ends_sentence(paragraph.text)
+        )
+
+    candidates = [paragraph for paragraph in paragraphs if small_words(paragraph)]
+    small = {id(paragraph) for paragraph in candidates}
+
+    def label(paragraph: _Paragraph) -> bool:
+        if _BARE_NUMBER.fullmatch(paragraph.text.strip()):
+            return True
+        return id(paragraph) in small and any(
+            other is not paragraph and other.top < paragraph.bottom and paragraph.top < other.bottom
+            for other in candidates
+        )
+
+    return [paragraph for paragraph in paragraphs if paragraph.table is not None or not label(paragraph)]
 
 
 def _wraps(last: _Line, line: _Line) -> bool:
