@@ -1387,6 +1387,43 @@ def render_cards_pdf(
     return result
 
 
+def render_blank_cards_pdf() -> bytes:
+    """A page of eight empty study cards, drawn like the printed ones, and a blank answer sheet to write on."""
+    theme, kind = _THEMES["study"], _Type()
+    document = pymupdf.open()
+    page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+    kind.prepare(page)
+    shape = page.new_shape()
+    left = f"{theme['title']}  ·  BLANK SHEET  ·  CARDS 1–{_CARDS_PER_PAGE}"
+    kind.draw(shape, [kind.printable(left, True)], 7.5, _LEFT, 17, True, _MUTED)
+    note = kind.printable("Write a clue on each card and its question in the strip. Cut along the dashed lines.")
+    kind.draw(shape, [note], 7.5, 0, 17, False, _MUTED, align_right=_LEFT + 2 * _CARD_WIDTH)
+    _cut_lines(shape, _CARDS_PER_PAGE)
+    blank = Card("blank", "", "", "", 0)
+    for position in range(_CARDS_PER_PAGE):
+        _draw_card(page, shape, kind, blank, position + 1, _card_box(position), theme)
+    shape.commit()
+
+    margin = 46.0
+    page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
+    kind.prepare(page)
+    shape = page.new_shape()
+    y = kind.draw(shape, ["ANSWER SHEET"], 15, margin, 34, True, theme["colour"])
+    y = kind.draw(shape, [kind.printable("Keep this page away from the cards.")], 8, margin, y + 2, False, _MUTED) + 30
+    for number in range(1, _CARDS_PER_PAGE + 1):
+        kind.draw(shape, [str(number)], 10, 0, y - 10, True, theme["colour"], align_right=margin + 22)
+        shape.draw_line((margin + 32, y + 2), (_PAGE_WIDTH - margin, y + 2))
+        shape.finish(color=_CUT, width=0.6)
+        y += 40
+    shape.commit()
+    document.set_metadata({"title": "Learn blank study cards", "author": "Learn Teaching Engine"})
+    if kind.embedded:
+        document.subset_fonts()
+    result = document.tobytes(garbage=4, deflate=True)
+    document.close()
+    return result
+
+
 def extract_source_visuals(source_pdf: bytes, pages: set[int] | None = None) -> list[SourceVisual]:
     """Extract distinct embedded source images as in-memory PNGs, linked to their PDF pages."""
     document = pymupdf.open(stream=source_pdf, filetype="pdf")

@@ -152,3 +152,19 @@ def test_the_page_default_makes_plain_study_cards(sample_pdf):
     assert response.headers["content-disposition"] == 'attachment; filename="learn_study_cards.pdf"'
     text = pymupdf.open(stream=response.content, filetype="pdf")[0].get_text()
     assert text.startswith("STUDY CARDS") and "DETECTIVE" not in text
+
+
+def test_the_home_page_links_a_blank_card_sheet_drawn_like_the_printed_cards():
+    client = TestClient(web.app)
+
+    assert 'href="/blank-cards" download' in client.get("/").text
+    response = client.get("/blank-cards")
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == 'attachment; filename="learn_blank_study_cards.pdf"'
+    document = pymupdf.open(stream=response.content, filetype="pdf")
+    cards, answers = document[0].get_text(), document[1].get_text()
+    assert document.page_count == 2
+    assert "STUDY CARDS" in cards and "BLANK SHEET" in cards
+    assert all(str(number) in cards for number in range(1, 9))
+    assert "ANSWER SHEET" in answers
