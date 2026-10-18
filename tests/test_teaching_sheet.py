@@ -767,3 +767,50 @@ def test_a_page_number_heading_names_no_topic():
     cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
 
     assert cards and not [card for card in cards if card.answer.startswith("Page")]
+
+
+def _grammar_pdf() -> bytes:
+    """Grammar tasks with options and a short key, then a heading mentioning a key and new numbered exercises."""
+    document = pymupdf.open()
+    page = document.new_page()
+    lines = [
+        (12, "Language skills"),
+        (9, "1. Choose the correct verb: She ___ (go) to school."),
+        (9, "A) go    B) goes    C) going    D) gone"),
+        (9, "2. Pick the odd one out: apple, mango, carrot, banana. A) apple  B) mango  C) carrot  D) banana"),
+        (9, "3. Match: Evaporation"),
+        (9, "Answer key (compact): 1-B; 2-C; 3-A. Passive: The plants are watered by the gardener."),
+        (12, "Answer Key"),
+        (9, "1. goes"),
+        (9, "2. carrot"),
+        (12, "Reading: comprehension and an answer key"),
+        (9, "1. Where was Ravi going?"),
+        (9, "2. What did he notice on the steps?"),
+    ]
+    y = 50
+    for size, text in lines:
+        page.insert_text((60, y), text, fontsize=size, fontname="hebo" if size == 12 else "helv")
+        y += size + 14
+    data = document.tobytes()
+    document.close()
+    return data
+
+
+def test_option_tasks_take_their_key_and_later_exercises_are_not_answers():
+    source_pdf = _grammar_pdf()
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+    asked = {card.clue.split("\n")[0]: card.answer for card in cards if card.kind == "question"}
+
+    assert asked["Choose the correct verb: She ______ (go) to school."] == "B. goes"
+    assert asked["Pick the odd one out: apple, mango, carrot, banana."] == "C. carrot"
+    assert asked.get("Match: Evaporation", "") == ""  # a bare letter answers questions with options only
+    assert asked["Where was Ravi going?"] == ""  # after a heading in larger type, numbers start new questions
+    assert asked["What did he notice on the steps?"] == ""
+
+
+def test_answer_key_lines_with_labels_and_trailing_answers():
+    assert sheet_module._key_pairs("Key: Q1-B; Q2-B") == [("1", "B"), ("2", "B")]
+    assert sheet_module._key_pairs("1-B; 2-C. Passive: The plants are watered.") == []  # no label, more text
+    assert sheet_module._key_pairs("Answer key (compact): 1-B; 2-C. Passive: …") == [("1", "B"), ("2", "C")]
+    assert sheet_module._section_kind("RG-09 · Fill blanks + answer key in compact string") != "answers"
+    assert sheet_module._section_kind("Answer key in column:") == "answers"
