@@ -34,6 +34,10 @@ _TIP = re.compile(
     r"^(?:memory\s+tip|study\s+tip|exam\s+tip|quick\s+tip|tip|think|remember|mnemonic|trick)\b\s*[:\-–—]\s*", re.I
 )
 _INLINE_ANSWER = re.compile(r"\s*[—–-]{1,2}\s*Ans(?:wer)?\s*[:.\-–—]\s*|\s+Ans(?:wer)?\s*:\s*")
+_WRITE_IN = re.compile(r"[\s_.…]*")  # an answer line left empty to write on
+# "Complete the name: United ______.  Answer: ________": a line left to write the answer on makes it a question.
+_ASKS_FOR_ANSWER = re.compile(r"\bAns(?:wer)?\s*:\s*[_.…]{3,}\s*$")
+_NUMBERED_ANSWER = re.compile(r"(?P<marker>\d{1,3}[.)])\s+(?P<answer>\S.*)")
 _LEADING_ANSWER = re.compile(r"^(?:[—–-]{1,2}\s*)?Ans(?:wer)?\s*[:.\-–—]\s*")
 _SUMMARY = re.compile(r"^(?P<name>[^=]{2,80}?)\s+=\s+(?P<rest>\S.*)$")
 _SENTENCE_END = re.compile(r"[.!?][\"'”’)\]]*$")
@@ -826,6 +830,13 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
     for index, paragraph in enumerate(paragraphs):
         if paragraph.table is not None:
             started, topic, answering = True, "", None
+            cells = [cell for row in (paragraph.table.header, *paragraph.table.rows) for cell in row if cell.strip()]
+            numbered = [_NUMBERED_ANSWER.fullmatch(cell.strip()) for cell in cells]
+            if section == "answers" and numbered and all(numbered):
+                # An answer key printed in columns ("1. Renaissance   2. Reformation") is a list of answers.
+                for found in numbered:
+                    add("answer", paragraph, found["answer"], found["marker"])
+                continue
             add("table", paragraph, "", table=paragraph.table)
             continue
         if index > last_body and body_size and paragraph.size and paragraph.size <= body_size * 0.85:
@@ -970,8 +981,13 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
                 continue
         if summary_parts(body) is not None:
             add("summary", paragraph, body, marker, note)
-        elif re.match(r"Q(?:uestion)?\b", marker, re.I) or (_QUESTION_START.match(body) and "?" in body):
-            add("question", paragraph, body, marker, note)
+        elif (
+            re.match(r"Q(?:uestion)?\b", marker, re.I)
+            or (_QUESTION_START.match(body) and "?" in body)
+            or _ASKS_FOR_ANSWER.search(body)
+        ):
+            question, answer = _split_answer(body)
+            add("question", paragraph, question, marker, note, answer=answer)
         elif section != "table":  # loose text around a table is usually a stray cell
             add("point", paragraph, body, marker, note)
     return items
@@ -979,6 +995,8 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
 
 def _split_answer(text: str) -> tuple[str, str]:
     parts = _INLINE_ANSWER.split(text, maxsplit=1)
+    if len(parts) == 2 and _WRITE_IN.fullmatch(parts[1]):
+        return parts[0].strip(), ""  # "… onward?  Answer: ________" leaves a line to write on, not a gap to fill
     if len(parts) == 2 and parts[1].strip():
         return parts[0].strip(), parts[1].strip()
     return text.strip(), ""
