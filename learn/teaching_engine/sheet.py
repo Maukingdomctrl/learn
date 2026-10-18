@@ -48,7 +48,7 @@ _ANSWER_TO = re.compile(
     r"Answer\s+(?:to|for)\s+(?:Question|Q)\.?\s*(?P<number>\d{1,3})\s*[:.\-–—]\s*(?P<answer>\S.*)", re.I | re.S
 )
 # One pair of an answer key: "3—B", "3. B", "3: (b)", "3 B" in a key table.
-_KEY_PAIR = re.compile(r"(?<![\w.])(\d{1,3})\s*[—–\-:.)]?\s*\(?([A-Ha-h])\)?(?![\w'’])")
+_KEY_PAIR = re.compile(r"(?<![\w.])(?:Q\.?\s*)?(\d{1,3})\s*[—–\-:.)]?\s*\(?([A-Ha-h])\)?(?![\w'’])")
 _NUMBERED_ANSWER = re.compile(r"(?P<marker>\d{1,3}[.)])\s+(?P<answer>\S.*)")
 _LEADING_ANSWER = re.compile(r"^(?:[—–-]{1,2}\s*)?Ans(?:wer)?\s*[:.\-–—]\s*")
 _SUMMARY = re.compile(r"^(?P<name>[^=]{2,80}?)\s+=\s+(?P<rest>\S.*)$")
@@ -68,7 +68,9 @@ _FOOTER_TAIL = re.compile(
 _LEADING_HEADING = re.compile(r"^(?:\d{1,2}\.\s+)?[A-Z][A-Z0-9&'’()\-–—:,/ ]{3,}?[A-Z)](?=\s+[A-Z][a-z])")
 _SECTION_KINDS = (
     ("qa", re.compile(r"\bQUESTIONS?\b.*\b(?:ANSWERS?|ANSWER\s*KEY)\b|\bQ\s?&\s?A\b", re.I)),
-    ("answers", re.compile(r"\bANSWER\s*KEY\b|\bANSWERS\b|\bSOLUTIONS\b", re.I)),
+    # Only a heading that starts with it ("Answer key", "Answers to Exercise 2", "Model answers"); a heading that
+    # mentions an answer key in passing ("Fill blanks + answer key in compact string") heads questions.
+    ("answers", re.compile(r"^\W*(?:model\s+|final\s+)?(?:ANSWER\s*KEY|ANSWERS|SOLUTIONS)\b", re.I)),
     (
         "questions",
         re.compile(
@@ -852,10 +854,12 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
         )
 
     for index, paragraph in enumerate(paragraphs):
-        if len(items) > questions_seen and items[-1].kind == "question":
-            # A new question: its options may follow its "?" ("… independent? A 1857") and the next lines.
+        numbered = len(items) > questions_seen and re.fullmatch(r"\d{1,3}[.)]", items[-1].marker)
+        if len(items) > questions_seen and (items[-1].kind == "question" or (numbered and items[-1].kind == "point")):
+            # A new question, or a numbered task ("1. Choose the correct verb: She ___ (go)"): options may follow
+            # its "?" ("… independent? A 1857") or its full stop ("… banana. A) apple B) mango"), and the next lines.
             asked_item = items[-1]
-            tail = re.search(r"\?\s+(?=\(?[Aa][.)]\s|A\s)", asked_item.text)
+            tail = re.search(r"\?\s+(?=\(?[Aa][.)]\s|A\s)|[.:]\s+(?=\(?[Aa][.)]\s)", asked_item.text)
             run = asked_item.text[tail.end() :] if tail and _option_run(asked_item.text[tail.end() :], 1) else ""
             question = asked_item.text[: tail.end()].strip() if run else asked_item.text
             ahead = index
@@ -865,7 +869,8 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
                     break
                 run, ahead = longer, ahead + 1
             if len(found := _option_run(run)) >= 2:
-                items[-1] = Item(**{**asked_item.__dict__, "text": question, "options": tuple(found)})
+                changes = {"kind": "question", "text": question, "options": tuple(found)}
+                items[-1] = Item(**{**asked_item.__dict__, **changes})
                 option_lines.update(range(index, ahead))
         questions_seen = len(items)
         if index in option_lines:
@@ -981,6 +986,10 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
             section, group, topic, context = "", "", "", ""
         sized = bool(body_size) and paragraph.size >= body_size * 1.12 and words <= 12
         heading = _heading_like(body) and not paragraph.bullet
+        if section == "answers" and answering is None and sized and not marker and not kind:
+            # A new heading in larger type after an answer key ("LT-05 · Grammar: passive voice") starts new work:
+            # its numbered lines are exercises, not more answers.
+            section, group, topic, context = "", "", "", ""
         shaped = heading and (upper or sized or (_title_case(body) and not marker) or (words <= 4 and not marker))
         # Inside a model answer only a heading as large as the question numbers starts something new.
         large = upper or not (paragraph.size and asked_size) or paragraph.size >= asked_size - 0.3
@@ -1060,12 +1069,21 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
 
 
 def _key_pairs(text: str) -> list[tuple[str, str]]:
-    """The (question number, option letter) pairs of an answer key line; [] for any other line."""
-    pairs = list(_KEY_PAIR.finditer(text))
-    rest = re.sub(r"^[^:]{0,40}:", "", _KEY_PAIR.sub(" ", text).strip())  # a label such as "Answers:" or "MCQ:"
-    if len(pairs) < 3 or re.sub(r"[\s;,.|]", "", rest):
-        return []
-    return [(pair[1], pair[2].upper()) for pair in pairs]
+    """The (question number, option letter) pairs an answer key line starts with; [] for any other line.
+
+    "MCQ: 3—B; 4—A" or "Key: Q1-B; Q2-B" after an optional label; the line may go on with other answers
+    ("1-B; 2-C. Passive: The plants are watered …"), but never starts with other words ("Rooms 1 A, 2 B …").
+    """
+    label = re.match(r"[^:\d]{0,40}:\s*", text)
+    start = label.end() if label else 0
+    pairs = []
+    for pair in _KEY_PAIR.finditer(text, start):
+        if re.sub(r"[\s;,.|]", "", text[start : pair.start()]):
+            break
+        pairs.append((pair[1], pair[2].upper()))
+        start = pair.end()
+    rest = re.sub(r"[\s;,.|]", "", text[start:])
+    return pairs if len(pairs) >= 3 or (len(pairs) >= 2 and label) or (len(pairs) >= 2 and not rest) else []
 
 
 def _option_run(text: str, least: int = 2) -> list[str]:

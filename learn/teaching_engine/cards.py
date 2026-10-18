@@ -907,6 +907,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 answer = answer[len(item.text) :].strip()
             if not answer and _open_task(text):
                 continue  # "What do you think …? Discuss in groups." has no answer to check
+            if re.fullmatch(r"\(?[A-Ha-h]\)?", answer) and not item.options:
+                answer = ""  # an option letter answers a question with options only, never a matching row
             if item.options:
                 letters = "ABCDEFGH"[: len(item.options)]
                 options = (f"{letter}. {option}" for letter, option in zip(letters, item.options, strict=True))
