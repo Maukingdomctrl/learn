@@ -262,7 +262,14 @@ _CHAPTER = re.compile(r"^(?:chapter|unit|lesson)\b", re.I)
 
 
 def _section_kind(text: str) -> str:
+    if _NO_ANSWERS.search(text):
+        return "questions"  # "Practice (no answers here)": questions to answer, not their answers
     return next((kind for kind, pattern in _SECTION_KINDS if pattern.search(text)), "")
+
+
+_NO_ANSWERS = re.compile(
+    r"\b(?:no|without)\s+answers?\b|\banswers?\s+(?:are\s+)?(?:not\s+(?:given|supplied|printed)|omitted)", re.I
+)
 
 
 def _title_case(text: str) -> bool:
@@ -790,6 +797,8 @@ def names_topic(text: str) -> bool:
     if GENERIC_HEADING.match(body):
         return False
     name = re.split(r"\s+[–—-]\s+|:\s+|\s*\(", body, maxsplit=1)[0]
+    if re.fullmatch(r"(?:page|sheet|part|section|unit|chapter|lesson)\s*\d+", name, re.I):
+        return False  # "Page 14 — Labelled circuit diagram" names a page, not a thing to learn
     return _upper_ratio(name) >= 0.75 or _title_case(name) or bool(re.match(r"[A-Z]\w*$", name))
 
 

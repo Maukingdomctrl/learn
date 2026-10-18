@@ -751,3 +751,19 @@ def test_page_breaks_keep_paragraphs_answers_and_tables_together():
     assert rows[("Which sample is it?", "Shiny and grey")] == "Metal strip"
     assert not any(clue == "Bend gently" for _, clue in rows)  # in two rows, so it names neither
     assert rows[("Which one is it?", "Soft, absorbent")] == "Cotton"  # a table printed without its header row
+
+
+def test_a_page_number_heading_names_no_topic():
+    document = pymupdf.open()
+    page = document.new_page()
+    page.insert_text((60, 70), "Page 14 - Labelled circuit diagram", fontsize=16, fontname="hebo")
+    page.insert_text(
+        (60, 100), "Study the simple circuit. Trace the wire path and find the cell and the bulb.", fontsize=10.5
+    )
+    page.insert_text((60, 130), "A closed path lets the current flow from the cell through the bulb.", fontsize=10.5)
+    source_pdf = document.tobytes()
+    document.close()
+
+    cards = plan_cards(read_sheet(extract_facts(extract(source_pdf).units), source_pdf))
+
+    assert cards and not [card for card in cards if card.answer.startswith("Page")]
