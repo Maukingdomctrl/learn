@@ -12,7 +12,7 @@ from conftest import ScriptedLLM
 
 from learn import config as C
 from learn.extraction import extract
-from learn.llm import AnthropicLLM, LLMError
+from learn.llm import JUNE_KEY_FROM_NETWORK, AnthropicLLM, LLMError
 from learn.teaching_engine import extract_facts
 from learn.teaching_engine.ai_cards import TASK, CardError, _Builder, sheet_prompt, write_with_model
 from learn.teaching_engine.detective import check_case_file, plan_case_file, render_case_file_pdf
@@ -250,3 +250,12 @@ def test_cards_default_to_the_claude_api_with_haiku(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
     llm = AnthropicLLM.for_cards()
     assert llm.model == "claude-haiku-5-5" and llm.effort == "low" and not llm.fallbacks
+
+
+def test_june_without_a_key_sends_a_bearer_header_for_the_network_secret_to_fill(monkeypatch):
+    monkeypatch.setenv("LEARN_PROVIDER", "june")
+    monkeypatch.delenv("JUNE_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    llm = AnthropicLLM.for_cards()
+    assert llm.client.auth_token == JUNE_KEY_FROM_NETWORK and llm.client.api_key is None
+    assert str(llm.client.base_url).startswith("https://api.blockchain.info/ai/api")
