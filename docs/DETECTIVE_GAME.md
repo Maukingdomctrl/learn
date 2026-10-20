@@ -1,6 +1,6 @@
 # Detective game — design (draft for review)
 
-Status: **proposal only.** Nothing here is built yet. Today "Detective" is only a title and colour on the plain study cards (`learn/teaching_engine/cards.py`). This document is for agreeing how the game should work before any code is written.
+Status: **step 1 is built, without AI** (`learn/teaching_engine/detective.py`): the Case File cards, the case board and the CASE CLOSED answers, with Rules A and B checked in code. It runs from the command line (`python -m learn.teaching_engine sheet.pdf --case-file case.pdf`). The upload page still prints the older Detective-themed study cards. Everything else in this document is still a proposal.
 
 The game must work without AI. Claude Haiku may write the cards later (see §1.5), but code checks every card, and the rule-based engine is the fallback.
 
@@ -55,6 +55,7 @@ Card types:
 | **PICK ONE** | circles the right answer from 3–4 words on the sheet |
 | **NUMBER DETECTIVE** | says what a number on the sheet counts |
 | **WHO AM I?** | names the topic from 2–3 lines |
+| **FINISH IT** | finishes a sentence from the sheet (added because sheets about causes or stages have few names or numbers to ask about) |
 | **SPOT THE MISTAKE** | crosses out and fixes one swapped fact *(open question: see below)* |
 | **CASE NOTES** | writes 3 facts from memory |
 
@@ -120,6 +121,19 @@ Open points:
    - The call goes through the same model client as the rest of Learn (`LLM.json`), so it can be tested with the scripted fake.
 6. **Showcase on the home page.** A "Rewards you can earn" section on the public home page (`site/index.html`) shows a few framed examples, rank badges and posters, so children see the goal before they start. It uses only catalogue art, with the frame and canvas designs supplied by the owner.
 7. **Rewards page.** Until the quiz exists, freebies sit on a public Rewards page. The parent decides when one has been earned, as with a sticker chart.
+
+## How the built version decides (step 1)
+
+- **Suspects** are the sheet's topic headings with their points. A sheet needs at least two topics; otherwise the parent is told to use the study cards.
+- **Sheet size:** the sheet's lines are cut, in reading order, into card sheets of about 12 lines each, cutting at the start of a topic when one is close. A cut is kept only when its 8 cards cover every line (Rule A).
+- **Choosing cards:** each card slot takes the card that tests the most untested lines, less a penalty for each card of its type already on the sheet. A type may appear at most twice, and a second card of a type is only allowed when it can be kept apart from the first.
+- **Review:** the second sheet of a case may mix one line from the first sheet into WHICH ONE? and SPOT THE MISTAKE, so earlier facts come back.
+- **Culprit:** a topic on the case's last sheet. Each Big Clue is one of its points, with its name hidden, that names no other suspect.
+- **Leftover sheet:** when a chapter makes an odd number of sheets, the last case has one sheet and one Big Clue.
+- `check_case_file` re-checks everything (8 cards, Rule A, Rule B, words from the sheet, Big Clues) and nothing is printed unless it passes.
+- The case board and CASE CLOSED pages print once per case file; the cards print one-sided, 8 to an A4 page.
+
+Of the sample sheets in the repository, 9 of 11 with topics make a case file; a short sheet (7 lines) and one whose topic names overlap ("Phule", "Savitribai Phule") are refused with a message. These are checks of structure only.
 
 ## Build order
 

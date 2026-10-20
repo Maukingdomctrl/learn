@@ -63,8 +63,10 @@ The exit code is 0 when a lesson was delivered and 2 when it stopped with a limi
 **Offline Teaching Engine** (no API key, model, or network calls):
 
 ```bash
-python -m learn.teaching_engine path/to/curriculum.pdf --out teaching_lesson.json [--pages 3-5]
+python -m learn.teaching_engine path/to/curriculum.pdf --out teaching_lesson.json [--pages 3-5] [--case-file case.pdf]
 ```
+
+`--case-file` also prints a Detective case file: one-sided card sheets of 8 cards that together test every line of the sheet, building up to a hidden suspect. See [`docs/DETECTIVE_GAME.md`](docs/DETECTIVE_GAME.md).
 
 This writes a source-linked JSON teaching scaffold. The standalone teaching web app offers ICSE Standard 7-9 Detective and Superhero card games (Standard 8 by default), plus the original lesson-plan PDF and a source-credited social-studies visual library at `/library`; it remains separate from the older printable-PDF command above.
 
