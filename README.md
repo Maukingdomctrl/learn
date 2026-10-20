@@ -68,6 +68,8 @@ python -m learn.teaching_engine path/to/curriculum.pdf --out teaching_lesson.jso
 
 `--case-file` also prints a Detective case file: one-sided card sheets of 8 cards that together test every line of the sheet, building up to a hidden suspect. See [`docs/DETECTIVE_GAME.md`](docs/DETECTIVE_GAME.md).
 
+`--ai` lets a model (Claude Haiku, directly or through June) choose the case file's cards for one sheet per run; code still builds every card from the sheet's words and checks it. See `.env.example` for the settings. It has not yet been run against a real model.
+
 This writes a source-linked JSON teaching scaffold. The standalone teaching web app offers ICSE Standard 7-9 Detective and Superhero card games (Standard 8 by default), plus the original lesson-plan PDF and a source-credited social-studies visual library at `/library`; it remains separate from the older printable-PDF command above.
 
 **Offline Teaching Engine web app:**

@@ -51,7 +51,11 @@ class CallRecord:
 
 
 class AnthropicLLM:
-    """Claude via the Anthropic SDK. Credentials come from the environment (ANTHROPIC_API_KEY etc.)."""
+    """Claude via the Anthropic SDK. Credentials come from the environment (ANTHROPIC_API_KEY etc.).
+
+    ``base_url`` and ``api_key`` point the same client at a service with Anthropic's Messages API, such as June.
+    ``fallbacks`` asks the API to re-run a declined request on another model; Haiku and June do not offer it.
+    """
 
     def __init__(
         self,
@@ -61,11 +65,22 @@ class AnthropicLLM:
         max_tokens: int = 32000,
         retry_max_tokens: int = 64000,
         client=None,
+        base_url: str = "",
+        api_key: str = "",
+        fallbacks: bool = True,
+        key_name: str = "ANTHROPIC_API_KEY",
     ):
         import anthropic
 
         self._anthropic = anthropic
-        self.client = client if client is not None else anthropic.Anthropic()
+        if client is None:
+            options = {"base_url": base_url} if base_url else {}
+            if api_key:
+                options["api_key"] = api_key
+            client = anthropic.Anthropic(**options)
+        self.client = client
+        self.fallbacks = fallbacks
+        self.key_name = key_name
         self.model = model
         self.effort = effort
         self.check_effort = check_effort
@@ -79,6 +94,22 @@ class AnthropicLLM:
     @classmethod
     def from_config(cls) -> "AnthropicLLM":
         return cls(C.model_name(), C.model_effort(), C.check_effort(), C.max_output_tokens(), C.retry_output_tokens())
+
+    @classmethod
+    def for_cards(cls) -> "AnthropicLLM":
+        """The card writer's model (Haiku by default) at low effort, through June when LEARN_PROVIDER=june."""
+        june = C.provider() == "june"
+        return cls(
+            C.cards_model(),
+            C.cards_effort(),
+            C.cards_effort(),
+            C.cards_max_tokens(),
+            2 * C.cards_max_tokens(),
+            base_url=C.june_base_url() if june else "",
+            api_key=C.env("JUNE_API_KEY") if june else "",
+            fallbacks=False,
+            key_name="JUNE_API_KEY" if june else "ANTHROPIC_API_KEY",
+        )
 
     def model_output_cap(self) -> Optional[int]:
         """The model's maximum output tokens from the Models API, or None if it cannot be read."""
@@ -108,17 +139,22 @@ class AnthropicLLM:
         effort = self.effort_for(task)
         rec = CallRecord(task=task, model=self.model, effort=effort, max_tokens=max_tokens, attempt=attempt)
         start = time.monotonic()
+        request = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "system": system,
+            "messages": [{"role": "user", "content": content}],
+            "thinking": {"type": "adaptive"},
+            "output_config": {"effort": effort},
+        }
         try:
-            with self.client.beta.messages.stream(
-                model=self.model,
-                max_tokens=max_tokens,
-                system=system,
-                messages=[{"role": "user", "content": content}],
-                thinking={"type": "adaptive"},
-                output_config={"effort": effort},
-                betas=["server-side-fallback-2026-07-01"],
-                fallbacks="default",
-            ) as stream:
+            if self.fallbacks:
+                manager = self.client.beta.messages.stream(
+                    **request, betas=["server-side-fallback-2026-07-01"], fallbacks="default"
+                )
+            else:
+                manager = self.client.messages.stream(**request)
+            with manager as stream:
                 msg = stream.get_final_message()
         except Exception as e:
             rec.error = f"{type(e).__name__}: {e}"
@@ -142,7 +178,7 @@ class AnthropicLLM:
     def _translate(self, e: Exception) -> Exception:
         a = self._anthropic
         if isinstance(e, a.AuthenticationError):
-            return LLMError("Claude API credentials are missing or invalid (set ANTHROPIC_API_KEY).")
+            return LLMError(f"Claude API credentials are missing or invalid (set {self.key_name}).")
         if isinstance(e, a.RateLimitError):
             return LLMError("Claude API rate limit reached; try again later.")
         if isinstance(e, a.APIStatusError):
@@ -150,7 +186,7 @@ class AnthropicLLM:
         if isinstance(e, a.APIConnectionError):
             return LLMError(f"Cannot reach the Claude API: {e}")
         if isinstance(e, TypeError) and "authentication" in str(e).lower():  # SDK: no credentials resolved
-            return LLMError("Claude API credentials are not configured (set ANTHROPIC_API_KEY).")
+            return LLMError(f"Claude API credentials are not configured (set {self.key_name}).")
         return e
 
     def _call(self, task: str, system: str, content) -> str:
