@@ -66,6 +66,19 @@ LABELS = {
     "mistake": "SPOT THE MISTAKE",
     "notes": "CASE NOTES",
 }
+# The fixed instruction printed under each card's label; the only words on a card not taken from the sheet.
+TASKS = {
+    "match": "Match each name to its description. Write the letter beside the number.",
+    "which": "Whose fact is it? Write the name after each one.",
+    "timeline": "Number these from 1 (earliest) to the latest.",
+    "mistake": "One name is wrong. Cross it out and write the right name.",
+    "pick": "Circle the word that fills the gap.",
+    "fill": "Write the missing word or number in the gap.",
+    "number": "What does this number count? Write it below.",
+    "who": "Read the clues. Which suspect is this?",
+    "finish": "Finish the sentence from your sheet.",
+    "notes": "Without looking at your sheet, write {count} facts about {suspect}.",
+}
 # Recognise (0) before recall (1) before produce (2); case notes (3) close every sheet.
 STAGE = {
     "match": 0,
@@ -135,6 +148,8 @@ class BigClue:
 class CaseSheet:
     cards: tuple[CaseCard, ...]
     clue: BigClue
+    lines: tuple[str, ...] = ()  # ids of the sheet's own lines, which its cards must cover
+    review: tuple[str, ...] = ()  # ids of the case's earlier sheet, which its cards may bring back
 
 
 @dataclass(frozen=True)
@@ -242,7 +257,7 @@ class _Planner:
                   for number, text in enumerate(descriptions, start=1)]  # fmt: skip
         return CaseCard(
             "match",
-            "Match each name to its description. Write the letter beside the number.",
+            TASKS["match"],
             tuple(lines),
             tuple(answer),
             tuple(fact.id for fact in headings),
@@ -274,7 +289,7 @@ class _Planner:
         answer = [f"{number}. {fact.suspect}" for number, fact in enumerate(chosen, start=1)]
         return CaseCard(
             "which",
-            "Whose fact is it? Write the name after each one.",
+            TASKS["which"],
             tuple(lines),
             tuple(answer),
             tuple(fact.id for fact in chosen),
@@ -288,7 +303,7 @@ class _Planner:
                 line, answer, options = found
                 return CaseCard(
                     "pick",
-                    "Circle the word that fills the gap.",
+                    TASKS["pick"],
                     (line, "   ".join(f"({letter}) {option}" for letter, option in zip("abcd", options, strict=False))),
                     (f"{answer}: {fact.text}",),
                     (fact.id,),
@@ -344,7 +359,7 @@ class _Planner:
         covers = tuple(dict.fromkeys(fact.id for _, _, fact in events))
         return CaseCard(
             "timeline",
-            "Number these from 1 (earliest) to the latest.",
+            TASKS["timeline"],
             tuple(lines),
             tuple(answer),
             covers,
@@ -359,7 +374,7 @@ class _Planner:
                 _, answer, line = found
                 return CaseCard(
                     "fill",
-                    "Write the missing word or number in the gap.",
+                    TASKS["fill"],
                     (line,),
                     (f"{answer}: {fact.text}",),
                     (fact.id,),
@@ -374,7 +389,7 @@ class _Planner:
             if found:
                 return CaseCard(
                     "number",
-                    "What does this number count? Write it below.",
+                    TASKS["number"],
                     (found.group(),),
                     (fact.text,),
                     (fact.id,),
@@ -399,7 +414,7 @@ class _Planner:
                 suspect = chosen[0].suspect
                 return CaseCard(
                     "who",
-                    "Read the clues. Which suspect is this?",
+                    TASKS["who"],
                     tuple(f"Clue {number}: {_hidden(fact)}" for number, fact in enumerate(chosen, start=1)),
                     (suspect,),
                     tuple(fact.id for fact in chosen),
@@ -415,7 +430,7 @@ class _Planner:
                 start, rest = found
                 return CaseCard(
                     "finish",
-                    "Finish the sentence from your sheet.",
+                    TASKS["finish"],
                     (start,),
                     (rest, f"The sheet says: {fact.text}"),
                     (fact.id,),
@@ -436,7 +451,7 @@ class _Planner:
             wrong = suspects[(suspects.index(fact.suspect) + 1) % len(suspects)]
             return CaseCard(
                 "mistake",
-                "One name is wrong. Cross it out and write the right name.",
+                TASKS["mistake"],
                 (f"{wrong}: {fact.text}",),
                 (f"{fact.suspect}, not {wrong}. The sheet says: {fact.text}",),
                 (fact.id,),
@@ -453,7 +468,7 @@ class _Planner:
         suspect, points = max(counts.items(), key=lambda pair: len(pair[1]))
         return CaseCard(
             "notes",
-            f"Without looking at your sheet, write {NOTES_FACTS} facts about {suspect}.",
+            TASKS["notes"].format(count=NOTES_FACTS, suspect=suspect),
             (),
             ("Any 3 of these:", *(fact.text for fact in points)),
             (),
@@ -641,8 +656,12 @@ def plan_case_file(sheet: Sheet) -> CaseFile:
         if made is None:
             raise ValueError("No mystery could be built from this part of the sheet. Use the study cards instead.")
         culprit, clues = made
-        case_sheets = tuple(CaseSheet(tuple(cards), clue) for (_, cards), clue in zip(group, clues, strict=True))
-        cases.append(Case(len(cases) + 1, names, culprit, case_sheets))
+        case_sheets, review = [], ()
+        for (sheet_facts, cards), clue in zip(group, clues, strict=True):
+            lines = tuple(fact.id for fact in sheet_facts)
+            case_sheets.append(CaseSheet(tuple(cards), clue, lines, review))
+            review = lines
+        cases.append(Case(len(cases) + 1, names, culprit, tuple(case_sheets)))
     return CaseFile(tuple(suspects), tuple(cases), facts)
 
 
@@ -667,11 +686,38 @@ def _shown_text(card: CaseCard) -> list[str]:
     return texts
 
 
+def sheet_problems(cards: tuple[CaseCard, ...], facts: dict[str, Fact], where: str) -> list[str]:
+    """Rule B and the sheet's own words, for one card sheet."""
+    problems: list[str] = []
+    source = " \n ".join(fact.text for fact in facts.values())
+    if len(cards) != SHEET_CARDS:
+        problems.append(f"{where}: {len(cards)} cards, not {SHEET_CARDS}.")
+    kinds = [card.kind for card in cards]
+    if kinds.count("fill") > MAX_FILLS:
+        problems.append(f"{where}: {kinds.count('fill')} fill-the-gap cards, more than {MAX_FILLS}.")
+    for index in range(1, len(kinds)):
+        if kinds[index] == kinds[index - 1]:
+            problems.append(f"{where}: two {LABELS[kinds[index]]} cards in a row.")
+        if STAGE[kinds[index]] < STAGE[kinds[index - 1]]:
+            problems.append(f"{where}: card {index + 1} is easier than the card before it.")
+    if kinds and kinds[-1] != "notes":
+        problems.append(f"{where}: the last card is not CASE NOTES.")
+    for position, card in enumerate(cards, start=1):
+        unknown = [fact for fact in card.covers if fact not in facts]
+        if unknown:
+            problems.append(f"{where}, card {position}: tests facts that are not on the sheet: {unknown}.")
+        for text in _shown_text(card):
+            if not _pattern(text).search(source):
+                problems.append(f"{where}, card {position}: “{text}” is not the sheet's own words.")
+        if not card.answer:
+            problems.append(f"{where}, card {position}: no answer.")
+    return problems
+
+
 def check_case_file(case_file: CaseFile) -> list[str]:
     """Every problem with a case file. Nothing is printed unless this is empty."""
     problems: list[str] = []
     facts = case_file.facts
-    source = " \n ".join(fact.text for fact in facts.values())
     covered: set[str] = set()
     for case in case_file.cases:
         if len(case.suspects) < 2:
@@ -684,29 +730,9 @@ def check_case_file(case_file: CaseFile) -> list[str]:
         clue_facts = set()
         for number, case_sheet in enumerate(case.sheets, start=1):
             where = f"Case {case.number}, sheet {number}"
-            cards = case_sheet.cards
-            if len(cards) != SHEET_CARDS:
-                problems.append(f"{where}: {len(cards)} cards, not {SHEET_CARDS}.")
-            kinds = [card.kind for card in cards]
-            if kinds.count("fill") > MAX_FILLS:
-                problems.append(f"{where}: {kinds.count('fill')} fill-the-gap cards, more than {MAX_FILLS}.")
-            for index in range(1, len(kinds)):
-                if kinds[index] == kinds[index - 1]:
-                    problems.append(f"{where}: two {LABELS[kinds[index]]} cards in a row.")
-                if STAGE[kinds[index]] < STAGE[kinds[index - 1]]:
-                    problems.append(f"{where}: card {index + 1} is easier than the card before it.")
-            if kinds and kinds[-1] != "notes":
-                problems.append(f"{where}: the last card is not CASE NOTES.")
-            for position, card in enumerate(cards, start=1):
+            problems += sheet_problems(case_sheet.cards, facts, where)
+            for card in case_sheet.cards:
                 covered.update(card.covers)
-                unknown = [fact for fact in card.covers if fact not in facts]
-                if unknown:
-                    problems.append(f"{where}, card {position}: tests facts that are not on the sheet: {unknown}.")
-                for text in _shown_text(card):
-                    if not _pattern(text).search(source):
-                        problems.append(f"{where}, card {position}: “{text}” is not the sheet's own words.")
-                if not card.answer:
-                    problems.append(f"{where}, card {position}: no answer.")
             clue = case_sheet.clue
             fact = facts.get(clue.fact)
             if fact is None or fact.suspect != case.culprit:

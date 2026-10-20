@@ -111,6 +111,35 @@ def retry_output_tokens() -> int:
     return _int_env("LEARN_MAX_TOKENS_RETRY", 64000)
 
 
+def provider() -> str:
+    """Where the card writer's model is called: anthropic (the Claude API) or june (June's Anthropic-format API)."""
+    return env("LEARN_PROVIDER", "anthropic").lower()
+
+
+def june_base_url() -> str:
+    return env("JUNE_BASE_URL", "https://api.blockchain.info/ai/api")
+
+
+def cards_model() -> str:
+    """The model that writes Detective cards. June names models with a provider prefix and dots."""
+    default = "anthropic/claude-haiku-5.5" if provider() == "june" else "claude-haiku-5-5"
+    return env("LEARN_CARDS_MODEL", default)
+
+
+def cards_effort() -> str:
+    return env("LEARN_CARDS_EFFORT", "low")
+
+
+def cards_max_tokens() -> int:
+    """Output budget for one card sheet, thinking included; a cut-off response is retried once at twice this."""
+    return _int_env("LEARN_CARDS_MAX_TOKENS", 8000)
+
+
+def cards_sheet_limit() -> int:
+    """How many card sheets per run the model is asked about; the rest keep rule-based cards. Keeps tests cheap."""
+    return _int_env("LEARN_CARDS_AI_SHEETS", 1)
+
+
 def ocr_backend() -> str:
     """auto | tesseract | claude | off"""
     return env("LEARN_OCR", "auto").lower()

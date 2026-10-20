@@ -63,12 +63,16 @@ Every clue, choice and answer comes from the sheet. The only added words are fix
 
 **Open question:** SPOT THE MISTAKE puts one topic's fact under another topic's name ("Birmingham is the financial centre of Europe"). Every fact is still from the sheet, but the line is not printed as the sheet prints it. Proposed: allow it, and the answer sheet shows the exact correct line.
 
-### 1.5 Writing the cards with Claude Haiku
+### 1.5 Choosing the cards with Claude Haiku
 
-- Haiku gets the sheet's lines numbered, the list of card types and worked example cards (the trial game's cards are a good start), and returns the cards as structured data.
-- Code checks each card: the hidden answer and clue lines are exact sheet text; wrong choices are other words from the same sheet; Rules A and B hold; each Big Clue rules suspects out using only sheets already mastered.
-- A failing card is sent back once with the problems listed, then replaced by the rule-based engine.
-- The call goes through `LLM.json`, so tests use the scripted fake. A test set built from real sheets (starting with the UK cities PDF) measures Haiku's cards before children see them.
+Built in `learn/teaching_engine/ai_cards.py`; **not yet run against a real model**.
+
+- The rule-based planner still decides the suspects, the card sheets, the culprit and the Big Clues. The model only chooses each sheet's cards: which lines a card uses and which words to hide. It never writes card text: code builds every card from the sheet's own words, exactly as the rule-based cards are built.
+- The model sees one sheet at a time: that sheet's numbered lines and the case's earlier sheet (for review), never the rest of the chapter.
+- Code refuses any choice not made of the sheet's words (hidden words not in the line, wrong choices not on the sheet, a line from another sheet, a timeline whose years run backwards…), then applies Rules A and B. A failing sheet goes back once with the problems listed; if it fails again, or the model cannot be reached, the sheet keeps its rule-based cards and the run says so.
+- **Cost control:** the model is used only when asked (`--ai`), at low effort, and for at most `LEARN_CARDS_AI_SHEETS` sheets per run (default 1, two calls at most each). Everything else is rule-based and free. The website does not call the model.
+- **Provider:** `LEARN_PROVIDER=june` sends the calls to June's Anthropic-format API (`JUNE_API_KEY`, model `anthropic/claude-haiku-5.5`); the default sends them to the Claude API (`ANTHROPIC_API_KEY`, model `claude-haiku-5-5`). Neither offers the Claude API's backup-model option for Haiku, so it is off for the card writer.
+- Every call's tokens (in, out, thinking) are printed, so a test run shows what it cost.
 
 ### 1.6 Other rules
 

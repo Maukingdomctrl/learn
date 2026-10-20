@@ -123,3 +123,28 @@ def test_limits_come_from_environment(monkeypatch):
     monkeypatch.setenv("LEARN_CHECK_EFFORT", "low")
     llm = AnthropicLLM.from_config()
     assert (llm.max_tokens, llm.retry_max_tokens, llm.check_effort) == (16000, 64000, "low")
+
+
+def test_without_fallbacks_requests_use_the_plain_endpoint_and_send_the_effort():
+    requests = []
+
+    def stream(**kwargs):
+        requests.append(kwargs)
+        return FakeStream(msg())
+
+    client = SimpleNamespace(
+        messages=SimpleNamespace(stream=stream),
+        beta=SimpleNamespace(messages=SimpleNamespace(stream=None)),  # must not be used
+        models=SimpleNamespace(retrieve=lambda model: SimpleNamespace(max_tokens=128000)),
+    )
+    llm = make(client, effort="low", check_effort="low", fallbacks=False)
+    assert llm.json("write_cards", "sys", "prompt") == {"ok": 1}
+    request = requests[0]
+    assert request["output_config"] == {"effort": "low"} and request["thinking"] == {"type": "adaptive"}
+    assert "fallbacks" not in request and "betas" not in request
+
+
+def test_with_fallbacks_requests_ask_for_the_default_fallback():
+    client = FakeClient([msg()])
+    make(client).json("generate_lesson", "sys", "prompt")
+    assert client.requests[0]["fallbacks"] == "default"
