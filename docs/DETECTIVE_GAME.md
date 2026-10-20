@@ -2,7 +2,9 @@
 
 Status: **proposal only.** Nothing here is built yet. Today "Detective" is only a title and colour on the plain study cards (`learn/teaching_engine/cards.py`). This document is for agreeing how the game should work before any code is written.
 
-The game is rule-based and needs no AI. AI may be added later, but the game must work without it.
+The game must work without AI. Claude Haiku may write the cards later (see §1.5), but code checks every card, and the rule-based engine is the fallback.
+
+A trial game was played by hand on `UK_Important_Cities_Grade8.pdf` (London and Birmingham) to shape these rules. It has not been tested with children.
 
 ## Who uses it
 
@@ -12,36 +14,73 @@ The game is rule-based and needs no AI. AI may be added later, but the game must
 
 ## 1. Case File: what one chapter upload makes
 
-One uploaded chapter becomes one **Case File**: a set of printed cards plus a separate answer sheet for the parent.
+### 1.1 The mystery
 
-**Cards are one-sided.** Nothing is printed on the back. Every card has a header strip naming what kind of card it is:
+Each case has a hidden culprit (a city, person, process…) chosen from the topics on the sheets. Every topic of the same kind is a **suspect**; the child crosses suspects out as evidence comes in.
 
-| Card | What it does |
+### 1.2 Sheets, cards and Big Clues
+
+| Unit | Rule |
 | :--- | :--- |
-| **HOW TO PLAY** | The rules, in a few short lines. One per Case File. |
-| **CASE** | The mystery: "Who or what is this?" One per case. |
-| **CLUE** | One clue, copied word-for-word from the chapter, with the answer hidden. Three per case, from vague to specific. |
-| **SUSPECTS** | 3–4 possible answers: the right one and others of the same kind (people with people, years with years) taken from the same chapter. The child crosses out the ones the clues rule out. |
-| **EVIDENCE** | "Find the proof on page N of your chapter. Copy the line that proves it." Sends the child back to the source. |
-| **COLD CASE** | "Pull 5 old cards from your Case Box and solve them again." Review of earlier chapters. One per Case File. |
+| **Sheet** | One printed card page with **8 cards**. |
+| **Card** | One question about the source. The child writes the answer in a blank space on the card. |
+| **Sheet mastered** | All 8 cards answered correctly (a second try counts, see §2). Earns ⭐ 1 star and **one Big Clue**. |
+| **Big Clue** | A line from the sheet about the culprit, with its name hidden. It rules suspects out using facts from sheets already mastered. |
+| **Case closed** | After **2 sheets** (16 cards, 2 Big Clues) the child names the culprit and gives the proof lines. |
+
+The child may accuse early, but the case closes only after both sheets.
+
+**Printing:** cards are one-sided; nothing is printed on the back. Each card has a header strip naming its type. Gaps are blank lines long enough to write in, and the word in front of the gap stays as a hint ("the River ________").
 
 After the cards: a **CASE CLOSED** answer sheet for the parent, giving each answer, the line that proves it and its page.
 
-A chapter gives about 6–10 cases, one per main topic, plus a **Chapter Big Case** that ties them together. Its pieces are unlocked as cases are solved.
+### 1.3 Rule A: full coverage
 
-**Scoring a case:** solved after 1 clue = 3 stars, after 2 = 2, after 3 = 1. Stars count only once the parent has checked the answer against the CASE CLOSED sheet. This rewards thinking, not speed.
+Code numbers every line on the sheet's part of the source and checks that each one is tested by at least one card. One card may cover several lines (a MATCH or WHICH-ONE card), so 8 cards can cover 11 or more lines. The trial game used fill-the-gap cards only and missed 3 of 11 lines; a varied set covered all 11.
 
-**Rules carried over from the card engine** (see `docs/ENGINE_GUIDE.md`):
-- Every clue, suspect and answer is word-for-word from the uploaded chapter. The only added words are fixed card labels and instructions.
+### 1.4 Rule B: variety and rising difficulty
+
+- At most 2 fill-the-gap cards per sheet, and never the same type twice in a row.
+- Cards move from **recognise** (pick or match) to **recall** (write) to **produce** (explain, free recall).
+- The last card on a sheet is free recall: "Without looking, write 3 facts about …".
+
+Card types:
+
+| Type | The child… |
+| :--- | :--- |
+| **MATCH** | draws lines between linked words (city ↔ river ↔ region) |
+| **WHICH ONE?** | marks which topic each fact belongs to |
+| **TIMELINE** | puts events in order |
+| **FILL THE GAP** | writes the hidden word |
+| **PICK ONE** | circles the right answer from 3–4 words on the sheet |
+| **NUMBER DETECTIVE** | says what a number on the sheet counts |
+| **WHO AM I?** | names the topic from 2–3 lines |
+| **SPOT THE MISTAKE** | crosses out and fixes one swapped fact *(open question: see below)* |
+| **CASE NOTES** | writes 3 facts from memory |
+
+Every clue, choice and answer comes from the sheet. The only added words are fixed card labels and instructions.
+
+**Open question:** SPOT THE MISTAKE puts one topic's fact under another topic's name ("Birmingham is the financial centre of Europe"). Every fact is still from the sheet, but the line is not printed as the sheet prints it. Proposed: allow it, and the answer sheet shows the exact correct line.
+
+### 1.5 Writing the cards with Claude Haiku
+
+- Haiku gets the sheet's lines numbered, the list of card types and worked example cards (the trial game's cards are a good start), and returns the cards as structured data.
+- Code checks each card: the hidden answer and clue lines are exact sheet text; wrong choices are other words from the same sheet; Rules A and B hold; each Big Clue rules suspects out using only sheets already mastered.
+- A failing card is sent back once with the problems listed, then replaced by the rule-based engine.
+- The call goes through `LLM.json`, so tests use the scripted fake. A test set built from real sheets (starting with the UK cities PDF) measures Haiku's cards before children see them.
+
+### 1.6 Other rules
+
 - It works for any subject, with no topic-specific rules.
 - Cards come first and the answer sheet comes last.
-- When a chapter has no clear topics to build cases from, fall back to plain study cards and say so.
+- When a chapter has no clear topics to build a case from, fall back to plain study cards and say so.
 
 ## 2. Remembering earlier chapters
 
 The site does not remember past uploads, so review is physical:
 - Solved cards go into the child's **Case Box** (any box or envelope).
-- The COLD CASE card in each new Case File sends the child back to the box. Cards answered right go to the back, and cards answered wrong come to the front, so they return sooner.
+- A card answered wrong gets one second try with a stronger hint. Right on the second try still counts, but the card is marked for review.
+- A **COLD CASE** card in each new Case File says "Pull 5 old cards from your Case Box and solve them again." Cards answered right go to the back, and cards answered wrong come to the front, so they return sooner.
 - Re-solving old cards earns stars too.
 
 ## 3. Detective Log Sheet
@@ -56,7 +95,8 @@ A printable sheet, downloaded once from the home page. It is the only record of 
 
 | Milestone | Reward |
 | :--- | :--- |
-| Each case solved | 1–3 stars |
+| Each sheet mastered | ⭐ 1 star + a Big Clue |
+| Each case closed (2 sheets) | Case stamp on the Log Sheet |
 | Chapter solved | Chapter badge |
 | Every 5 chapters | A freebie (see §5) |
 | Every 10 chapters | New rank: Cadet → Detective → Inspector → Chief Inspector |
