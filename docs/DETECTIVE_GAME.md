@@ -73,7 +73,12 @@ Open points:
 2. **Screen time.** The product is screen-free for the child. A quiz of a few minutes, done once per Case File, is a small exception, but it should stay short.
 3. **Building the quiz.** The quiz can be built from the Case File's own text, without AI. The site already recognises its own generated PDFs (`cards.py`), so it can tell a Case File from a fresh chapter.
 4. **Printed frames.** Selling frames means payments, delivery addresses and a supplier. Checkout must be done by the parent, never the child, and we should store only what delivery needs.
-5. **Rewards page.** Until the quiz exists, freebies sit on a public Rewards page. The parent decides when one has been earned, as with a sticker chart.
+5. **Choosing the print with AI (Claude Haiku).** Haiku writes text, not pictures, so it chooses rather than draws:
+   - It picks the artwork from **our own catalogue** of owned or licensed pictures, matched to the chapter and the child's rank. Code rejects any pick that is not in the catalogue, so the AI can never put an unlicensed character on a frame.
+   - It writes the personal caption ("Agent Aarav, Chief Inspector, History Book 1") from the details the parent gives. Code checks its length and wording before printing.
+   - The parent sees the finished design and approves it before ordering.
+   - The call goes through the same model client as the rest of Learn (`LLM.json`), so it can be tested with the scripted fake.
+6. **Rewards page.** Until the quiz exists, freebies sit on a public Rewards page. The parent decides when one has been earned, as with a sticker chart.
 
 ## Build order
 
