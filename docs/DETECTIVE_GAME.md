@@ -78,7 +78,8 @@ Open points:
    - It writes the personal caption ("Agent Aarav, Chief Inspector, History Book 1") from the details the parent gives. Code checks its length and wording before printing.
    - The parent sees the finished design and approves it before ordering.
    - The call goes through the same model client as the rest of Learn (`LLM.json`), so it can be tested with the scripted fake.
-6. **Rewards page.** Until the quiz exists, freebies sit on a public Rewards page. The parent decides when one has been earned, as with a sticker chart.
+6. **Showcase on the home page.** A "Rewards you can earn" section on the public home page (`site/index.html`) shows a few framed examples, rank badges and posters, so children see the goal before they start. It uses only catalogue art, with the frame and canvas designs supplied by the owner.
+7. **Rewards page.** Until the quiz exists, freebies sit on a public Rewards page. The parent decides when one has been earned, as with a sticker chart.
 
 ## Build order
 
