@@ -50,10 +50,15 @@ class CallRecord:
     error: Optional[str] = None
 
 
+# Stands in for the June key when the environment's network secret replaces it on the way out.
+JUNE_KEY_FROM_NETWORK = "set-by-network-secret"
+
+
 class AnthropicLLM:
     """Claude via the Anthropic SDK. Credentials come from the environment (ANTHROPIC_API_KEY etc.).
 
     ``base_url`` and ``api_key`` point the same client at a service with Anthropic's Messages API, such as June.
+    ``auth_token`` sends the key as "Authorization: Bearer"; a network secret may put the real key there instead.
     ``fallbacks`` asks the API to re-run a declined request on another model; Haiku and June do not offer it.
     """
 
@@ -67,6 +72,7 @@ class AnthropicLLM:
         client=None,
         base_url: str = "",
         api_key: str = "",
+        auth_token: str = "",
         fallbacks: bool = True,
         key_name: str = "ANTHROPIC_API_KEY",
     ):
@@ -77,6 +83,8 @@ class AnthropicLLM:
             options = {"base_url": base_url} if base_url else {}
             if api_key:
                 options["api_key"] = api_key
+            elif auth_token:
+                options["auth_token"] = auth_token
             client = anthropic.Anthropic(**options)
         self.client = client
         self.fallbacks = fallbacks
@@ -107,6 +115,8 @@ class AnthropicLLM:
             2 * C.cards_max_tokens(),
             base_url=C.june_base_url() if june else "",
             api_key=C.env("JUNE_API_KEY") if june else "",
+            # Without JUNE_API_KEY, the environment's network secret adds the key as "Authorization: Bearer".
+            auth_token=JUNE_KEY_FROM_NETWORK if june and not C.env("JUNE_API_KEY") else "",
             fallbacks=False,
             key_name="JUNE_API_KEY" if june else "ANTHROPIC_API_KEY",
         )
