@@ -138,12 +138,15 @@ def _case_papers(data: bytes, inventory, page_range: set[int] | None, standard: 
         if key in _CASE_PAPERS:
             _CASE_PAPERS.move_to_end(key)
             return _CASE_PAPERS[key]
-    llm = _case_paper_model()
-    if llm is None:
-        return None
     try:
+        llm = _case_paper_model()
+        if llm is None:
+            return None
         papers = write_case_papers(read_sheet(inventory, data, page_range), llm, standard, C.detective_ai_sheets())
     except ValueError:  # no lines to write cards from; the rule-based path says why
+        return None
+    except Exception as error:  # noqa: BLE001 - a broken model setup must not crash the page
+        print(f"Detective case papers failed, using the rule-based case file: {type(error).__name__}: {error}")
         return None
     if not papers.model_cards:  # the model was unreachable or broke every rule: the rule-based case file is better
         return None
