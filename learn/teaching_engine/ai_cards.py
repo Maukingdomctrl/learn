@@ -386,8 +386,32 @@ class StudyResult:
     sheets: int = 0
 
 
+def _table_lines(table) -> list[str]:
+    """One line per table row (or per panel item), in the table's own words: "Trial B: Force: 1.00 N; Mass: 0.50 kg"."""
+
+    def filled(cell: str) -> bool:
+        return bool(cell.strip()) and cell.strip() not in {"—", "–", "-"}
+
+    header = list(table.header)
+    if table.kind == "panels":  # bullet lists side by side under short headings
+        cells = [(header[col], row[col]) for row in table.rows for col in range(min(len(header), len(row)))]
+        return [f"{name}: {cell}" for name, cell in cells if filled(cell)]
+    lines = []
+    for row in table.rows:
+        if not row or not filled(row[0]):
+            continue
+        pairs = [f"{name}: {cell}" for name, cell in zip(header[1:], row[1:], strict=False) if filled(cell)]
+        if table.kind == "timeline" or not any(header[1:]):
+            pairs = [cell for cell in row[1:] if filled(cell)]
+        if pairs:
+            lines.append(f"{row[0]}: {'; '.join(pairs)}")
+    return lines
+
+
 def study_lines(sheet) -> tuple[list[Fact], tuple[str, ...]]:
-    """The sheet's lines with their topics: the Detective suspects when there are two, else every point."""
+    """The sheet's lines with their topics: the Detective suspects when there are two. Otherwise every point,
+    every table row and every practice question printed with its answer, so a sheet whose facts sit in tables or
+    model answers is covered too."""
     from .detective import _display, suspects_from
 
     suspects = suspects_from(sheet)
@@ -395,11 +419,23 @@ def study_lines(sheet) -> tuple[list[Fact], tuple[str, ...]]:
         return [fact for suspect in suspects for fact in suspect.facts], tuple(s.name for s in suspects)
     from .cards import parse_heading
 
-    facts = []
+    facts: list[Fact] = []
+    points = {item.text.strip() for item in sheet.items if item.kind in {"point", "summary"}}
+
+    def add(topic: str, text: str, item) -> None:
+        facts.append(Fact(f"F{len(facts) + 1}", topic, text, item.page, unit_ids=item.unit_ids))
+
     for item in sheet.items:
+        topic = _display(parse_heading(item.topic).name) if item.topic else ""
         if item.kind in {"point", "summary"} and item.text.strip():
-            topic = _display(parse_heading(item.topic).name) if item.topic else ""
-            facts.append(Fact(f"F{len(facts) + 1}", topic, item.text, item.page, unit_ids=item.unit_ids))
+            add(topic, item.text, item)
+        elif item.kind == "table" and item.table is not None:
+            for line in _table_lines(item.table):
+                add(topic or item.context, line, item)
+        elif item.kind == "question" and item.answer.strip():
+            answers = [line.strip(" •-") for line in item.answer.splitlines() if line.strip(" •-")]
+            if answers and not all(answer in points for answer in answers):  # model answers already read as points
+                add(topic, f"{item.text} Answer: {' '.join(answers)}", item)
     return facts, tuple(dict.fromkeys(fact.suspect for fact in facts if fact.suspect))
 
 

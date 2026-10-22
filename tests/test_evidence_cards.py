@@ -181,3 +181,20 @@ def test_a_card_may_not_bundle_many_lines(uk_sheet):
     llm = ScriptedLLM({TASK: [bundled, GOOD, {}]})
     papers = write_case_papers(uk_sheet, llm, limit=1)
     assert papers.model_sheets == 1 and "teaches 3 lines; one concept per card" in llm.calls[1][1]
+
+
+@pytest.mark.parametrize(
+    "name, expected",
+    [
+        ("full-history-timeline.pdf", 15),  # a timeline and two grids: one line per row
+        ("comparison-panels.pdf", 9),  # two panels side by side: one line per bullet
+        ("full-physics-forces.pdf", 12),
+    ],
+)
+def test_tables_become_lines_so_their_facts_get_cards(name, expected):
+    data = (UK.parent / name).read_bytes()
+    lines, _ = study_lines(read_sheet(extract_facts(extract(data).units), data))
+    assert len(lines) == expected
+    papers = write_case_papers(read_sheet(extract_facts(extract(data).units), data))
+    taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
+    assert len(taught) >= len(lines) - 2  # plain cards: nearly every line, even without a model
