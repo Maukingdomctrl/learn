@@ -186,8 +186,20 @@ def load_dotenv(path: str = ".env") -> None:
 
 def detective_ai_sheets() -> int:
     """On the website, how many sheets of Detective cards the model writes per upload; the rest are plain cards.
-    Each sheet is one or two model calls, and the page waits at most two minutes for the PDF."""
-    return _int_env("LEARN_DETECTIVE_AI_SHEETS", 3)
+    Each sheet is one or two model calls."""
+    return _int_env("LEARN_DETECTIVE_AI_SHEETS", 10)
+
+
+def detective_workers() -> int:
+    """How many sheets of Detective cards the model writes at the same time. The page waits at most two minutes for
+    the PDF, and one sheet takes Haiku about 20-35 seconds, so a whole upload must run at once."""
+    return _int_env("LEARN_DETECTIVE_WORKERS", 10)
+
+
+def detective_max_pages() -> int:
+    """On the website, the most pages one Detective upload may have. More pages mean more sheets than can be written
+    before the page stops waiting, and the tokens spent on them would be wasted."""
+    return _int_env("LEARN_DETECTIVE_MAX_PAGES", 5)
 
 
 def detective_daily_limit() -> int:

@@ -1465,6 +1465,7 @@ def render_printable_cards_pdf(
     standard: int = 8,
     llm=None,
     ai_limit: int | None = None,
+    notes: tuple[str, ...] = (),
 ) -> bytes:
     """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them.
 
@@ -1498,9 +1499,9 @@ def render_printable_cards_pdf(
             "practice questions."
         )
     lost = lost_text_pages(sheet)
-    notes = tuple(
+    lost_notes = tuple(
         f"Some text on page {page} could not be read from the PDF (its font has no letters for it), so it is on "
         "no card. Check that page by eye."
         for page in lost
     )
-    return render_cards_pdf(cards, game_mode, standard, (*notes, *ai_notes))
+    return render_cards_pdf(cards, game_mode, standard, (*notes, *lost_notes, *ai_notes))

@@ -949,7 +949,8 @@
               aria-describedby="pages-help" autocomplete="off"
               spellcheck="false">
             <p class="hint" id="pages-help">
-              Use the PDF's page numbers. Leave blank to use all pages.
+              Use the PDF's page numbers. Leave blank to use all pages.{% if show_games %}
+              Detective works on up to {{ detective_max_pages }} pages at a time.{% endif %}
             </p>
           </div>
 
@@ -1378,7 +1379,8 @@
               ? "The server could not accept this file size. Try a smaller PDF."
               : response.status === 429
               ? "There are a lot of requests right now. Please try again shortly."
-              : "We couldn't create a PDF preview. Check your file and page range, then try again.";
+              : response.headers.get("x-learn-error")
+              || "We couldn't create a PDF preview. Check your file and page range, then try again.";
 
             throw new Error(message);
           }

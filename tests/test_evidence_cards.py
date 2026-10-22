@@ -298,3 +298,42 @@ def test_dates_formulas_and_everyday_words_pass_while_the_rule_still_bites(good,
     allowed = list(SCIENCE)
     assert check_card(good, SCIENCE, allowed) == []
     assert any(message in problem for problem in check_card(bad, SCIENCE, allowed))
+
+
+def test_groups_of_lines_go_to_the_model_at_the_same_time_and_keep_their_order(uk_sheet):
+    import threading
+    import time
+
+    class Slow:
+        running = most = 0
+        lock = threading.Lock()
+
+        def json(self, task, system, prompt):
+            with self.lock:
+                Slow.running += 1
+                Slow.most = max(Slow.most, Slow.running)
+            time.sleep(0.2)
+            with self.lock:
+                Slow.running -= 1
+            raise LLMError("busy")
+
+    papers = write_case_papers(uk_sheet, Slow(), workers=8)
+    assert Slow.most > 1  # several groups were with the model at once
+    busy = [note for note in papers.notes if "busy" in note]
+    assert busy == ["The model could not be used (busy); plain cards are used."]  # said once, not per group
+    numbers = [c.number for sheet in papers.sheets for c in sheet]
+    assert numbers == list(range(1, len(numbers) + 1))  # cards stay in the sheet's order
+    Slow.most = 0
+    write_case_papers(uk_sheet, Slow(), workers=1)
+    assert Slow.most == 1
+
+
+def test_a_long_topic_tag_fits_its_card_without_being_cut_mid_word():
+    from learn.teaching_engine.cards import _Type
+    from learn.teaching_engine.evidence_cards import _topic_tag
+
+    kind = _Type()
+    tag, size = _topic_tag(kind, "Causes Of The Uprising", 150)
+    assert "UPRISING" in tag.replace(" ", "") and kind.width(tag, size, True) + 12 <= 150
+    tag, size = _topic_tag(kind, "The Very Long Topic Name Of An Important Historical Movement In India", 150)
+    assert tag.endswith("…") and kind.width(tag, size, True) + 12 <= 150
