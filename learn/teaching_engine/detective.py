@@ -833,7 +833,7 @@ def _sheet_page(document, kind: _Type, case: Case, number: int, theme: dict) -> 
     shape.commit()
 
 
-def _answer_pages(document, kind: _Type, case_file: CaseFile, theme: dict) -> None:
+def _answer_pages(document, kind: _Type, case_file: CaseFile, theme: dict, notes: tuple[str, ...] = ()) -> None:
     margin, width = 46.0, _PAGE_WIDTH - 92.0
     state = {"y": 0.0, "shape": None}
 
@@ -876,11 +876,14 @@ def _answer_pages(document, kind: _Type, case_file: CaseFile, theme: dict) -> No
         write([f"THE HIDDEN SUSPECT: {case.culprit}"], 11, True, theme["colour"])
         write([f"Proof, p. {fact.page}: {fact.text}" for fact in proofs], 9.5, False, _INK, 18)
         state["y"] += 8
+    if notes:
+        write(["HOW THESE CARDS WERE MADE"], 10, True, theme["colour"])
+        write(list(notes), 8.5, False, _MUTED)
     state["shape"].commit()
 
 
-def render_case_file_pdf(case_file: CaseFile, standard: int = 8) -> bytes:
-    """Each case: its board, its card sheets (one-sided), then every answer at the end."""
+def render_case_file_pdf(case_file: CaseFile, standard: int = 8, notes: tuple[str, ...] = ()) -> bytes:
+    """Each case: its board, its card sheets (one-sided), then every answer at the end, with any notes."""
     problems = check_case_file(case_file)
     if problems:
         raise ValueError("The case file failed its checks: " + " ".join(problems))
@@ -890,7 +893,7 @@ def render_case_file_pdf(case_file: CaseFile, standard: int = 8) -> bytes:
         _board_page(document, kind, case, theme)
         for number in range(1, len(case.sheets) + 1):
             _sheet_page(document, kind, case, number, theme)
-    _answer_pages(document, kind, case_file, theme)
+    _answer_pages(document, kind, case_file, theme, notes)
     title = f"Learn ICSE Standard {standard} detective case file"
     document.set_metadata({"title": title, "author": "Learn Teaching Engine"})
     if kind.embedded:
