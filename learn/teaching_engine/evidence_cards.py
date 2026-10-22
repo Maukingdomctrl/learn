@@ -375,12 +375,10 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
             )
         result.sheets.append(made)
         result.model_cards += sum(card.by_model for card in made)
-    # Plain cards for a group of lines can run past eight; they continue on the next sheet.
-    result.sheets = [
-        cards[start : start + CARDS_PER_SHEET]
-        for cards in result.sheets
-        for start in range(0, len(cards), CARDS_PER_SHEET)
-    ]
+    # The cards run on in the sheet's order, eight to a printed sheet, so no sheet is left half empty when a group
+    # of lines makes more or fewer than eight cards.
+    every = [card for cards in result.sheets for card in cards]
+    result.sheets = [every[start : start + CARDS_PER_SHEET] for start in range(0, len(every), CARDS_PER_SHEET)]
     if asked and len(asked) < len(groups) and not failures:
         result.notes.append(f"The model was asked about {len(asked)} of {len(groups)} sheets (limit {limit}).")
     return result

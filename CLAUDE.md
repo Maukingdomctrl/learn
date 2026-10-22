@@ -76,12 +76,13 @@ The offline engine behind the public site (`learn/teaching_web.py`, deployed on 
   - It runs only with `--ai` on the command line, for at most `LEARN_CARDS_AI_SHEETS` sheets (default 1). The website doesn't call it yet.
   - `LEARN_PROVIDER=june` sends calls to June's Anthropic-format API. The key comes from the environment's network secret for `api.blockchain.info`, or from `JUNE_API_KEY`.
   - `LEARN_PROVIDER=google` sends calls to Gemini on Google's OpenAI-style API (`OpenAIStyleLLM` in `llm.py`, plain httpx). The key comes from a network secret for `generativelanguage.googleapis.com`, or from `GOOGLE_API_KEY`. Get card models from `llm.card_llm()`, never by building a client directly.
-  - Claude Haiku 5.5 has been run live once, on one sheet. Don't claim more.
-  - The Google client has not been run live yet. Don't claim it has.
+  - Live runs so far: Haiku 5.5 (through June and the Anthropic API) and Gemini (through June and Google) have written Detective case papers for sample and test sheets. No child or parent has used the cards yet. Don't claim more.
 - `evidence_cards.py` makes Detective Mode case papers (`--case-papers`): the model writes everyday-scene Evidence cards from the sheet's numbered lines, and `check_card` holds each card to the sheet.
   - The sheet is the only truth. The answer must be printed in the card's lines, and any number or capitalised name on a card must be on the sheet; only `SCENE_NAMES` and `EVERYDAY_NAMES` are exempt. Don't loosen these checks to raise the model's pass rate.
   - Cards that pass are kept one by one. Lines no passing card teaches get plain rule-based cards.
-  - The website's Detective button calls it when `JUNE_API_KEY` (or `ANTHROPIC_API_KEY` without June) is set, for up to `LEARN_DETECTIVE_AI_SHEETS` sheets per upload and `LEARN_DETECTIVE_DAILY_LIMIT` uploads a day. A repeat of the same upload is served from memory. Without a key, past the limit, or with no good model card, the button makes the rule-based case file.
+  - The website's Detective button calls it when the chosen provider's key is set (`config.card_key_name()`), for up to `LEARN_DETECTIVE_AI_SHEETS` sheets per upload, `LEARN_DETECTIVE_WORKERS` at a time, and `LEARN_DETECTIVE_DAILY_LIMIT` uploads a day. Uploads over `LEARN_DETECTIVE_MAX_PAGES` pages are refused before any model call. A repeat of the same upload is served from memory.
+  - Without a key, past the limit, or with no good model card, the button makes the rule-based case file, with a note telling the parent why. Every Detective upload logs one line (model, calls, tokens, time).
+  - Website tests replace the model with a fake that fails at once (`tests/test_teaching_web.py`). Never let a test reach a real model: a network secret can fill in a real key.
 - Tests: `tests/test_detective.py`, `tests/test_ai_cards.py`, `tests/test_evidence_cards.py` (scripted fake model), and the `test_teaching_*.py` files.
 
 ## Cards (`cards/`)

@@ -337,3 +337,13 @@ def test_a_long_topic_tag_fits_its_card_without_being_cut_mid_word():
     assert "UPRISING" in tag.replace(" ", "") and kind.width(tag, size, True) + 12 <= 150
     tag, size = _topic_tag(kind, "The Very Long Topic Name Of An Important Historical Movement In India", 150)
     assert tag.endswith("…") and kind.width(tag, size, True) + 12 <= 150
+
+
+@pytest.mark.parametrize("name", ["uk-cities-comparative-table.pdf", "full-physics-forces.pdf", "mumbai-events.pdf"])
+def test_every_printed_sheet_but_the_last_is_full(name):
+    data = (UK.parent / name).read_bytes()
+    papers = write_case_papers(read_sheet(extract_facts(extract(data).units), data))  # plain cards, 9 for some groups
+    sizes = [len(sheet) for sheet in papers.sheets]
+    assert all(size == CARDS_PER_SHEET for size in sizes[:-1]) and 1 <= sizes[-1] <= CARDS_PER_SHEET
+    numbers = [c.number for sheet in papers.sheets for c in sheet]
+    assert numbers == list(range(1, len(numbers) + 1))
