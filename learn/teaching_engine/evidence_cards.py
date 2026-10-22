@@ -55,11 +55,17 @@ THE CARD RECIPE (non-negotiable):
    grandmothers, cricket. Everyday life only. Historical or civic facts still get a scene a child can picture.
    REAL LIFE: let the scene show the line's concept at work where a child meets it: at home, at school, in the street,
    on a trip, in the news. The scene shows the concept; it never adds a new fact about the topic (rule 8).
+   GENTLE: keep scenes calm and safe for a child. When a line is about death, injury, war or disaster, teach what it
+   says in plain, calm words, and never describe people being hurt; picture the place, the warning or the help
+   instead. Add no detail that does not help the question (no rain on an earthquake card).
 4. QUESTION: direct but curious, exactly one sentence ending with "?". Model: "The bottle is sealed, yet drops appear
    outside. Where did the water come from?"
 5. ANSWER: 1-2 words, at most 3 for a name (e.g. "Condensation", "River Thames", "Harland and Wolff"), copied exactly
    as printed in one of the card's lines. A date or formula may be longer ("28 December 1885", "A = l × w"). The
    question must lead straight to that answer. Each card has its own answer.
+   Pick the line's KEY TERM as the answer: a naming word the child should remember ("Humid climate", "Yarn",
+   "Recycling"), not a phrase that describes it ("Dries quickly", "Switching off", "Run out"). Use a describing phrase
+   only when the line has no term for the idea.
 6. SIMPLE LANGUAGE: the child already has a whole chapter to learn, so a card must add no reading load. Write for a
    tired 12-year-old: everyday words a Class 5 child knows, one idea per sentence, about 10-12 words per sentence,
    warm and friendly. Retell the lines in your own easy words; never copy hard words like "preeminent", "apparatus",
