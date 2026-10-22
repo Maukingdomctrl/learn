@@ -28,6 +28,8 @@ from .cards import _ORANGE, _PAGE_HEIGHT, _PAGE_WIDTH, _Type, plan_cards
 from .detective import Fact
 
 TASK = "write_evidence_cards"
+# The only names a scene may add: everyday children, so no person, place or thing outside the sheet appears on a card.
+SCENE_NAMES = ("Rohan", "Asha", "Meera", "Aarav", "Riya", "Kabir", "Priya", "Arjun", "Anya", "Dev")
 CARDS_PER_SHEET = 8
 LINES_PER_SHEET = 9  # sheet lines the model turns into one sheet of cards: about one card per line
 MAX_LINES_PER_CARD = 2  # a card teaches one concept; two lines only when they say the same thing
@@ -54,7 +56,10 @@ THE CARD RECIPE (non-negotiable):
    "metropolitan" or "prominence" onto a card. Only the answer must match the lines exactly.
 7. SUPPLEMENTARY FACTS: small extra facts from the lines (numbers, names, side notes) are folded into a related card's
    evidence, never given their own filler card.
-8. NO FABRICATION: every fact must come from the lines. Do not invent statistics, people, dates or processes.
+8. NO FABRICATION: the sheet is the only truth. Every fact about the topic (names, places, dates, numbers, events,
+   causes, how things work) must come from the card's lines. The everyday scene may add only ordinary, non-factual
+   details: a child, a map, a bottle, rain, a classroom. Do not add true facts you know from elsewhere either. For
+   children in a scene use only these names: {", ".join(SCENE_NAMES)}.
 9. COVERAGE: teach every important concept on the sheet, not a summary of it. Write ONE CARD PER LINE; join two
    lines on one card only when they say the same thing, never more than two. Each card lists the ids of the lines
    it teaches, and every line must be taught by a card.
@@ -100,6 +105,8 @@ class EvidenceSet:
     notes: list[str] = field(default_factory=list)
     model_sheets: int = 0
     facts: dict[str, Fact] = field(default_factory=dict)
+    problems: list[str] = field(default_factory=list)  # why each fallen-back sheet failed, for tuning
+    problems: list[str] = field(default_factory=list)  # why each fallen-back sheet failed, for tuning
 
 
 def _norm(text: str) -> str:
@@ -146,6 +153,25 @@ def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[s
         problems.append(f"{where}: the evidence is too long; keep it to {MAX_EVIDENCE_WORDS} words.")
     if len(texts["question"].split()) > MAX_QUESTION_WORDS:
         problems.append(f"{where}: the question is too long; keep it to {MAX_QUESTION_WORDS} words.")
+    problems += _outside_facts(where, f"{texts['evidence']} {texts['question']}", facts)
+    return problems
+
+
+def _outside_facts(where: str, text: str, facts: dict[str, Fact]) -> list[str]:
+    """Numbers and names on a card that the sheet does not print: knowledge from outside the sheet."""
+    sheet = " ".join(f"{fact.suspect} {fact.text}" for fact in facts.values())
+    numbers = [n.rstrip(".,") for n in re.findall(r"\d[\d,.]*", text) if not _contains(sheet, n.rstrip(".,"))]
+    names = []
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        for word in re.findall(r"[A-Za-z][\w'’-]*", sentence)[1:]:  # a sentence's first word is capitalised anyway
+            if word[0].isupper() and word not in SCENE_NAMES and not _contains(sheet, word):
+                names.append(word)
+    problems = []
+    if numbers:
+        problems.append(f"{where}: the numbers {', '.join(numbers)} are not on the sheet; use only the sheet's facts.")
+    if names:
+        problems.append(f"{where}: the names {', '.join(dict.fromkeys(names))} are not on the sheet; use only the "
+                        f"sheet's facts and the scene names {', '.join(SCENE_NAMES[:3])}…")  # fmt: skip
     return problems
 
 
@@ -257,6 +283,8 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
                 result.notes.append(
                     f"Lines {lines[0]}–{lines[-1]}: the model's cards broke the rules twice, so plain cards are used."
                 )
+                result.problems.extend(f"{lines[0]}–{lines[-1]}: {problem}" for problem in problems)
+                result.problems.extend(f"{lines[0]}–{lines[-1]}: {problem}" for problem in problems)
             except Exception as error:  # noqa: BLE001 - any model failure falls back to plain cards
                 reachable = False
                 result.notes.append(f"The model could not be used ({error}); plain cards are used.")

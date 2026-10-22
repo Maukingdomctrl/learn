@@ -45,7 +45,7 @@ GOOD = {
         card(
             ["F1", "F3"],
             "The Red Star on the Map",
-            "Rohan opens a map of Britain. One city has a red star. It leads the whole country.",
+            "Rohan opens a map of the country. One city has a red star. It leads the whole country.",
             "Which city has the red star?",
             "London",
         ),
@@ -146,6 +146,11 @@ def test_the_model_sees_only_its_sheet_of_lines(uk_sheet):
         ({"answer": "the river thames"}, "1-2 words"),
         ({"question": "Which river flows through this city"}, "must end with"),
         ({"lines": ["F40"]}, "ids of lines on this sheet"),
+        ({"evidence": "Boats float past Big Ben. The wide water runs through the big city."}, "names Big, Ben are not"),
+        (
+            {"evidence": "Boats float past a clock tower built in 1859. The water runs through the city."},
+            "numbers 1859",
+        ),
     ],
 )
 def test_each_broken_rule_is_named(facts, change, message):
@@ -198,3 +203,15 @@ def test_tables_become_lines_so_their_facts_get_cards(name, expected):
     papers = write_case_papers(read_sheet(extract_facts(extract(data).units), data))
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
     assert len(taught) >= len(lines) - 2  # plain cards: nearly every line, even without a model
+
+
+def test_scene_names_and_sheet_facts_are_allowed(facts):
+    allowed = [f"F{n}" for n in range(1, 10)]
+    scene = {**GOOD["cards"][1], "evidence": "Asha watches boats in southeastern England. The water runs past London."}
+    assert check_card(scene, facts, allowed) == []
+
+
+def test_why_a_sheet_fell_back_is_recorded(uk_sheet):
+    partial = {"cards": GOOD["cards"][:3]}
+    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [partial, partial, {}]}), limit=1)
+    assert any("taught by no card" in problem for problem in papers.problems)
