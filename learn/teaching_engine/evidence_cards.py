@@ -85,12 +85,18 @@ EXAMPLES of the style (from a Water chapter):
   youth. Today the diggers go down sixty. Each summer, the well fills slower." Question: "What is the hidden level
   below which the ground stays soaked with water called?" Answer: "Water table".
 
+10. TWO KINDS OF CARD, printed in two parts so no question repeats. Label each card with "mode":
+   - "detective" when the answer is a name, place, date or number: the scene is a small mystery, and the child finds
+     the fact from the clues.
+   - "hero" when the answer is an idea, process, cause or term: the scene is an everyday problem or emergency, and the
+     child saves the day by naming the idea that explains it or fixes it.
+
 SELF-CHECK: the answer words must NOT appear in the card's title, evidence or question.
 
 Reply with one JSON object only, no commentary:
-{{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "title": "3-6 everyday words", "evidence": "2-3
-sentences.", "question": "One sentence?", "answer": "1-2 words from the lines", "key_why": "One short sentence: why
-the answer follows."}}]}}
+{{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "mode": "detective or hero", "title": "3-6 everyday
+words", "evidence": "2-3 sentences.", "question": "One sentence?", "answer": "1-2 words from the lines", "key_why":
+"One short sentence: why the answer follows."}}]}}
 Use at most {CARDS_PER_SHEET} cards."""
 
 
@@ -106,17 +112,30 @@ class EvidenceCard:
     page: int
     by_model: bool = True
     topic: str = ""
+    mode: str = "detective"  # "detective": find a fact (name, place, date, number); "hero": use an idea
 
 
 @dataclass
 class EvidenceSet:
     title: str
-    sheets: list[list[EvidenceCard]]
+    sheets: list[list[EvidenceCard]]  # the detective sheets, then from ``hero_start`` on the hero sheets
     notes: list[str] = field(default_factory=list)
     model_sheets: int = 0
     facts: dict[str, Fact] = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)  # why each fallen-back group failed, for tuning
     model_cards: int = 0
+    hero_start: int = 0  # index of the first hero sheet; equal to len(sheets) when there are none
+
+
+def card_mode(card: dict) -> str:
+    """The card's part of the printout: the model's label, or for plain cards (and missing labels) "detective" when
+    the answer is a name, date or number, "hero" when it is an idea."""
+    mode = card.get("mode")
+    if mode in {"detective", "hero"}:
+        return mode
+    words = str(card.get("answer", "")).split()
+    named = words and all(word[:1].isupper() or word.casefold() in {"and", "of", "the"} for word in words)
+    return "detective" if named or re.search(r"\d", str(card.get("answer", ""))) else "hero"
 
 
 def _norm(text: str) -> str:
@@ -337,9 +356,9 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
                 failures.append(str(error))
             else:
                 kept, reply, problems = answer
+                if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
+                    result.title = reply["case_title"].strip()[:70] or result.title
                 if _complete(kept, lines):
-                    if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
-                        result.title = reply["case_title"].strip()[:70] or result.title
                     raw_sheets.append([(card, True) for card in kept])
                     result.model_sheets += 1
                     continue
@@ -353,10 +372,14 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
         raw_sheets.append([(card, True) for card in kept] + [(card, False) for card in plain])
     for error in dict.fromkeys(failures):
         result.notes.append(f"The model could not be used ({error}); plain cards are used.")
+    # Two parts, each in the sheet's order and eight cards to a printed sheet, so no sheet is left half empty: the
+    # detective cards (facts to find), then the hero cards (ideas to use). Every line is taught once.
+    every = [(card, by_model) for cards in raw_sheets for card, by_model in cards]
+    parts = [[item for item in every if card_mode(item[0]) == mode] for mode in ("detective", "hero")]
     number = 0
-    for cards in raw_sheets:
+    for part, mode in zip(parts, ("detective", "hero"), strict=True):
         made = []
-        for card, by_model in cards:
+        for card, by_model in part:
             number += 1
             lines = tuple(card["lines"])
             made.append(
@@ -371,14 +394,13 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
                     facts[lines[0]].page,
                     by_model,
                     facts[lines[0]].suspect,
+                    mode,
                 )
             )
-        result.sheets.append(made)
+        if mode == "hero":
+            result.hero_start = len(result.sheets)
+        result.sheets += [made[start : start + CARDS_PER_SHEET] for start in range(0, len(made), CARDS_PER_SHEET)]
         result.model_cards += sum(card.by_model for card in made)
-    # The cards run on in the sheet's order, eight to a printed sheet, so no sheet is left half empty when a group
-    # of lines makes more or fewer than eight cards.
-    every = [card for cards in result.sheets for card in cards]
-    result.sheets = [every[start : start + CARDS_PER_SHEET] for start in range(0, len(every), CARDS_PER_SHEET)]
     if asked and len(asked) < len(groups) and not failures:
         result.notes.append(f"The model was asked about {len(asked)} of {len(groups)} sheets (limit {limit}).")
     return result
@@ -511,8 +533,7 @@ def _stamp(shape, text: str, centre: pymupdf.Point) -> None:
                       morph=(centre, turn))  # fmt: skip
 
 
-def _key_page(document, kind: _Type, papers: EvidenceSet, index: int, cards: list[EvidenceCard]) -> None:
-    total = len(papers.sheets)
+def _key_page(document, kind: _Type, papers: EvidenceSet, index: int, total: int, cards: list[EvidenceCard]) -> None:
     page, shape = _paper(document, kind)
     _page_header(
         shape,
@@ -559,12 +580,16 @@ def _key_page(document, kind: _Type, papers: EvidenceSet, index: int, cards: lis
     shape.commit()
 
 
-def render_case_papers_pdf(papers: EvidenceSet) -> bytes:
-    """Each sheet's cards on one page (one-sided), then its sealed answer key on the next."""
+def render_case_papers_pdf(papers: EvidenceSet, subject: str = "") -> bytes:
+    """The detective part, each sheet's cards on one page (one-sided) and its sealed answer key on the next, then the
+    hero part in the Hero Academy look (``hero_papers.py``)."""
+    from .hero_papers import add_hero_pages
+
     kind = _Type()
     document = pymupdf.open()
-    total = len(papers.sheets)
-    for index, cards in enumerate(papers.sheets, start=1):
+    detective = papers.sheets[: papers.hero_start]
+    total = len(detective)
+    for index, cards in enumerate(detective, start=1):
         page, shape = _paper(document, kind)
         topics = list(dict.fromkeys(card.topic for card in cards if card.topic))
         _page_header(
@@ -583,7 +608,8 @@ def render_case_papers_pdf(papers: EvidenceSet) -> bytes:
             shape.finish(color=_RULE, width=0.6, dashes="[2 2] 0")
             _draw_card(shape, kind, card, box)
         shape.commit()
-        _key_page(document, kind, papers, index, cards)
+        _key_page(document, kind, papers, index, total, cards)
+    add_hero_pages(document, kind, papers, papers.sheets[papers.hero_start :], subject, notes=not detective)
     document.set_metadata({"title": "Learn ICSE Standard 8 detective case papers", "author": "Learn Teaching Engine"})
     if kind.embedded:
         document.subset_fonts()
