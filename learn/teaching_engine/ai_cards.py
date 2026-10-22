@@ -434,7 +434,7 @@ def study_lines(sheet) -> tuple[list[Fact], tuple[str, ...]]:
                 add(topic or item.context, line, item)
         elif item.kind == "question" and item.answer.strip():
             answers = [line.strip(" •-") for line in item.answer.splitlines() if line.strip(" •-")]
-            if answers and not all(answer in points for answer in answers):  # model answers already read as points
+            if answers and not any(answer in points for answer in answers):  # model answers already read as points
                 add(topic, f"{item.text} Answer: {' '.join(answers)}", item)
     return facts, tuple(dict.fromkeys(fact.suspect for fact in facts if fact.suspect))
 

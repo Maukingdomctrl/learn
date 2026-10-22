@@ -23,7 +23,7 @@ can check.
 """
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import pymupdf
 
@@ -76,10 +76,6 @@ THE CARD RECIPE (non-negotiable):
    causes, how things work) must come from the card's lines. The everyday scene may add only ordinary, non-factual
    details: a child, a map, a bottle, rain, a classroom. Do not add true facts you know from elsewhere either. For
    children in a scene use only these names: {", ".join(SCENE_NAMES)}.
-   Never add, unless the lines say it: why something happened, what people felt, feared or believed, what came
-   next, words like "first", "famous", "leading", "biggest" or "for hundreds of years", or how something works.
-   Wrong: "Soldiers feared the new gun was against their faith." (the line only says the cartridges were rumoured to
-   be greased with cow and pig fat). Right: "A rumour spread that the new gun's cartridges were greased with fat."
 9. COVERAGE: teach every important concept on the sheet, not a summary of it. Write ONE CARD PER LINE; join two
    lines on one card only when they say the same thing, never more than two. Each card lists the ids of the lines
    it teaches, and every line must be taught by a card.
@@ -95,18 +91,12 @@ EXAMPLES of the style (from a Water chapter):
   youth. Today the diggers go down sixty. Each summer, the well fills slower." Question: "What is the hidden level
   below which the ground stays soaked with water called?" Answer: "Water table".
 
-10. TWO KINDS OF CARD, printed in two parts so no question repeats. Label each card with "mode":
-   - "detective" when the answer is a name, place, date or number: the scene is a small mystery, and the child finds
-     the fact from the clues.
-   - "hero" when the answer is an idea, process, cause or term: the scene is an everyday problem or emergency, and the
-     child saves the day by naming the idea that explains it or fixes it.
-
 SELF-CHECK: the answer words must NOT appear in the card's title, evidence or question.
 
 Reply with one JSON object only, no commentary:
-{{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "mode": "detective or hero", "title": "3-6 everyday
-words", "evidence": "2-3 sentences.", "question": "One sentence?", "answer": "1-2 words from the lines", "key_why":
-"One short sentence: why the answer follows."}}]}}
+{{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "title": "3-6 everyday words", "evidence": "2-3
+sentences.", "question": "One sentence?", "answer": "1-2 words from the lines", "key_why": "One short sentence: why
+the answer follows."}}]}}
 Use at most {CARDS_PER_SHEET} cards."""
 
 
@@ -122,30 +112,17 @@ class EvidenceCard:
     page: int
     by_model: bool = True
     topic: str = ""
-    mode: str = "detective"  # "detective": find a fact (name, place, date, number); "hero": use an idea
 
 
 @dataclass
 class EvidenceSet:
     title: str
-    sheets: list[list[EvidenceCard]]  # the detective sheets, then from ``hero_start`` on the hero sheets
+    sheets: list[list[EvidenceCard]]
     notes: list[str] = field(default_factory=list)
     model_sheets: int = 0
     facts: dict[str, Fact] = field(default_factory=dict)
     problems: list[str] = field(default_factory=list)  # why each fallen-back group failed, for tuning
     model_cards: int = 0
-    hero_start: int = 0  # index of the first hero sheet; equal to len(sheets) when there are none
-
-
-def card_mode(card: dict) -> str:
-    """The card's part of the printout: the model's label, or for plain cards (and missing labels) "detective" when
-    the answer is a name, date or number, "hero" when it is an idea."""
-    mode = card.get("mode")
-    if mode in {"detective", "hero"}:
-        return mode
-    words = str(card.get("answer", "")).split()
-    named = words and all(word[:1].isupper() or word.casefold() in {"and", "of", "the"} for word in words)
-    return "detective" if named or re.search(r"\d", str(card.get("answer", ""))) else "hero"
 
 
 def _norm(text: str) -> str:
@@ -154,6 +131,14 @@ def _norm(text: str) -> str:
 
 def _contains(haystack: str, needle: str) -> bool:
     return bool(needle) and f" {_norm(needle)} " in f" {_norm(haystack)} "
+
+
+def short_answer(answer: str) -> bool:
+    """1-2 words, 3 for a name, or a date or formula as printed: an answer a child can write and remember."""
+    words = answer.split()
+    name = all(word[:1].isupper() or word.casefold() in {"and", "of", "the"} for word in words)
+    exact = re.search(r"[\d=+×÷<>]", answer) and len(words) <= MAX_EXACT_ANSWER_WORDS  # a date or a formula
+    return bool(words) and bool(exact or len(words) < MAX_ANSWER_WORDS or (len(words) == MAX_ANSWER_WORDS and name))
 
 
 def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[str]:
@@ -170,10 +155,7 @@ def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[s
     if problems:
         return problems
     answer = texts["answer"].strip()
-    words = answer.split()
-    name = all(word[:1].isupper() or word.casefold() in {"and", "of", "the"} for word in words)
-    exact = re.search(r"[\d=+×÷<>]", answer) and len(words) <= MAX_EXACT_ANSWER_WORDS  # a date or a formula
-    if not exact and (len(words) > MAX_ANSWER_WORDS or (len(words) == MAX_ANSWER_WORDS and not name)):
+    if not short_answer(answer):
         problems.append(f"{where}: the answer “{answer}” must be 1-2 words (3 only for a name).")
     if not any(_contains(facts[line].text, answer) or _contains(facts[line].suspect, answer) for line in lines):
         problems.append(f"{where}: the answer “{answer}” is not printed in its lines {', '.join(lines)}.")
@@ -283,11 +265,19 @@ def _plain_cards(sheet, facts: dict[str, Fact], lines: list[str], standard: int)
                 "key_why": "From the sheet.",
             }
         )
+    made = [card for card in made if _usable_plain(card)]
     covered = {line for card in made for line in card["lines"]}
     for line in lines:
-        if line not in covered and (plain := _line_card(facts[line])):
+        if line not in covered and (plain := _line_card(facts[line])) and _usable_plain(plain):
             made.append(plain)
     return made
+
+
+def _usable_plain(card: dict) -> bool:
+    """A plain card worth printing: a real question with a short answer. "Answer it." over a whole practice question
+    and "Finish the sentence." over half a line make a parent give up on the sheet, so they are left out."""
+    stub = str(card.get("evidence", "")).rstrip().endswith("…") or card.get("question") == "Answer it."
+    return not stub and short_answer(str(card.get("answer", "")).strip(" .…"))
 
 
 def _line_card(fact: Fact) -> dict | None:
@@ -307,63 +297,14 @@ def _line_card(fact: Fact) -> dict | None:
     return None
 
 
-REVIEW_TASK = "review_evidence_cards"
-REVIEW_SYSTEM = """You check printed study cards for children against the curriculum lines they were written from.
-The lines are the only truth.
-
-A card may add an everyday scene that says nothing about the topic: a child, a map, a classroom, the weather, a
-bottle. A card may also say what its lines say in simpler words.
-
-Flag every sentence of a card's evidence or question that states something about the topic that its lines do not
-say: a fact, name, place, number or date; a cause or reason; what people felt, feared or believed; what came next;
-a claim such as "first", "famous", "leading" or "biggest"; how something works. Do not flag simpler wording of what
-the lines say, and do not flag scene details.
-
-Reply with one JSON object only: {"flags": [{"card": 1, "sentence": "the exact sentence", "reason": "what the lines
-do not say"}]}. Use {"flags": []} when every card keeps to its lines."""
-
-
-def _review(llm, facts: dict[str, Fact], cards: list[dict]) -> dict[int, str]:
-    """The cards (by position) that state something about the topic their lines do not say, with the reason."""
-    listing = "\n\n".join(
-        f"CARD {number}\nLINES: "
-        + " | ".join(facts[line].text for line in card["lines"])
-        + f"\nEVIDENCE: {card['evidence']}\nQUESTION: {card['question']}\nANSWER: {card['answer']}"
-        for number, card in enumerate(cards, start=1)
-    )
-    reply = llm.json(REVIEW_TASK, REVIEW_SYSTEM, listing)
-    flags = reply.get("flags") if isinstance(reply, dict) else None
-    found: dict[int, str] = {}
-    for flag in flags if isinstance(flags, list) else []:
-        number = flag.get("card") if isinstance(flag, dict) else None
-        if isinstance(number, int) and 1 <= number <= len(cards):
-            found.setdefault(number - 1, f"“{flag.get('sentence', '')}” ({flag.get('reason', 'not in its lines')})")
-    return found
-
-
-def _reviewed(llm, facts: dict[str, Fact], kept: list[dict], problems: list[str]) -> list[dict]:
-    """The kept cards without those the review flags; each flag is added to ``problems`` for the retry."""
-    flagged = _review(llm, facts, kept) if kept else {}
-    for index, reason in flagged.items():
-        problems.append(f"Card “{kept[index]['title']}”: says something its lines do not say: {reason}.")
-    return [card for index, card in enumerate(kept) if index not in flagged]
-
-
-def _ask_model(
-    llm, facts: dict[str, Fact], lines: list[str], topics, review: bool = False
-) -> tuple[list[dict], object, list[str]]:
+def _ask_model(llm, facts: dict[str, Fact], lines: list[str], topics) -> tuple[list[dict], object, list[str]]:
     """One group of lines sent to the model, and back once more with the problems listed when a line is left
-    untaught: the cards that pass every rule, the last reply, and the problems of the last reply.
-
-    With ``review``, a second request checks the passing cards against their lines and drops any that state
-    something the lines do not say; their lines then count as untaught, so they go back to the model once."""
+    untaught: the cards that pass every rule, the last reply, and the problems of the last reply."""
     listing = "\n".join(f"{line} [{facts[line].suspect or '-'}] {facts[line].text}" for line in lines)
     prompt = f"TOPICS: {', '.join(topics) or '-'}\n\nLINES:\n{listing}"
     reply = llm.json(TASK, SYSTEM, prompt)
     cards, problems = _cards_from(reply, facts, lines)
     kept = _keep(cards, facts, lines)
-    if review:
-        kept = _reviewed(llm, facts, kept, problems)
     if problems and not _complete(kept, lines):
         listed = "\n".join(f"- {problem}" for problem in problems)
         retry = (
@@ -373,29 +314,13 @@ def _ask_model(
         reply = llm.json(TASK, SYSTEM, retry)
         cards, problems = _cards_from(reply, facts, lines)
         again = _keep(cards, facts, lines)
-        if review:
-            again = _reviewed(llm, facts, again, problems)
-        kept = _merged(again, kept) if _taught(again) >= _taught(kept) else _merged(kept, again)
+        if _taught(again) >= _taught(kept):
+            kept = again
     return kept, reply, problems
 
 
-def _merged(base: list[dict], extra: list[dict]) -> list[dict]:
-    """``base``, plus the ``extra`` cards that teach lines ``base`` leaves untaught with answers of their own."""
-    merged, taught = list(base), _taught(base)
-    answers = {_norm(card["answer"]) for card in base}
-    for card in extra:
-        if len(merged) < CARDS_PER_SHEET and not set(card["lines"]) & taught and _norm(card["answer"]) not in answers:
-            merged.append(card)
-            taught |= set(card["lines"])
-            answers.add(_norm(card["answer"]))
-    return merged
-
-
-def write_case_papers(
-    sheet, llm=None, standard: int = 8, limit: int | None = None, workers: int = 8, review: bool = False
-) -> EvidenceSet:
-    """The sheet's lines as Evidence cards, 8 to a sheet, model-written where they pass every check (and, with
-    ``review``, a second request's check that no card states something its lines do not say).
+def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = None, workers: int = 8) -> EvidenceSet:
+    """The sheet's lines as Evidence cards, 8 to a sheet, model-written where they pass every check.
 
     Up to ``limit`` groups of lines go to the model, ``workers`` of them at a time, so a chapter takes about as long
     as its slowest group rather than the sum of them.
@@ -415,7 +340,7 @@ def write_case_papers(
 
     def ask(lines):
         try:
-            return _ask_model(llm, facts, lines, topics, review), None
+            return _ask_model(llm, facts, lines, topics), None
         except Exception as error:  # noqa: BLE001 - any model failure falls back to plain cards
             return None, error
 
@@ -431,9 +356,9 @@ def write_case_papers(
                 failures.append(str(error))
             else:
                 kept, reply, problems = answer
-                if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
-                    result.title = reply["case_title"].strip()[:70] or result.title
                 if _complete(kept, lines):
+                    if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
+                        result.title = reply["case_title"].strip()[:70] or result.title
                     raw_sheets.append([(card, True) for card in kept])
                     result.model_sheets += 1
                     continue
@@ -447,16 +372,10 @@ def write_case_papers(
         raw_sheets.append([(card, True) for card in kept] + [(card, False) for card in plain])
     for error in dict.fromkeys(failures):
         result.notes.append(f"The model could not be used ({error}); plain cards are used.")
-    # Two parts, each in the sheet's order and eight cards to a printed sheet, so no sheet is left half empty: the
-    # detective cards (facts to find), then the hero cards (ideas to use). Every line is taught once.
-    every = [(card, by_model) for cards in raw_sheets for card, by_model in cards]
-    # Plain cards are gap-fills in the sheet's own words, not stories, so they always stay in the detective part.
-    modes = [card_mode(card) if by_model else "detective" for card, by_model in every]
-    parts = [[item for item, own in zip(every, modes, strict=True) if own == mode] for mode in ("detective", "hero")]
     number = 0
-    for part, mode in zip(parts, ("detective", "hero"), strict=True):
+    for cards in raw_sheets:
         made = []
-        for card, by_model in part:
+        for card, by_model in cards:
             number += 1
             lines = tuple(card["lines"])
             made.append(
@@ -471,13 +390,27 @@ def write_case_papers(
                     facts[lines[0]].page,
                     by_model,
                     facts[lines[0]].suspect,
-                    mode,
                 )
             )
-        if mode == "hero":
-            result.hero_start = len(result.sheets)
-        result.sheets += [made[start : start + CARDS_PER_SHEET] for start in range(0, len(made), CARDS_PER_SHEET)]
+        result.sheets.append(made)
         result.model_cards += sum(card.by_model for card in made)
+    # The cards run on in the sheet's order, eight to a printed sheet, so no sheet is left half empty when a group
+    # of lines makes more or fewer than eight cards.
+    # Model cards may share an answer when they ask different things ("Carbon dioxide" on a carbon-cycle sheet); a
+    # plain card whose answer is already on the sheets would only repeat "What is this about? London", so it goes.
+    every, answers = [], set()
+    for card in (card for cards in result.sheets for card in cards):
+        if card.by_model or _norm(card.answer) not in answers:
+            answers.add(_norm(card.answer))
+            every.append(card)
+    every = [replace(card, number=number) for number, card in enumerate(every, start=1)]
+    result.model_cards = sum(card.by_model for card in every)
+    result.sheets = [every[start : start + CARDS_PER_SHEET] for start in range(0, len(every), CARDS_PER_SHEET)]
+    untaught = [line for line in ids if line not in {line for card in every for line in card.lines}]
+    if untaught:
+        result.notes.append(
+            f"{len(untaught)} of {len(ids)} lines had no card that kept to the sheet, so they are not on these sheets."
+        )
     if asked and len(asked) < len(groups) and not failures:
         result.notes.append(f"The model was asked about {len(asked)} of {len(groups)} sheets (limit {limit}).")
     return result
@@ -610,7 +543,8 @@ def _stamp(shape, text: str, centre: pymupdf.Point) -> None:
                       morph=(centre, turn))  # fmt: skip
 
 
-def _key_page(document, kind: _Type, papers: EvidenceSet, index: int, total: int, cards: list[EvidenceCard]) -> None:
+def _key_page(document, kind: _Type, papers: EvidenceSet, index: int, cards: list[EvidenceCard]) -> None:
+    total = len(papers.sheets)
     page, shape = _paper(document, kind)
     _page_header(
         shape,
@@ -657,16 +591,12 @@ def _key_page(document, kind: _Type, papers: EvidenceSet, index: int, total: int
     shape.commit()
 
 
-def render_case_papers_pdf(papers: EvidenceSet, subject: str = "") -> bytes:
-    """The detective part, each sheet's cards on one page (one-sided) and its sealed answer key on the next, then the
-    hero part in the Hero Academy look (``hero_papers.py``)."""
-    from .hero_papers import add_hero_pages
-
+def render_case_papers_pdf(papers: EvidenceSet) -> bytes:
+    """Each sheet's cards on one page (one-sided), then its sealed answer key on the next."""
     kind = _Type()
     document = pymupdf.open()
-    detective = papers.sheets[: papers.hero_start]
-    total = len(detective)
-    for index, cards in enumerate(detective, start=1):
+    total = len(papers.sheets)
+    for index, cards in enumerate(papers.sheets, start=1):
         page, shape = _paper(document, kind)
         topics = list(dict.fromkeys(card.topic for card in cards if card.topic))
         _page_header(
@@ -685,8 +615,7 @@ def render_case_papers_pdf(papers: EvidenceSet, subject: str = "") -> bytes:
             shape.finish(color=_RULE, width=0.6, dashes="[2 2] 0")
             _draw_card(shape, kind, card, box)
         shape.commit()
-        _key_page(document, kind, papers, index, total, cards)
-    add_hero_pages(document, kind, papers, papers.sheets[papers.hero_start :], subject, notes=not detective)
+        _key_page(document, kind, papers, index, cards)
     document.set_metadata({"title": "Learn ICSE Standard 8 detective case papers", "author": "Learn Teaching Engine"})
     if kind.embedded:
         document.subset_fonts()
