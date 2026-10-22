@@ -114,6 +114,7 @@ class Fact:
     text: str
     page: int
     heading: bool = False
+    unit_ids: tuple[str, ...] = ()  # the source units the line came from
 
 
 @dataclass(frozen=True)
@@ -174,15 +175,15 @@ def _display(name: str) -> str:
 def suspects_from(sheet: Sheet) -> list[Suspect]:
     """The sheet's topics, each with its heading description and its points, in reading order."""
     order: list[str] = []
-    headings: dict[str, tuple[str, int]] = {}
-    points: dict[str, list[tuple[str, int]]] = {}
+    headings: dict[str, tuple[str, int, tuple[str, ...]]] = {}
+    points: dict[str, list[tuple[str, int, tuple[str, ...]]]] = {}
     for item in sheet.items:
         if item.kind == "topic":
             order.append(item.text)
-            headings[item.text] = (item.text, item.page)
+            headings[item.text] = (item.text, item.page, item.unit_ids)
             points.setdefault(item.text, [])
         elif item.kind == "point" and item.topic in headings:
-            points[item.topic].append((item.text, item.page))
+            points[item.topic].append((item.text, item.page, item.unit_ids))
     suspects, number = [], 0
     for topic in order:
         heading = parse_heading(topic)
@@ -191,10 +192,11 @@ def suspects_from(sheet: Sheet) -> list[Suspect]:
         description = re.sub(r"^\s*(?:[–—-]|:)\s*", "", heading.after).strip()
         if description:
             number += 1
-            facts.append(Fact(f"F{number}", name, _hide_name(description, name), headings[topic][1], True))
-        for text, page in points[topic]:
+            _, page, units = headings[topic]
+            facts.append(Fact(f"F{number}", name, _hide_name(description, name), page, True, units))
+        for text, page, units in points[topic]:
             number += 1
-            facts.append(Fact(f"F{number}", name, text, page))
+            facts.append(Fact(f"F{number}", name, text, page, unit_ids=units))
         if len(facts) >= 2:
             suspects.append(Suspect(name, tuple(facts)))
     return suspects

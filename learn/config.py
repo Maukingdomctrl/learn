@@ -121,13 +121,15 @@ def june_base_url() -> str:
 
 
 def cards_model() -> str:
-    """The model that writes Detective cards. June names models with a provider prefix and dots."""
-    default = "anthropic/claude-haiku-5.5" if provider() == "june" else "claude-haiku-5-5"
+    """The model that chooses cards. Through June the test default is Gemini 3.8 Flash; June names models with a
+    provider prefix and dots."""
+    default = "google/gemini-3.8-flash" if provider() == "june" else "claude-haiku-5-5"
     return env("LEARN_CARDS_MODEL", default)
 
 
 def cards_effort() -> str:
-    return env("LEARN_CARDS_EFFORT", "low")
+    """Thinking effort for choosing cards: medium for Gemini 3.8 Flash, low for Haiku (from the first live tests)."""
+    return env("LEARN_CARDS_EFFORT", "medium" if "gemini" in cards_model() else "low")
 
 
 def cards_max_tokens() -> int:

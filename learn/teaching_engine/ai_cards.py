@@ -37,39 +37,53 @@ from .detective import (
 )
 
 TASK = "write_cards"
+STUDY_CARDS = 8  # cards on one printed study-card sheet
+STUDY_LINES = 12  # sheet lines the model is shown at once for study cards
 MAX_HIDDEN_WORDS = 6  # the most words a gap may hide
 # The first word of a name that says what kind of place it is; it stays on the card as a hint ("River ____").
 KIND_WORDS = frozenset("River Mount Mt Lake Sea Ocean Bay Gulf Cape Fort Port Lord Sir Mahatma".split())
 AI_KINDS = ("match", "which", "pick", "timeline", "fill", "number", "who", "finish", "mistake")
 
-SYSTEM = f"""You choose the cards for one sheet of a Detective study game for Indian school children in Standard 7-8.
 
-The child studies a sheet of numbered lines. Each line belongs to a suspect (a topic: a city, a person, a process).
-You choose {SHEET_CARDS - 1} cards that help the child remember every line. Code prints them using the sheet's own
-words, so you never write a clue or an answer yourself: you only say which lines a card uses and which words of a
-line to hide. Copy any words you hide exactly as they appear in the line, with the same capitals and punctuation.
+def system_prompt(count: int, game: str, review: bool) -> str:
+    """The model's instructions for choosing ``count`` cards for one sheet."""
+    review_rule = (
+        '- Lines under EARLIER SHEET may appear only in "which" and "mistake" cards, as review.\n' if review else ""
+    )
+    return f"""You choose the cards for one sheet of {game} for Indian school children in Standard 7-8.
+
+The child studies a sheet of numbered lines. Each line belongs to a topic (a city, a person, a process); the topic is
+in square brackets. You choose {count} cards that help the child remember every line. Code prints them using the
+sheet's own words, so you never write a clue or an answer yourself: you only say which lines a card uses and which
+words of a line to hide. Copy any words you hide exactly as they appear in the line, with the same capitals and
+punctuation.
 
 Rules:
 - Every line under THIS SHEET must be used by at least one card.
-- Use at least 5 different kinds. At most {MAX_FILLS} "fill" cards and at most 2 cards of any other kind.
+- Use at least 5 different kinds when the lines allow. At most {MAX_FILLS} "fill" cards and at most 2 cards of any
+  other kind.
 - Hide what a child should remember: a name, place, term, date, number or key phrase of 1-{MAX_HIDDEN_WORDS} words.
-  Leave a kind word such as "River" or "Mount" showing as a hint: hide "Thames", not "River Thames".
-- A timeline event must contain its date or period ("in 1905", "in the 18th century", "in the medieval period").
   Never hide small words such as "the", "major" or "one".
-- Lines under EARLIER SHEET may appear only in "which" and "mistake" cards, as review.
-
+- Leave a kind word such as "River" or "Mount" showing as a hint: hide "Thames", not "River Thames".
+- A timeline event must contain its date or period ("in 1905", "in the 18th century", "in the medieval period").
+- "match", "which", "who" and "mistake" need lines of at least two topics.
+{review_rule}
 Card kinds (JSON):
-- {{"kind": "match", "lines": [2-4 ids of different suspects]}}: the child matches each suspect to its line.
-- {{"kind": "which", "lines": [2-{WHICH_ONE_LINES} ids, at least 2 suspects]}}: the child names whose line each is.
+- {{"kind": "match", "lines": [2-4 ids of different topics]}}: the child matches each topic to its line.
+- {{"kind": "which", "lines": [2-{WHICH_ONE_LINES} ids, at least 2 topics]}}: the child names whose line each is.
 - {{"kind": "pick", "line": id, "hide": "words", "wrong": [2-3 other words from the sheet of the same kind]}}
 - {{"kind": "fill", "line": id, "hide": "words"}}
 - {{"kind": "timeline", "events": [{{"line": id, "words": "part of the line"}}, ...]}}: 2-4 events, earliest first.
 - {{"kind": "number", "line": id, "number": "a number printed in the line"}}: the child says what it counts.
-- {{"kind": "who", "lines": [2-{WHO_LINES} ids of one suspect]}}: the child names the suspect from its lines.
+- {{"kind": "who", "lines": [2-{WHO_LINES} ids of one topic]}}: the child names the topic from its lines.
 - {{"kind": "finish", "line": id, "shown": "the first words of the line"}}: the child finishes the sentence.
-- {{"kind": "mistake", "line": id, "wrong_name": "another suspect"}}: the line is printed under the wrong name.
+- {{"kind": "mistake", "line": id, "wrong_name": "another topic"}}: the line is printed under the wrong name.
 
-Reply with one JSON object only: {{"cards": [ ... {SHEET_CARDS - 1} cards ... ]}}"""
+Reply with one JSON object only: {{"cards": [ ... up to {count} cards ... ]}}"""
+
+
+SYSTEM = system_prompt(SHEET_CARDS - 1, "a Detective study game", review=True)
+STUDY_SYSTEM = system_prompt(STUDY_CARDS, "study cards", review=False)
 
 EXAMPLE = """Example, for a sheet with these lines:
 L1 [London] Situated on the River Thames in southeastern England.
@@ -344,4 +358,148 @@ def write_with_model(case_file: CaseFile, llm, limit: int | None = None) -> AIRe
     if limit is not None and asked < result.sheets and reachable:
         result.notes.append(f"The model was asked about {asked} of {result.sheets} sheets (limit {limit}).")
     result.case_file = replace(case_file, cases=tuple(cases))
+    return result
+
+
+# Study cards: the same choices, printed as the site's study cards.
+
+STUDY_TASK = "write_study_cards"
+# The one plain question printed in each study card's strip.
+STUDY_QUESTIONS = {
+    "match": "Which description goes with each name?",
+    "which": "Whose fact is each one?",
+    "pick": "Which word fills the gap?",
+    "timeline": "What is the right order?",
+    "fill": "What goes in the gap?",
+    "number": "What does this number count?",
+    "who": "Who or what is this?",
+    "finish": "How does this sentence end?",
+    "mistake": "Which name is wrong?",
+}
+
+
+@dataclass
+class StudyResult:
+    cards: list
+    notes: list[str] = field(default_factory=list)
+    ai_sheets: int = 0
+    sheets: int = 0
+
+
+def study_lines(sheet) -> tuple[list[Fact], tuple[str, ...]]:
+    """The sheet's lines with their topics: the Detective suspects when there are two, else every point."""
+    from .detective import _display, suspects_from
+
+    suspects = suspects_from(sheet)
+    if len(suspects) >= 2:
+        return [fact for suspect in suspects for fact in suspect.facts], tuple(s.name for s in suspects)
+    from .cards import parse_heading
+
+    facts = []
+    for item in sheet.items:
+        if item.kind in {"point", "summary"} and item.text.strip():
+            topic = _display(parse_heading(item.topic).name) if item.topic else ""
+            facts.append(Fact(f"F{len(facts) + 1}", topic, item.text, item.page, unit_ids=item.unit_ids))
+    return facts, tuple(dict.fromkeys(fact.suspect for fact in facts if fact.suspect))
+
+
+def _study_card(card: CaseCard, facts: dict[str, Fact]):
+    """A model-chosen card in the study cards' form: one plain question, the sheet's words, a short answer."""
+    from .cards import GAP as CARD_GAP
+    from .cards import Card
+
+    if card.kind in {"fill", "pick"}:
+        answer = card.answer[0].split(": ", 1)[0]
+    elif card.kind == "mistake":
+        answer = card.answer[0].split(". ", 1)[0]
+    elif card.kind in {"number", "finish"}:
+        answer = card.answer[0]
+    else:
+        answer = "; ".join(card.answer)
+    units = tuple(dict.fromkeys(unit for line in card.covers if line in facts for unit in facts[line].unit_ids))
+    clue = "\n".join(card.lines).replace(_BLANK, CARD_GAP)
+    return Card(f"ai_{card.kind}", STUDY_QUESTIONS[card.kind], clue, answer, card.page, units, card.about)
+
+
+def _study_from(facts: dict[str, Fact], lines: list[str], suspects, reply: dict):
+    """(cards, problems) for one model reply about one group of lines."""
+    builder = _Builder(facts, tuple(lines), (), suspects)
+    specs = reply.get("cards") if isinstance(reply, dict) else None
+    if not isinstance(specs, list):
+        return [], ['The reply has no "cards" list.']
+    built, problems = [], []
+    for number, spec in enumerate(specs, start=1):
+        try:
+            built.append(builder.build(spec))
+        except CardError as error:
+            problems.append(f"Card {number}: {error}.")
+    kinds = [card.kind for card in built]
+    if len(built) > STUDY_CARDS:
+        problems.append(f"{len(built)} cards, more than {STUDY_CARDS}.")
+    for kind in set(kinds):
+        most = MAX_FILLS if kind == "fill" else 2
+        if kinds.count(kind) > most:
+            problems.append(f"{kinds.count(kind)} {LABELS[kind]} cards, more than {most}.")
+    covered = {line for card in built for line in card.covers}
+    missing = [line for line in lines if line not in covered]
+    if missing:
+        problems.append("These lines are on no card: " + ", ".join(missing) + ".")
+    return [_study_card(card, facts) for card in built], problems
+
+
+def write_study_cards(sheet, llm, limit: int | None = None, standard: int = 8) -> StudyResult:
+    """The sheet's study cards, with each group of lines' cards chosen by the model where they pass every check.
+
+    The rule-based cards are planned first. Each group of up to ``STUDY_LINES`` lines the model handles replaces the
+    rule-based cards made from the same source units; tables, practice questions and any group the model fails on
+    keep their rule-based cards.
+    """
+    from .cards import plan_cards
+
+    rule_cards = plan_cards(sheet, standard)
+    facts, suspects = study_lines(sheet)
+    by_id = {fact.id: fact for fact in facts}
+    ids = [fact.id for fact in facts]
+    groups = [ids[start : start + STUDY_LINES] for start in range(0, len(ids), STUDY_LINES)]
+    result = StudyResult(rule_cards, sheets=len(groups))
+    chosen: dict[int, list] = {}
+    asked = 0
+    for number, lines in enumerate(groups):
+        if limit is not None and asked >= limit:
+            break
+        asked += 1
+        listing = "\n".join(f"{line} [{by_id[line].suspect or '-'}] {by_id[line].text}" for line in lines)
+        prompt = f"{EXAMPLE}\n\nTOPICS: {', '.join(suspects) or '-'}\n\nTHIS SHEET:\n{listing}"
+        try:
+            cards, problems = _study_from(by_id, lines, suspects, llm.json(STUDY_TASK, STUDY_SYSTEM, prompt))
+            if problems:
+                listed = "\n".join(f"- {problem}" for problem in problems)
+                retry = f"{prompt}\n\nYour cards had these problems. Choose the cards again.\n{listed}"
+                cards, problems = _study_from(by_id, lines, suspects, llm.json(STUDY_TASK, STUDY_SYSTEM, retry))
+        except Exception as error:  # noqa: BLE001 - any model failure keeps the rule-based cards
+            result.notes.append(f"The model could not be used ({error}); the rule-based cards are printed.")
+            break
+        if problems:
+            result.notes.append(
+                f"Lines {lines[0]}–{lines[-1]}: the model's cards failed checks twice; rule-based cards kept."
+            )
+        else:
+            chosen[number] = cards
+    units = {number: {unit for line in groups[number] for unit in by_id[line].unit_ids} for number in chosen}
+    merged, placed = [], set()
+    for card in rule_cards:
+        group = next((number for number, used in units.items() if used & set(card.unit_ids)), None)
+        if group is None:
+            merged.append(card)
+        elif group not in placed:
+            merged.extend(chosen[group])
+            placed.add(group)
+    for number in chosen:
+        if number not in placed:
+            merged.extend(chosen[number])
+    result.cards, result.ai_sheets = merged, len(chosen)
+    if limit is not None and len(chosen) < len(groups):
+        result.notes.append(
+            f"The model chose the cards for {len(chosen)} of {len(groups)} groups of lines (limit {limit})."
+        )
     return result
