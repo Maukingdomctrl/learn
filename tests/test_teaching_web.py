@@ -1,3 +1,4 @@
+import re
 from collections import OrderedDict
 from pathlib import Path
 
@@ -19,8 +20,9 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
 
     page = client.get("/").text
     assert "No account or API key needed" in page
-    # The page offers the games, Detective first.
-    assert "<strong>Detective</strong>" in page and "<strong>Superhero</strong>" in page
+    # The page offers the Detective game; Superhero is hidden for now.
+    assert "<strong>Detective</strong>" in page and "<strong>Superhero</strong>" not in page
+    assert "uperhero" not in re.sub(r"(?s)<script.*?</script>", "", page)  # nor in the page's wording
     assert 'name="output" value="detective" checked' in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
@@ -138,6 +140,14 @@ def test_teaching_web_rejects_its_own_generated_card_pdf():
 
     with pytest.raises(ValueError, match="already a Learn-generated card PDF"):
         web._build_pdf(generated_pdf, "", "detective", 8)
+
+
+def test_turning_superhero_back_on_shows_both_games(monkeypatch):
+    monkeypatch.setattr(web, "SHOW_SUPERHERO", True)
+    page = TestClient(web.app).get("/").text
+
+    assert 'name="output" value="detective" checked' in page and 'name="output" value="superhero"' in page
+    assert "Pick Detective or Superhero." in page
 
 
 def test_turning_the_games_off_makes_plain_study_cards(monkeypatch):

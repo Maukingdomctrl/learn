@@ -27,6 +27,8 @@ MAX_SCANNED_PAGES = 8
 # The upload page offers the Detective and Superhero games. With this off it hides them and makes the same cards
 # titled "STUDY CARDS"; /generate still makes the games when asked.
 SHOW_GAMES = True
+# The Superhero game is hidden from the page for now; /generate still makes it when asked.
+SHOW_SUPERHERO = False
 # Detective case papers already made, by upload: "Preview" then "Create" for the same PDF costs one set of model calls.
 _CASE_PAPERS: OrderedDict[str, bytes] = OrderedDict()
 _CASE_PAPERS_KEPT = 16
@@ -44,7 +46,7 @@ def _page(name: str, **ctx) -> HTMLResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return _page("teaching_upload.html.j2", show_games=SHOW_GAMES)
+    return _page("teaching_upload.html.j2", show_games=SHOW_GAMES, show_superhero=SHOW_SUPERHERO)
 
 
 @app.get("/healthz")
