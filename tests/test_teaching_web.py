@@ -282,3 +282,27 @@ def test_a_model_that_writes_no_good_card_gives_the_rule_based_case_file(monkeyp
     response = _post(TestClient(web.app), "/generate")
 
     assert "DETECTIVE CASE FILE" in "\n".join(page.get_text() for page in pymupdf.open(stream=response.content))
+
+
+def test_a_broken_model_setup_gives_the_rule_based_case_file_not_an_error_page(monkeypatch):
+    def broken():
+        raise ModuleNotFoundError("No module named 'httpx'")  # what the live site hit
+
+    monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
+    monkeypatch.setattr(web, "_case_paper_model", broken)
+    response = _post(TestClient(web.app), "/preview")
+
+    assert response.status_code == 200
+    assert "DETECTIVE CASE FILE" in "\n".join(page.get_text() for page in pymupdf.open(stream=response.content))
+
+
+def test_the_site_installs_every_package_the_card_models_import():
+    """The Render image installs only requirements-teaching.txt, so the model clients' imports must be in it."""
+    pinned = {
+        line.split("==")[0].strip().lower()
+        for line in (Path(__file__).parent.parent / "requirements-teaching.txt").read_text().splitlines()
+        if line and not line.startswith("#")
+    }
+    source = (Path(__file__).parent.parent / "learn" / "llm.py").read_text()
+    imported = set(re.findall(r"^[ \t]+import (\w+)$", source, re.M))  # the clients import their packages lazily
+    assert imported and imported <= pinned, f"missing from requirements-teaching.txt: {imported - pinned}"
