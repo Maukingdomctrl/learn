@@ -1,5 +1,9 @@
 """Standalone Teaching Engine web app; its optional Commons gallery loads external images."""
 
+import hashlib
+import threading
+from collections import OrderedDict
+from datetime import date
 from pathlib import Path
 
 import pymupdf
@@ -7,19 +11,27 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from . import config as C
 from .extraction import MIN_PAGE_CHARS, ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
 from .teaching_engine import create_teaching_lesson, extract_facts, render_printable_cards_pdf, render_teaching_pdf
 from .teaching_engine.cards import render_blank_cards_pdf
+from .teaching_engine.evidence_cards import render_case_papers_pdf, write_case_papers
+from .teaching_engine.sheet import read_sheet
 from .teaching_engine.visual_library import list_visuals
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 # Reading a scanned page (OCR) takes several seconds on the free host; more than this would pass the browser's
 # two-minute wait. Pages with their own text are not counted.
 MAX_SCANNED_PAGES = 8
-# The Detective and Superhero choices are hidden from the upload page, which makes the same cards titled
-# "STUDY CARDS"; /generate still makes the games when asked, so turning this back on is the only change needed.
-SHOW_GAMES = False
+# The upload page offers the Detective and Superhero games. With this off it hides them and makes the same cards
+# titled "STUDY CARDS"; /generate still makes the games when asked.
+SHOW_GAMES = True
+# Detective case papers already made, by upload: "Preview" then "Create" for the same PDF costs one set of model calls.
+_CASE_PAPERS: OrderedDict[str, bytes] = OrderedDict()
+_CASE_PAPERS_KEPT = 16
+_ai_uploads = {"day": date.min, "count": 0}
+_lock = threading.Lock()
 app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
@@ -79,6 +91,8 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         )
 
     inventory = extract_facts(source.units)
+    if output == "detective" and (pdf_bytes := _case_papers(data, inventory, page_range, standard)):
+        return pdf_bytes, "learn_detective_game.pdf"
     if output == "lesson":
         lesson = create_teaching_lesson(inventory)
         pdf_bytes = render_teaching_pdf(lesson, source.warnings)
@@ -95,6 +109,49 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         filename = "learn_study_cards.pdf" if output == "study" else f"learn_{output}_game.pdf"
 
     return pdf_bytes, filename
+
+
+def _case_paper_model():
+    """The model for Detective case papers, or None when no key is set or today's uploads are used up."""
+    june = C.provider() == "june"
+    if not C.env("JUNE_API_KEY" if june else "ANTHROPIC_API_KEY"):
+        return None
+    with _lock:
+        if _ai_uploads["day"] != date.today():
+            _ai_uploads.update(day=date.today(), count=0)
+        if _ai_uploads["count"] >= C.detective_daily_limit():
+            return None
+        _ai_uploads["count"] += 1
+    from .llm import AnthropicLLM
+
+    return AnthropicLLM.for_cards(C.evidence_effort())
+
+
+def _case_papers(data: bytes, inventory, page_range: set[int] | None, standard: int) -> bytes | None:
+    """Detective case papers written by the model, or None to make the rule-based case file instead.
+
+    The same upload is answered from memory, so previewing and then downloading calls the model once.
+    """
+    key = hashlib.sha256(data + repr((sorted(page_range or ()), standard)).encode()).hexdigest()
+    with _lock:
+        if key in _CASE_PAPERS:
+            _CASE_PAPERS.move_to_end(key)
+            return _CASE_PAPERS[key]
+    llm = _case_paper_model()
+    if llm is None:
+        return None
+    try:
+        papers = write_case_papers(read_sheet(inventory, data, page_range), llm, standard, C.detective_ai_sheets())
+    except ValueError:  # no lines to write cards from; the rule-based path says why
+        return None
+    if not papers.model_cards:  # the model was unreachable or broke every rule: the rule-based case file is better
+        return None
+    pdf_bytes = render_case_papers_pdf(papers)
+    with _lock:
+        _CASE_PAPERS[key] = pdf_bytes
+        while len(_CASE_PAPERS) > _CASE_PAPERS_KEPT:
+            _CASE_PAPERS.popitem(last=False)
+    return pdf_bytes
 
 
 def _scanned_pages(data: bytes, page_range: set[int] | None) -> list[int]:

@@ -79,6 +79,7 @@ The offline engine behind the public site (`learn/teaching_web.py`, deployed on 
 - `evidence_cards.py` makes Detective Mode case papers (`--case-papers`): the model writes everyday-scene Evidence cards from the sheet's numbered lines, and `check_card` holds each card to the sheet.
   - The sheet is the only truth. The answer must be printed in the card's lines, and any number or capitalised name on a card must be on the sheet; only `SCENE_NAMES` and `EVERYDAY_NAMES` are exempt. Don't loosen these checks to raise the model's pass rate.
   - Cards that pass are kept one by one. Lines no passing card teaches get plain rule-based cards.
+  - The website's Detective button calls it when `JUNE_API_KEY` (or `ANTHROPIC_API_KEY` without June) is set, for up to `LEARN_DETECTIVE_AI_SHEETS` sheets per upload and `LEARN_DETECTIVE_DAILY_LIMIT` uploads a day. A repeat of the same upload is served from memory. Without a key, past the limit, or with no good model card, the button makes the rule-based case file.
 - Tests: `tests/test_detective.py`, `tests/test_ai_cards.py`, `tests/test_evidence_cards.py` (scripted fake model), and the `test_teaching_*.py` files.
 
 ## Cards (`cards/`)

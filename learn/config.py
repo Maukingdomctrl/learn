@@ -171,3 +171,15 @@ def load_dotenv(path: str = ".env") -> None:
                     os.environ[key] = value
     except FileNotFoundError:
         pass
+
+
+def detective_ai_sheets() -> int:
+    """On the website, how many sheets of Detective cards the model writes per upload; the rest are plain cards.
+    Each sheet is one or two model calls, and the page waits at most two minutes for the PDF."""
+    return _int_env("LEARN_DETECTIVE_AI_SHEETS", 3)
+
+
+def detective_daily_limit() -> int:
+    """On the website, how many uploads a day may use the model for Detective cards. After that, and whenever no key
+    is set, the Detective button makes the rule-based case file. Counted in memory, so a restart resets it."""
+    return _int_env("LEARN_DETECTIVE_DAILY_LIMIT", 20)
