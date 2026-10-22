@@ -365,3 +365,8 @@ def test_each_detective_upload_logs_what_the_model_did(case_model, capsys):
     _post(TestClient(web.app), "/preview")
     line = capsys.readouterr().out
     assert "Detective upload: 8/" in line and "cards by AI" in line and "calls" in line and "tokens" in line
+
+
+def test_the_upload_page_says_who_uploads():
+    page = TestClient(web.app).get("/").text
+    assert "For parents and students aged 18+. Younger students: ask a parent to upload your notes." in page
