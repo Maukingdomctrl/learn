@@ -10,12 +10,16 @@ checks each card against the sheet, not just its format:
 - every card names the line(s) it teaches, and its answer must be printed in one of them;
 - every line of the sheet is taught by some card;
 - the answer never appears in the card's title, evidence or question;
-- 1-3 word answers, a question ending in "?", 1-4 evidence sentences, text that fits the printed card.
+- 1-3 word answers (a date or formula as printed), a question ending in "?", 1-4 evidence sentences, text that
+  fits the printed card;
+- no number or capitalised name that the sheet does not print.
 
-A sheet whose cards break a rule goes back to the model once with the problems listed. If it still fails, or no
-model is available, that sheet's cards are made from the rule-based study cards for the same lines, so the set is
-always complete. The evidence sentences themselves are the model's own words: code checks their answer and source
-line, not every fact in them, and the answer key names the source lines so a parent can check.
+Cards that pass every rule on their own are kept; extra cards past eight and repeated answers are dropped. When
+the kept cards leave a line untaught, the sheet goes back to the model once with the problems listed. Lines still
+untaught after that, or every line when no model is available, get plain cards made from the rule-based study cards,
+so the set is always complete. The evidence sentences themselves are the model's own words: code checks their
+answer, source line, numbers and names, not every fact in them, and the answer key names the source lines so a parent
+can check.
 """
 
 import re
@@ -30,10 +34,13 @@ from .detective import Fact
 TASK = "write_evidence_cards"
 # The only names a scene may add: everyday children, so no person, place or thing outside the sheet appears on a card.
 SCENE_NAMES = ("Rohan", "Asha", "Meera", "Aarav", "Riya", "Kabir", "Priya", "Arjun", "Anya", "Dev")
+# Capitalised words a scene may use that are everyday words, not facts from outside the sheet.
+EVERYDAY_NAMES = ("I", "Earth", "Sun", "Moon")
 CARDS_PER_SHEET = 8
 LINES_PER_SHEET = 9  # sheet lines the model turns into one sheet of cards: about one card per line
 MAX_LINES_PER_CARD = 2  # a card teaches one concept; two lines only when they say the same thing
 MAX_ANSWER_WORDS = 3
+MAX_EXACT_ANSWER_WORDS = 6  # a date ("28 December 1885") or a formula ("A = l × w") as printed
 MAX_EVIDENCE_WORDS = 45  # what fits a printed card at a readable size
 MAX_QUESTION_WORDS = 22
 
@@ -46,10 +53,13 @@ THE CARD RECIPE (non-negotiable):
 2. EVIDENCE: exactly 2-3 short, clear sentences. Everyday words. If a sentence feels long, split it or cut it.
 3. FAMILIAR SITUATIONS: cold bottles, puddles, mirrors, village wells, cooking pots, school bags, rain, taps,
    grandmothers, cricket. Everyday life only. Historical or civic facts still get a scene a child can picture.
+   REAL LIFE: let the scene show the line's concept at work where a child meets it: at home, at school, in the street,
+   on a trip, in the news. The scene shows the concept; it never adds a new fact about the topic (rule 8).
 4. QUESTION: direct but curious, exactly one sentence ending with "?". Model: "The bottle is sealed, yet drops appear
    outside. Where did the water come from?"
 5. ANSWER: 1-2 words, at most 3 for a name (e.g. "Condensation", "River Thames", "Harland and Wolff"), copied exactly
-   as printed in one of the card's lines. The question must lead straight to that answer.
+   as printed in one of the card's lines. A date or formula may be longer ("28 December 1885", "A = l × w"). The
+   question must lead straight to that answer. Each card has its own answer.
 6. SIMPLE LANGUAGE: the child already has a whole chapter to learn, so a card must add no reading load. Write for a
    tired 12-year-old: everyday words a Class 5 child knows, one idea per sentence, about 10-12 words per sentence,
    warm and friendly. Retell the lines in your own easy words; never copy hard words like "preeminent", "apparatus",
@@ -105,8 +115,8 @@ class EvidenceSet:
     notes: list[str] = field(default_factory=list)
     model_sheets: int = 0
     facts: dict[str, Fact] = field(default_factory=dict)
-    problems: list[str] = field(default_factory=list)  # why each fallen-back sheet failed, for tuning
-    problems: list[str] = field(default_factory=list)  # why each fallen-back sheet failed, for tuning
+    problems: list[str] = field(default_factory=list)  # why each fallen-back group failed, for tuning
+    model_cards: int = 0
 
 
 def _norm(text: str) -> str:
@@ -133,7 +143,8 @@ def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[s
     answer = texts["answer"].strip()
     words = answer.split()
     name = all(word[:1].isupper() or word.casefold() in {"and", "of", "the"} for word in words)
-    if len(words) > MAX_ANSWER_WORDS or (len(words) == MAX_ANSWER_WORDS and not name):
+    exact = re.search(r"[\d=+×÷<>]", answer) and len(words) <= MAX_EXACT_ANSWER_WORDS  # a date or a formula
+    if not exact and (len(words) > MAX_ANSWER_WORDS or (len(words) == MAX_ANSWER_WORDS and not name)):
         problems.append(f"{where}: the answer “{answer}” must be 1-2 words (3 only for a name).")
     if not any(_contains(facts[line].text, answer) or _contains(facts[line].suspect, answer) for line in lines):
         problems.append(f"{where}: the answer “{answer}” is not printed in its lines {', '.join(lines)}.")
@@ -160,11 +171,13 @@ def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[s
 def _outside_facts(where: str, text: str, facts: dict[str, Fact]) -> list[str]:
     """Numbers and names on a card that the sheet does not print: knowledge from outside the sheet."""
     sheet = " ".join(f"{fact.suspect} {fact.text}" for fact in facts.values())
-    numbers = [n.rstrip(".,") for n in re.findall(r"\d[\d,.]*", text) if not _contains(sheet, n.rstrip(".,"))]
+    # Whole tokens, so "CO2" is checked as CO2, not as the number 2.
+    tokens = [token.strip(".,") for token in re.findall(r"[\w.,]*\d[\w.,]*", text)]
+    numbers = [token for token in tokens if not _contains(sheet, token)]
     names = []
     for sentence in re.split(r"(?<=[.!?])\s+", text):
         for word in re.findall(r"[A-Za-z][\w'’-]*", sentence)[1:]:  # a sentence's first word is capitalised anyway
-            if word[0].isupper() and word not in SCENE_NAMES and not _contains(sheet, word):
+            if word[0].isupper() and word not in SCENE_NAMES + EVERYDAY_NAMES and not _contains(sheet, word):
                 names.append(word)
     problems = []
     if numbers:
@@ -198,6 +211,28 @@ def _cards_from(reply, facts: dict[str, Fact], lines: list[str]) -> tuple[list[d
     if len(set(answers)) != len(answers):
         problems.append("Two cards have the same answer; give each card its own concept.")
     return cards, problems
+
+
+def _keep(cards: list, facts: dict[str, Fact], lines: list[str]) -> list[dict]:
+    """The model's cards that pass every rule on their own, one per answer, at most a sheet of them."""
+    kept, answers = [], set()
+    for card in cards:
+        if not isinstance(card, dict) or check_card(card, facts, lines):
+            continue
+        answer = _norm(card["answer"])
+        if len(card["lines"]) <= MAX_LINES_PER_CARD and answer not in answers:
+            answers.add(answer)
+            kept.append(card)
+    return kept[:CARDS_PER_SHEET]
+
+
+def _taught(cards: list[dict]) -> set[str]:
+    return {line for card in cards for line in card["lines"]}
+
+
+def _complete(cards: list[dict], lines: list[str]) -> bool:
+    """Every line is taught, by about one card per line."""
+    return set(lines) <= _taught(cards) and len(cards) >= min(CARDS_PER_SHEET, len(lines)) - 1
 
 
 def _plain_cards(sheet, facts: dict[str, Fact], lines: list[str], standard: int) -> list[dict]:
@@ -255,9 +290,9 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
     groups = [ids[start : start + LINES_PER_SHEET] for start in range(0, len(ids), LINES_PER_SHEET)]
     result = EvidenceSet("The Case of the Study Sheet", [], facts=facts)
     reachable, asked = llm is not None, 0
-    raw_sheets: list[tuple[list[dict], bool]] = []
+    raw_sheets: list[list[tuple[dict, bool]]] = []  # each card with whether the model wrote it
     for lines in groups:
-        cards: list[dict] = []
+        kept: list[dict] = []
         if reachable and (limit is None or asked < limit):
             asked += 1
             listing = "\n".join(f"{line} [{facts[line].suspect or '-'}] {facts[line].text}" for line in lines)
@@ -265,7 +300,8 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
             try:
                 reply = llm.json(TASK, SYSTEM, prompt)
                 cards, problems = _cards_from(reply, facts, lines)
-                if problems:
+                kept = _keep(cards, facts, lines)
+                if problems and not _complete(kept, lines):
                     listed = "\n".join(f"- {problem}" for problem in problems)
                     retry = (
                         f"{prompt}\n\nYour cards broke these rules. Fix only these problems and reply with the full "
@@ -273,27 +309,31 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
                     )
                     reply = llm.json(TASK, SYSTEM, retry)
                     cards, problems = _cards_from(reply, facts, lines)
-                if not problems:
-                    if isinstance(reply, dict) and isinstance(reply.get("case_title"), str) and not result.sheets:
+                    again = _keep(cards, facts, lines)
+                    if _taught(again) >= _taught(kept):
+                        kept = again
+                if _complete(kept, lines):
+                    if isinstance(reply, dict) and isinstance(reply.get("case_title"), str) and not raw_sheets:
                         result.title = reply["case_title"].strip()[:70] or result.title
-                    raw_sheets.append((cards, True))
+                    raw_sheets.append([(card, True) for card in kept])
                     result.model_sheets += 1
-                    result.sheets.append([])
                     continue
                 result.notes.append(
-                    f"Lines {lines[0]}–{lines[-1]}: the model's cards broke the rules twice, so plain cards are used."
+                    f"Lines {lines[0]}–{lines[-1]}: the model's cards broke the rules twice, so {len(kept)} of its "
+                    "cards are kept and plain cards teach the other lines."
                 )
-                result.problems.extend(f"{lines[0]}–{lines[-1]}: {problem}" for problem in problems)
                 result.problems.extend(f"{lines[0]}–{lines[-1]}: {problem}" for problem in problems)
             except Exception as error:  # noqa: BLE001 - any model failure falls back to plain cards
                 reachable = False
+                kept = []
                 result.notes.append(f"The model could not be used ({error}); plain cards are used.")
-        raw_sheets.append((_plain_cards(sheet, facts, lines, standard), False))
-        result.sheets.append([])
+        missing = [line for line in lines if line not in _taught(kept)]
+        plain = _plain_cards(sheet, facts, missing, standard) if missing else []
+        raw_sheets.append([(card, True) for card in kept] + [(card, False) for card in plain])
     number = 0
-    for index, (cards, by_model) in enumerate(raw_sheets):
+    for cards in raw_sheets:
         made = []
-        for card in cards:
+        for card, by_model in cards:
             number += 1
             lines = tuple(card["lines"])
             made.append(
@@ -310,7 +350,8 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
                     facts[lines[0]].suspect,
                 )
             )
-        result.sheets[index] = made
+        result.sheets.append(made)
+        result.model_cards += sum(card.by_model for card in made)
     # Plain cards for a group of lines can run past eight; they continue on the next sheet.
     result.sheets = [
         cards[start : start + CARDS_PER_SHEET]

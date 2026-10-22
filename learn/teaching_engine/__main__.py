@@ -83,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"No case papers: {error}")
             return 2
         cards = sum(len(sheet) for sheet in papers.sheets)
-        print(f"Case papers: {cards} cards on {len(papers.sheets)} sheets, {papers.model_sheets} written by the model.")
+        print(f"Case papers: {cards} cards on {len(papers.sheets)} sheets, {papers.model_cards} written by the model.")
         for note in papers.notes:
             print(f"  {note}")
         if llm is not None:

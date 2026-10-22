@@ -15,6 +15,7 @@ from learn.extraction import extract
 from learn.llm import LLMError
 from learn.teaching_engine import extract_facts
 from learn.teaching_engine.ai_cards import study_lines
+from learn.teaching_engine.detective import Fact
 from learn.teaching_engine.evidence_cards import (
     CARDS_PER_SHEET,
     TASK,
@@ -160,14 +161,45 @@ def test_each_broken_rule_is_named(facts, change, message):
     assert check_card(GOOD["cards"][1], facts, allowed) == []
 
 
-def test_a_set_that_misses_a_line_is_sent_back_then_falls_back_to_plain_cards(uk_sheet):
+def test_a_set_that_misses_a_line_is_sent_back_then_keeps_its_good_cards(uk_sheet):
     partial = {"cards": GOOD["cards"][:3]}
     llm = ScriptedLLM({TASK: [partial, partial, {}]})
     papers = write_case_papers(uk_sheet, llm, limit=1)
     assert "taught by no card" in llm.calls[1][1] and "write at least 7, one per line" in llm.calls[1][1]
     assert papers.model_sheets == 0 and any("broke the rules twice" in note for note in papers.notes)
-    assert not any(c.by_model for sheet in papers.sheets for c in sheet)
+    first = papers.sheets[0]
+    assert [c.answer for c in first if c.by_model] == ["London", "River Thames", "Southeastern England"]
+    assert papers.model_cards == 3 and not all(c.by_model for c in first)
+    taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
+    assert {f"F{n}" for n in range(1, 10)} <= taught  # the plain cards teach the lines the model missed
     assert render_case_papers_pdf(papers).startswith(b"%PDF")
+
+
+def test_a_set_with_no_good_card_falls_back_to_plain_cards(uk_sheet):
+    broken = {"cards": [{**c, "answer": "Paris"} for c in GOOD["cards"]]}
+    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [broken, broken, {}]}), limit=1)
+    assert papers.model_sheets == 0 and papers.model_cards == 0
+    assert not any(c.by_model for sheet in papers.sheets for c in sheet)
+
+
+def test_extra_and_repeated_cards_are_dropped_without_a_second_call(uk_sheet):
+    extra = {**GOOD, "cards": [*GOOD["cards"], GOOD["cards"][1], {**GOOD["cards"][0], "title": "Ninth"}]}
+    llm = ScriptedLLM({TASK: [extra, {}]})
+    papers = write_case_papers(uk_sheet, llm, limit=1)
+    assert len(llm.calls) == 1 and papers.model_sheets == 1
+    assert [c.answer for c in papers.sheets[0]] == [c["answer"] for c in GOOD["cards"]]
+
+
+def test_one_bad_card_does_not_sink_a_covered_sheet(uk_sheet):
+    leaky = {**GOOD["cards"][4], "evidence": "Children far away love popular culture from this city."}
+    spare = card(["F5"], "Money Desks", "Rohan sees money desks for many lands.", "Which continent?", "Europe")
+    reply = {**GOOD, "cards": [*GOOD["cards"][:4], leaky, *GOOD["cards"][5:]]}
+    llm = ScriptedLLM({TASK: [reply, {**GOOD, "cards": [*GOOD["cards"][:4], leaky, spare]}, {}]})
+    papers = write_case_papers(uk_sheet, llm, limit=1)
+    assert len(llm.calls) == 2  # F6 was taught only by the leaky card, so the sheet went back once
+    cards = [c for sheet in papers.sheets for c in sheet]
+    assert papers.model_cards == 7  # the first set's 7 good cards beat the retry's 5
+    assert [c.by_model for c in cards if "F6" in c.lines] == [False]  # a plain card teaches the leaky card's line
 
 
 def test_without_a_model_every_line_still_gets_a_plain_card(uk_sheet):
@@ -215,3 +247,54 @@ def test_why_a_sheet_fell_back_is_recorded(uk_sheet):
     partial = {"cards": GOOD["cards"][:3]}
     papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [partial, partial, {}]}), limit=1)
     assert any("taught by no card" in problem for problem in papers.problems)
+
+
+SCIENCE = {
+    "F1": Fact("F1", "Photosynthesis", "Plants take in CO2 and give out oxygen.", 1),
+    "F2": Fact("F2", "Area", "The area of a rectangle is A = l × w.", 1),
+    "F3": Fact("F3", "Congress", "The Indian National Congress first met on 28 December 1885.", 1),
+}
+
+
+@pytest.mark.parametrize(
+    "good, bad, message",
+    [
+        # A formula or a date may be a longer answer, if printed; other long answers may not.
+        (
+            card(["F2"], "Tiles", "Asha tiles a floor.", "How do you find the area?", "A = l × w"),
+            card(["F2"], "Tiles", "Asha tiles a floor.", "How do you find it?", "area of a rectangle"),
+            "must be 1-2 words",
+        ),
+        (
+            card(
+                ["F3"],
+                "First Meeting",
+                "Riya reads an old notice.",
+                "When did the Congress first meet?",
+                "28 December 1885",
+            ),  # fmt: skip
+            card(["F3"], "First Meeting", "Riya reads an old notice.", "Who first met?", "Indian National Congress x"),
+            "must be 1-2 words",
+        ),
+        # CO2 is read as CO2, not as the number 2; a formula the sheet does not print is still caught.
+        (
+            card(["F1"], "Leafy Air", "Plants in the garden take in CO2 all day.", "What do they give out?", "Oxygen"),
+            card(["F1"], "Leafy Air", "Plants in the garden take in H2O all day.", "What do they give out?", "Oxygen"),
+            "numbers H2O",
+        ),
+        # Everyday words like Earth and Sun are not outside facts; a real name not on the sheet still is.
+        (
+            card(
+                ["F1"], "Green Kitchen", "Under the Sun, plants on Earth make food.", "What do they give out?", "Oxygen"
+            ),  # fmt: skip
+            card(
+                ["F1"], "Green Kitchen", "Under the Sun, Mr Darwin's plants grow.", "What do they give out?", "Oxygen"
+            ),  # fmt: skip
+            "names Mr, Darwin",
+        ),
+    ],
+)
+def test_dates_formulas_and_everyday_words_pass_while_the_rule_still_bites(good, bad, message):
+    allowed = list(SCIENCE)
+    assert check_card(good, SCIENCE, allowed) == []
+    assert any(message in problem for problem in check_card(bad, SCIENCE, allowed))
