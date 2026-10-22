@@ -1145,46 +1145,6 @@ def _has_blank(card: Card) -> bool:
     return not prompt.startswith(card.question.rstrip("?").rstrip("."))
 
 
-def _practice_worksheet_pages(document: pymupdf.Document, kind: _Type, cards: list[Card], theme: dict) -> None:
-    margin, width = 48.0, _PAGE_WIDTH - 96.0
-    page = shape = None
-    y = 0.0
-
-    def new_page(first: bool) -> None:
-        nonlocal page, shape, y
-        if shape is not None:
-            shape.commit()
-        page = document.new_page(width=_PAGE_WIDTH, height=_PAGE_HEIGHT)
-        kind.prepare(page)
-        shape = page.new_shape()
-        title = "FILL IN THE BLANKS" if first else "FILL IN THE BLANKS (CONTINUED)"
-        y = kind.draw(shape, [title], 17, margin, 40, True, theme["colour"])
-        y = (
-            kind.draw(
-                shape,
-                ["Write the missing name, year or key word. Try these before checking the answer sheet."],
-                9,
-                margin,
-                y + 3,
-                False,
-                _MUTED,
-            )
-            + 18
-        )
-
-    new_page(True)
-    for number, card in enumerate(cards, start=1):
-        prompt, _ = _practice_prompt(card)
-        lines = kind.wrap(kind.printable(prompt), 11, width - 42)
-        height = len(lines) * 14 + 12
-        if y + height > _PAGE_HEIGHT - 42:
-            new_page(False)
-        kind.draw(shape, [f"{number}."], 10, margin, y, True, theme["colour"])
-        bottom = kind.draw(shape, lines, 11, margin + 28, y, False, _INK)
-        y = max(bottom, y + 11) + 9
-    shape.commit()
-
-
 def _practice_reinforcement(card: Card) -> tuple[str, str]:
     answer = card.answer.strip()
     if card.kind == "teach":

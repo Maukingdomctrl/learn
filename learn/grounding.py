@@ -45,9 +45,6 @@ class SourceIndex:
     def prompt_block(self) -> str:
         return "\n".join(f"[{u.id}] (page {u.page}) {u.text}" for u in self.units)
 
-    def total_chars(self) -> int:
-        return sum(len(u.text) for u in self.units)
-
     def focus(self, ids: list[str], neighbors: int = 1) -> "SourceIndex":
         """The selected units plus up to `neighbors` units either side of each on the same page, in source order.
 
