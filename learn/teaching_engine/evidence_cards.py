@@ -444,7 +444,9 @@ def write_case_papers(
     # Two parts, each in the sheet's order and eight cards to a printed sheet, so no sheet is left half empty: the
     # detective cards (facts to find), then the hero cards (ideas to use). Every line is taught once.
     every = [(card, by_model) for cards in raw_sheets for card, by_model in cards]
-    parts = [[item for item in every if card_mode(item[0]) == mode] for mode in ("detective", "hero")]
+    # Plain cards are gap-fills in the sheet's own words, not stories, so they always stay in the detective part.
+    modes = [card_mode(card) if by_model else "detective" for card, by_model in every]
+    parts = [[item for item, own in zip(every, modes, strict=True) if own == mode] for mode in ("detective", "hero")]
     number = 0
     for part, mode in zip(parts, ("detective", "hero"), strict=True):
         made = []

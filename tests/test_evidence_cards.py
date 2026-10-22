@@ -414,3 +414,19 @@ def test_a_flag_for_a_card_that_does_not_exist_is_ignored(uk_sheet):
     llm = ScriptedLLM({TASK: [GOOD, {}], REVIEW_TASK: {"flags": [{"card": 99, "sentence": "x"}, "nonsense"]}})
     papers = write_case_papers(uk_sheet, llm, limit=1, review=True)
     assert papers.model_sheets == 1 and len(llm.calls) == 2
+
+
+def test_plain_cards_always_print_in_the_detective_part(uk_sheet, monkeypatch):
+    from learn.teaching_engine import evidence_cards
+
+    def idea_cards(sheet, facts, lines, standard):  # plain cards whose answers read as ideas
+        return [card(line_ids, "Case file", "A gap in the line …", "Finish the sentence.", "land revenue")
+                for line_ids in ([line] for line in lines)]  # fmt: skip
+
+    monkeypatch.setattr(evidence_cards, "_plain_cards", idea_cards)
+    papers = write_case_papers(uk_sheet)  # no model: every card is plain
+    assert papers.hero_start == len(papers.sheets)  # no hero sheets
+    llm = ScriptedLLM({TASK: [GOOD, {}]})
+    papers = write_case_papers(uk_sheet, llm, limit=1)
+    hero = [c for sheet in papers.sheets[papers.hero_start :] for c in sheet]
+    assert hero and all(c.by_model for c in hero)  # only the model's story cards are hero cards

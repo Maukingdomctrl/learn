@@ -1354,7 +1354,7 @@
         loading.hidden = false;
         frame.setAttribute("aria-busy", "true");
         status.textContent =
-          `Building your ${modeLabel} cards. Larger PDFs may take a little longer.`;
+          `Building your ${modeLabel} cards. Story cards can take a minute or two.`;
 
         document.body.classList.add("modal-open");
         dialog.showModal();
@@ -1362,7 +1362,7 @@
         const timeout = setTimeout(() => {
           timedOut = true;
           activeController.abort();
-        }, 120000);
+        }, 180000);  // story cards for 5 pages, written and reviewed, can take up to about 2 minutes
 
         try {
           const response = await fetch("/preview", {

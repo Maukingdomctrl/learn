@@ -343,6 +343,7 @@ def test_detective_takes_up_to_five_pages_and_says_why_before_any_model_call(cas
     assert _post(TestClient(web.app), "/preview", pages="2-6").headers["content-type"] == "application/pdf"
     page = TestClient(web.app).get("/").text
     assert "Detective works on up to 5 pages at a time." in page and 'headers.get("x-learn-error")' in page
+    assert "}, 180000);" in page  # the preview waits three minutes: 5 pages written and reviewed fit in that
 
 
 def test_the_parent_is_told_when_the_story_cards_could_not_be_made(monkeypatch, capsys):
