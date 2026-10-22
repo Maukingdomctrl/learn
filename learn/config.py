@@ -190,6 +190,12 @@ def detective_ai_sheets() -> int:
     return _int_env("LEARN_DETECTIVE_AI_SHEETS", 10)
 
 
+def evidence_review() -> bool:
+    """Whether a second request checks each sheet of Detective cards for sentences that say something the sheet does
+    not (LEARN_EVIDENCE_REVIEW=off turns it off). It costs about a third more tokens."""
+    return env("LEARN_EVIDENCE_REVIEW", "on").lower() not in {"off", "0", "no", "false"}
+
+
 def detective_workers() -> int:
     """How many sheets of Detective cards the model writes at the same time. The page waits at most two minutes for
     the PDF, and one sheet takes Haiku about 20-35 seconds, so a whole upload must run at once."""
