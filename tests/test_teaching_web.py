@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from test_evidence_cards import GOOD
 
 import learn.teaching_web as web
+from learn.llm import LLMError
 from learn.teaching_engine.evidence_cards import TASK
 
 
@@ -241,9 +242,29 @@ def case_model(monkeypatch):
     return llm, made
 
 
-def _post(client, path):
+def _post(client, path, pages="1-5"):
     with open(UK, "rb") as pdf_file:
-        return client.post(path, data={"output": "detective"}, files={"pdf": ("uk.pdf", pdf_file, "application/pdf")})
+        data = {"output": "detective", "pages": pages}
+        return client.post(path, data=data, files={"pdf": ("uk.pdf", pdf_file, "application/pdf")})
+
+
+_REAL_MODEL = web._case_paper_model  # builds a model client; only its key and daily-limit rules are tested
+
+
+class _NoNetwork:
+    """Stands in for the card model: tests never reach a real model, which would need a network and spend credits."""
+
+    def json(self, task, system, prompt):
+        raise LLMError("no model in tests")
+
+
+@pytest.fixture(autouse=True)
+def a_card_model_key(monkeypatch):
+    """A model key, so the Detective button tries a model; tests that need none unset it. The model itself is a
+    fake that fails at once, unless a test sets its own scripted model."""
+    monkeypatch.setenv("LEARN_PROVIDER", "june")
+    monkeypatch.setenv("JUNE_API_KEY", "test-key")
+    monkeypatch.setattr(web, "_case_paper_model", lambda: _NoNetwork())
 
 
 def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
@@ -261,6 +282,7 @@ def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
 
 
 def test_without_a_key_or_past_the_daily_limit_no_model_is_used(monkeypatch):
+    monkeypatch.setattr(web, "_case_paper_model", _REAL_MODEL)  # builds a client but makes no call
     monkeypatch.setenv("LEARN_PROVIDER", "google")
     monkeypatch.setenv("JUNE_API_KEY", "a-june-key")
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
@@ -306,3 +328,39 @@ def test_the_site_installs_every_package_the_card_models_import():
     source = (Path(__file__).parent.parent / "learn" / "llm.py").read_text()
     imported = set(re.findall(r"^[ \t]+import (\w+)$", source, re.M))  # the clients import their packages lazily
     assert imported and imported <= pinned, f"missing from requirements-teaching.txt: {imported - pinned}"
+
+
+def _text(response) -> str:
+    return "\n".join(page.get_text() for page in pymupdf.open(stream=response.content))
+
+
+def test_detective_takes_up_to_five_pages_and_says_why_before_any_model_call(case_model):
+    llm, made = case_model
+    response = _post(TestClient(web.app), "/preview", pages="")  # the UK sheet has 6 pages
+
+    assert "up to 5 pages at a time" in response.headers["x-learn-error"] and "1-5" in response.headers["x-learn-error"]
+    assert not made and not llm.calls  # no tokens spent
+    assert _post(TestClient(web.app), "/preview", pages="2-6").headers["content-type"] == "application/pdf"
+    page = TestClient(web.app).get("/").text
+    assert "Detective works on up to 5 pages at a time." in page and 'headers.get("x-learn-error")' in page
+
+
+def test_the_parent_is_told_when_the_story_cards_could_not_be_made(monkeypatch, capsys):
+    monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
+    monkeypatch.setattr(web, "_case_paper_model", lambda: None)  # today's uploads are used up
+    assert "Today's AI story cards are used up" in _text(_post(TestClient(web.app), "/preview"))
+    assert "Detective upload: daily limit reached" in capsys.readouterr().out
+
+    broken = {"cards": [{**c, "answer": "Paris"} for c in GOOD["cards"]]}
+    monkeypatch.setattr(web, "_case_paper_model", lambda: ScriptedLLM({TASK: [broken, broken, {}]}))
+    assert "The AI could not write story cards just now" in _text(_post(TestClient(web.app), "/preview"))
+    assert "0/" in capsys.readouterr().out  # the log says no card came from the model
+
+    monkeypatch.delenv("JUNE_API_KEY")  # no model set up at all: the plain cards, with no note
+    assert "story cards" not in _text(_post(TestClient(web.app), "/preview"))
+
+
+def test_each_detective_upload_logs_what_the_model_did(case_model, capsys):
+    _post(TestClient(web.app), "/preview")
+    line = capsys.readouterr().out
+    assert "Detective upload: 8/" in line and "cards by AI" in line and "calls" in line and "tokens" in line

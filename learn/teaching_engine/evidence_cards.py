@@ -278,8 +278,36 @@ def _line_card(fact: Fact) -> dict | None:
     return None
 
 
-def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = None) -> EvidenceSet:
-    """The sheet's lines as Evidence cards, 8 to a sheet, model-written where they pass every check."""
+def _ask_model(llm, facts: dict[str, Fact], lines: list[str], topics) -> tuple[list[dict], object, list[str]]:
+    """One group of lines sent to the model, and back once more with the problems listed when a line is left
+    untaught: the cards that pass every rule, the last reply, and the problems of the last reply."""
+    listing = "\n".join(f"{line} [{facts[line].suspect or '-'}] {facts[line].text}" for line in lines)
+    prompt = f"TOPICS: {', '.join(topics) or '-'}\n\nLINES:\n{listing}"
+    reply = llm.json(TASK, SYSTEM, prompt)
+    cards, problems = _cards_from(reply, facts, lines)
+    kept = _keep(cards, facts, lines)
+    if problems and not _complete(kept, lines):
+        listed = "\n".join(f"- {problem}" for problem in problems)
+        retry = (
+            f"{prompt}\n\nYour cards broke these rules. Fix only these problems and reply with the full "
+            f"set again.\n{listed}\n\nYOUR CARDS:\n{cards}"
+        )
+        reply = llm.json(TASK, SYSTEM, retry)
+        cards, problems = _cards_from(reply, facts, lines)
+        again = _keep(cards, facts, lines)
+        if _taught(again) >= _taught(kept):
+            kept = again
+    return kept, reply, problems
+
+
+def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = None, workers: int = 8) -> EvidenceSet:
+    """The sheet's lines as Evidence cards, 8 to a sheet, model-written where they pass every check.
+
+    Up to ``limit`` groups of lines go to the model, ``workers`` of them at a time, so a chapter takes about as long
+    as its slowest group rather than the sum of them.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
     from .ai_cards import study_lines
 
     facts_list, topics = study_lines(sheet)
@@ -289,31 +317,28 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
     ids = [fact.id for fact in facts_list]
     groups = [ids[start : start + LINES_PER_SHEET] for start in range(0, len(ids), LINES_PER_SHEET)]
     result = EvidenceSet("The Case of the Study Sheet", [], facts=facts)
-    reachable, asked = llm is not None, 0
+    asked = [] if llm is None else groups[: len(groups) if limit is None else limit]
+
+    def ask(lines):
+        try:
+            return _ask_model(llm, facts, lines, topics), None
+        except Exception as error:  # noqa: BLE001 - any model failure falls back to plain cards
+            return None, error
+
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(asked) or 1))) as pool:
+        answers = list(pool.map(ask, asked))
+    failures: list[str] = []
     raw_sheets: list[list[tuple[dict, bool]]] = []  # each card with whether the model wrote it
-    for lines in groups:
+    for index, lines in enumerate(groups):
         kept: list[dict] = []
-        if reachable and (limit is None or asked < limit):
-            asked += 1
-            listing = "\n".join(f"{line} [{facts[line].suspect or '-'}] {facts[line].text}" for line in lines)
-            prompt = f"TOPICS: {', '.join(topics) or '-'}\n\nLINES:\n{listing}"
-            try:
-                reply = llm.json(TASK, SYSTEM, prompt)
-                cards, problems = _cards_from(reply, facts, lines)
-                kept = _keep(cards, facts, lines)
-                if problems and not _complete(kept, lines):
-                    listed = "\n".join(f"- {problem}" for problem in problems)
-                    retry = (
-                        f"{prompt}\n\nYour cards broke these rules. Fix only these problems and reply with the full "
-                        f"set again.\n{listed}\n\nYOUR CARDS:\n{cards}"
-                    )
-                    reply = llm.json(TASK, SYSTEM, retry)
-                    cards, problems = _cards_from(reply, facts, lines)
-                    again = _keep(cards, facts, lines)
-                    if _taught(again) >= _taught(kept):
-                        kept = again
+        if index < len(answers):
+            answer, error = answers[index]
+            if error is not None:
+                failures.append(str(error))
+            else:
+                kept, reply, problems = answer
                 if _complete(kept, lines):
-                    if isinstance(reply, dict) and isinstance(reply.get("case_title"), str) and not raw_sheets:
+                    if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
                         result.title = reply["case_title"].strip()[:70] or result.title
                     raw_sheets.append([(card, True) for card in kept])
                     result.model_sheets += 1
@@ -323,13 +348,11 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
                     "cards are kept and plain cards teach the other lines."
                 )
                 result.problems.extend(f"{lines[0]}–{lines[-1]}: {problem}" for problem in problems)
-            except Exception as error:  # noqa: BLE001 - any model failure falls back to plain cards
-                reachable = False
-                kept = []
-                result.notes.append(f"The model could not be used ({error}); plain cards are used.")
         missing = [line for line in lines if line not in _taught(kept)]
         plain = _plain_cards(sheet, facts, missing, standard) if missing else []
         raw_sheets.append([(card, True) for card in kept] + [(card, False) for card in plain])
+    for error in dict.fromkeys(failures):
+        result.notes.append(f"The model could not be used ({error}); plain cards are used.")
     number = 0
     for cards in raw_sheets:
         made = []
@@ -352,14 +375,12 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
             )
         result.sheets.append(made)
         result.model_cards += sum(card.by_model for card in made)
-    # Plain cards for a group of lines can run past eight; they continue on the next sheet.
-    result.sheets = [
-        cards[start : start + CARDS_PER_SHEET]
-        for cards in result.sheets
-        for start in range(0, len(cards), CARDS_PER_SHEET)
-    ]
-    if limit is not None and asked < len(groups) and reachable:
-        result.notes.append(f"The model was asked about {asked} of {len(groups)} sheets (limit {limit}).")
+    # The cards run on in the sheet's order, eight to a printed sheet, so no sheet is left half empty when a group
+    # of lines makes more or fewer than eight cards.
+    every = [card for cards in result.sheets for card in cards]
+    result.sheets = [every[start : start + CARDS_PER_SHEET] for start in range(0, len(every), CARDS_PER_SHEET)]
+    if asked and len(asked) < len(groups) and not failures:
+        result.notes.append(f"The model was asked about {len(asked)} of {len(groups)} sheets (limit {limit}).")
     return result
 
 
@@ -443,12 +464,12 @@ def _draw_card(shape, kind: _Type, card: EvidenceCard, box: pymupdf.Rect) -> Non
     inner = box + (12, 10, -12, -8)
     _typed(shape, f"CARD {card.number:02d}", 9.5, inner.x0, inner.y0 + 9, _TEXT)
     if card.topic:
-        tag = kind.printable(" ".join(card.topic.upper()[:18]), True)
-        width = kind.width(tag, 6.5, True) + 12
+        tag, size = _topic_tag(kind, card.topic, inner.width - 70)  # clear of "CARD 01" on the left
+        width = kind.width(tag, size, True) + 12
         pill = pymupdf.Rect(inner.x1 - width, inner.y0 - 1, inner.x1, inner.y0 + 12)
         shape.draw_rect(pill)
         shape.finish(color=_RULE, fill=_ROSE, width=0.5)
-        kind.draw(shape, [tag], 6.5, pill.x0 + 6, pill.y0 + 1.5, True, _MAROON)
+        kind.draw(shape, [tag], size, pill.x0 + 6, pill.y0 + 1.5 + (6.5 - size) / 2, True, _MAROON)
     title = card.title.upper()
     _typed(shape, title, _typed_fit(title, inner.width, 9.5), inner.x0, inner.y0 + 23, _MAROON)
     _typed(shape, "EVIDENCE", 6, inner.x0, inner.y0 + 33, _SOFT, spaced=True)
@@ -465,6 +486,19 @@ def _draw_card(shape, kind: _Type, card: EvidenceCard, box: pymupdf.Rect) -> Non
     kind.draw(shape, ["Y O U R   A N S W E R"], 6, inner.x0, strip.y1 - 13, True, _SOFT)
     shape.draw_line((inner.x0 + 72, strip.y1 - 6), (inner.x1, strip.y1 - 6))
     shape.finish(color=_SOFT, width=0.6, dashes="[2 1] 0")
+
+
+def _topic_tag(kind: _Type, topic: str, room: float) -> tuple[str, float]:
+    """The card's topic tag and its size: letter-spaced when it fits, then plain, then smaller, and only when even
+    that is too wide, cut at a word with "…"."""
+    words = topic.upper().split()
+    for count in range(len(words), 0, -1):
+        text = " ".join(words[:count]) + ("" if count == len(words) else " …")
+        for tag in (" ".join(text.replace(" ", "  ")) if count == len(words) else None, text):
+            for size in (6.5, 6, 5.5, 5):
+                if tag and kind.width(kind.printable(tag, True), size, True) + 12 <= room:
+                    return kind.printable(tag, True), size
+    return kind.printable(words[0][:12], True), 5
 
 
 def _stamp(shape, text: str, centre: pymupdf.Point) -> None:
