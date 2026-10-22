@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from test_evidence_cards import GOOD
 
 import learn.teaching_web as web
+from learn.llm import LLMError
 from learn.teaching_engine.evidence_cards import TASK
 
 
@@ -247,11 +248,23 @@ def _post(client, path, pages="1-5"):
         return client.post(path, data=data, files={"pdf": ("uk.pdf", pdf_file, "application/pdf")})
 
 
+_REAL_MODEL = web._case_paper_model  # builds a model client; only its key and daily-limit rules are tested
+
+
+class _NoNetwork:
+    """Stands in for the card model: tests never reach a real model, which would need a network and spend credits."""
+
+    def json(self, task, system, prompt):
+        raise LLMError("no model in tests")
+
+
 @pytest.fixture(autouse=True)
 def a_card_model_key(monkeypatch):
-    """A model key, so the Detective button tries the (scripted or broken) model; tests that need none unset it."""
+    """A model key, so the Detective button tries a model; tests that need none unset it. The model itself is a
+    fake that fails at once, unless a test sets its own scripted model."""
     monkeypatch.setenv("LEARN_PROVIDER", "june")
     monkeypatch.setenv("JUNE_API_KEY", "test-key")
+    monkeypatch.setattr(web, "_case_paper_model", lambda: _NoNetwork())
 
 
 def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
@@ -269,6 +282,7 @@ def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
 
 
 def test_without_a_key_or_past_the_daily_limit_no_model_is_used(monkeypatch):
+    monkeypatch.setattr(web, "_case_paper_model", _REAL_MODEL)  # builds a client but makes no call
     monkeypatch.setenv("LEARN_PROVIDER", "google")
     monkeypatch.setenv("JUNE_API_KEY", "a-june-key")
     monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
