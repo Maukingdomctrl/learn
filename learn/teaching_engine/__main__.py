@@ -77,8 +77,7 @@ def main(argv: list[str] | None = None) -> int:
 
         llm = _card_model(C.evidence_effort()) if args.ai else None
         try:
-            sheet = read_sheet(extract_facts(source.units), data, page_range)
-            papers = write_case_papers(sheet, llm, limit=_limit(), review=C.evidence_review())
+            papers = write_case_papers(read_sheet(extract_facts(source.units), data, page_range), llm, limit=_limit())
             pdf = render_case_papers_pdf(papers)
         except ValueError as error:
             print(f"No case papers: {error}")

@@ -18,7 +18,6 @@ from learn.teaching_engine.ai_cards import study_lines
 from learn.teaching_engine.detective import Fact
 from learn.teaching_engine.evidence_cards import (
     CARDS_PER_SHEET,
-    REVIEW_TASK,
     TASK,
     check_card,
     render_case_papers_pdf,
@@ -115,48 +114,24 @@ def facts(uk_sheet):
     return {fact.id: fact for fact in study_lines(uk_sheet)[0]}
 
 
-def test_a_good_set_becomes_detective_cards_then_hero_cards_each_with_its_key(uk_sheet):
+def test_a_good_set_becomes_the_first_sheet_with_its_sealed_key(uk_sheet):
     llm = ScriptedLLM({TASK: [GOOD, {}]})
     papers = write_case_papers(uk_sheet, llm, limit=1)
     assert papers.model_sheets == 1 and papers.title == "The Case of the Two Big Cities"
     first = papers.sheets[0]
-    assert [c.answer for c in first][:2] == ["London", "River Thames"] and all(c.by_model for c in first[:7])
-    assert all(c.mode == "detective" for sheet in papers.sheets[: papers.hero_start] for c in sheet)
-    hero = [c for sheet in papers.sheets[papers.hero_start :] for c in sheet]
-    assert "Popular culture" in [c.answer for c in hero] and all(c.mode == "hero" for c in hero)
+    assert [c.answer for c in first][:2] == ["London", "River Thames"] and all(c.by_model for c in first)
     assert all(len(sheet) <= CARDS_PER_SHEET for sheet in papers.sheets)
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
-    assert taught == set(papers.facts)  # every line of the sheet is on some card, once
-    answers = [c.answer for sheet in papers.sheets for c in sheet if c.by_model]
-    assert len(answers) == len(set(answers))  # no model question repeats across the two parts
+    assert {f"F{n}" for n in range(1, 10)} <= taught  # every line of the model's sheet is on a card
+    left_out = len(set(papers.facts) - taught)
+    assert not left_out or any(f"{left_out} of {len(papers.facts)} lines" in note for note in papers.notes)
     pdf = render_case_papers_pdf(papers)
     with pymupdf.open(stream=pdf, filetype="pdf") as document:
         texts = [page.get_text() for page in document]
     assert len(texts) == 2 * len(papers.sheets)  # each sheet's cards, then its key
     assert "Which river flows through this city?" in texts[0] and "River Thames" not in texts[0]
     assert "SHEET 1 OF" in texts[1] and "River Thames" in texts[1] and "Sheet says: p. 1" in texts[1]
-    detective_pages = 2 * papers.hero_start
-    assert "CASE CLOSED" in texts[detective_pages - 1]
-    assert "H E R O" in texts[detective_pages] and "Popular culture" not in texts[detective_pages]
-    assert "POPULAR CULTURE" in "".join(texts[detective_pages:]) and "MISSION COMPLETE" in texts[-1]
-
-
-@pytest.mark.parametrize(
-    "card, mode",
-    [
-        ({"answer": "Rani Lakshmibai"}, "detective"),
-        ({"answer": "10 May 1857"}, "detective"),
-        ({"answer": "Condensation"}, "detective"),  # one capitalised word reads as a name without the model's label
-        ({"answer": "land revenue"}, "hero"),
-        ({"answer": "Popular culture"}, "hero"),
-        ({"answer": "Condensation", "mode": "hero"}, "hero"),  # the model's label wins
-        ({"answer": "Meerut", "mode": "villain"}, "detective"),  # an unknown label is ignored
-    ],
-)
-def test_each_card_goes_to_one_part(card, mode):
-    from learn.teaching_engine.evidence_cards import card_mode
-
-    assert card_mode(card) == mode
+    assert "CASE CLOSED" in texts[-1]
 
 
 def test_the_model_sees_only_its_sheet_of_lines(uk_sheet):
@@ -194,12 +169,12 @@ def test_a_set_that_misses_a_line_is_sent_back_then_keeps_its_good_cards(uk_shee
     papers = write_case_papers(uk_sheet, llm, limit=1)
     assert "taught by no card" in llm.calls[1][1] and "write at least 7, one per line" in llm.calls[1][1]
     assert papers.model_sheets == 0 and any("broke the rules twice" in note for note in papers.notes)
-    assert papers.title == "The Case of the Study Sheet"  # the partial replies gave no case title
     first = papers.sheets[0]
     assert [c.answer for c in first if c.by_model] == ["London", "River Thames", "Southeastern England"]
     assert papers.model_cards == 3 and not all(c.by_model for c in first)
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
-    assert {f"F{n}" for n in range(1, 10)} <= taught  # the plain cards teach the lines the model missed
+    assert {"F1", "F2", "F4"} <= taught  # the model's three good cards
+    assert all(c.question != "Answer it." and not c.evidence.endswith("…") for s in papers.sheets for c in s)
     assert render_case_papers_pdf(papers).startswith(b"%PDF")
 
 
@@ -215,9 +190,7 @@ def test_extra_and_repeated_cards_are_dropped_without_a_second_call(uk_sheet):
     llm = ScriptedLLM({TASK: [extra, {}]})
     papers = write_case_papers(uk_sheet, llm, limit=1)
     assert len(llm.calls) == 1 and papers.model_sheets == 1
-    expected = [c["answer"] for c in GOOD["cards"] if c["answer"] != "Popular culture"] + ["Popular culture"]
-    written = [c.answer for sheet in papers.sheets for c in sheet if c.by_model]
-    assert written == expected  # the model's detective cards, then its hero card
+    assert [c.answer for c in papers.sheets[0]] == [c["answer"] for c in GOOD["cards"]]
 
 
 def test_one_bad_card_does_not_sink_a_covered_sheet(uk_sheet):
@@ -229,7 +202,7 @@ def test_one_bad_card_does_not_sink_a_covered_sheet(uk_sheet):
     assert len(llm.calls) == 2  # F6 was taught only by the leaky card, so the sheet went back once
     cards = [c for sheet in papers.sheets for c in sheet]
     assert papers.model_cards == 7  # the first set's 7 good cards beat the retry's 5
-    assert [c.by_model for c in cards if "F6" in c.lines] == [False]  # a plain card teaches the leaky card's line
+    assert all(c.by_model for c in cards if "F6" in c.lines)  # the leaky card never prints; any F6 card is clean
 
 
 def test_without_a_model_every_line_still_gets_a_plain_card(uk_sheet):
@@ -264,7 +237,11 @@ def test_tables_become_lines_so_their_facts_get_cards(name, expected):
     assert len(lines) == expected
     papers = write_case_papers(read_sheet(extract_facts(extract(data).units), data))
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
-    assert len(taught) >= len(lines) - 2  # plain cards: nearly every line, even without a model
+    answers = [c.answer for sheet in papers.sheets for c in sheet]
+    assert len(answers) == len(set(answers))  # plain cards: no answer twice
+    assert all(c.question != "Answer it." and not c.evidence.endswith("…") for s in papers.sheets for c in s)
+    left_out = len(lines) - len(taught)
+    assert not left_out or any(f"{left_out} of {len(lines)} lines" in note for note in papers.notes)
 
 
 def test_scene_names_and_sheet_facts_are_allowed(facts):
@@ -373,60 +350,60 @@ def test_a_long_topic_tag_fits_its_card_without_being_cut_mid_word():
 def test_every_printed_sheet_but_the_last_is_full(name):
     data = (UK.parent / name).read_bytes()
     papers = write_case_papers(read_sheet(extract_facts(extract(data).units), data))  # plain cards, 9 for some groups
-    for part in (papers.sheets[: papers.hero_start], papers.sheets[papers.hero_start :]):
-        sizes = [len(sheet) for sheet in part]  # each part fills its sheets; only its last may be short
-        assert all(size == CARDS_PER_SHEET for size in sizes[:-1])
-        assert all(1 <= size <= CARDS_PER_SHEET for size in sizes)
+    sizes = [len(sheet) for sheet in papers.sheets]
+    assert all(size == CARDS_PER_SHEET for size in sizes[:-1]) and 1 <= sizes[-1] <= CARDS_PER_SHEET
     numbers = [c.number for sheet in papers.sheets for c in sheet]
     assert numbers == list(range(1, len(numbers) + 1))
 
 
-def test_the_model_title_is_kept_even_when_its_first_sheet_needs_plain_cards(uk_sheet):
-    partial = {"case_title": "The Case of the Two Big Cities", "cards": GOOD["cards"][:3]}
-    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [partial, partial, {}]}), limit=1)
-    assert papers.model_sheets == 0 and papers.title == "The Case of the Two Big Cities"
+@pytest.mark.parametrize(
+    "plain, usable",
+    [
+        (
+            {
+                "evidence": "On ______, sepoys rose in revolt.",
+                "question": "Which date fits the gap?",
+                "answer": "10 May 1857",
+            },
+            True,
+        ),  # fmt: skip
+        (
+            {
+                "evidence": "Rani Lakshmibai led the fight at Jhansi.",
+                "question": "What is this about?",
+                "answer": "Rani Lakshmibai",
+            },
+            True,
+        ),  # fmt: skip
+        (
+            {"evidence": "Plants act as …", "question": "Finish the sentence.", "answer": "… a larger carbon sink."},
+            False,
+        ),  # fmt: skip
+        (
+            {"evidence": "Explain why photosynthesis matters.", "question": "Answer it.", "answer": "Because it does"},
+            False,
+        ),  # fmt: skip
+        ({"evidence": "A line.", "question": "What is it?", "answer": "a long phrase of many words"}, False),
+    ],
+)
+def test_only_plain_cards_with_a_real_question_and_a_short_answer_are_printed(plain, usable):
+    from learn.teaching_engine.evidence_cards import _usable_plain
+
+    assert _usable_plain(plain) is usable
 
 
-def test_the_review_drops_a_card_that_says_more_than_its_lines_and_sends_that_line_back(uk_sheet):
-    invented = {**GOOD["cards"][1], "evidence": "Boats float past a tall clock tower. Kings built it long ago."}
-    fixed = card(["F2"], "Boats by the Bridge", "Boats float under a bridge. The water runs through the city.",
-                 "Which river flows through this city?", "River Thames")  # fmt: skip
-    first = {**GOOD, "cards": [GOOD["cards"][0], invented, *GOOD["cards"][2:]]}
-    flag = {"flags": [{"card": 2, "sentence": "Kings built it long ago.", "reason": "the line says nothing of kings"}]}
-    llm = ScriptedLLM({TASK: [first, {"cards": [fixed]}, {}], REVIEW_TASK: [flag, {"flags": []}]})
-    papers = write_case_papers(uk_sheet, llm, limit=1, review=True)
-    tasks = [task for task, _ in llm.calls]
-    assert tasks == [TASK, REVIEW_TASK, TASK, REVIEW_TASK]
-    assert "Kings built it long ago." in llm.calls[2][1] and "the line says nothing of kings" in llm.calls[2][1]
-    cards = [c for sheet in papers.sheets for c in sheet if c.by_model]
-    thames = [c for c in cards if c.answer == "River Thames"]
-    assert [c.evidence for c in thames] == [fixed["evidence"]]  # the invented sentence never reaches the page
-    assert "Kings" not in " ".join(c.evidence for c in cards)
+def test_a_question_whose_answers_are_already_points_is_not_a_line_again():
+    data = (UK.parent / "carbon-cycle-answers.pdf").read_bytes()
+    lines, _ = study_lines(read_sheet(extract_facts(extract(data).units), data))
+    assert not any(" Answer: " in line.text for line in lines)  # its bullet points carry the answer once
 
 
-def test_without_the_review_no_second_request_is_made(uk_sheet):
-    llm = ScriptedLLM({TASK: [GOOD, {}]})
-    write_case_papers(uk_sheet, llm, limit=1, review=False)
-    assert [task for task, _ in llm.calls] == [TASK]
+def test_model_cards_may_share_an_answer_across_groups(uk_sheet):
+    from learn.teaching_engine.evidence_cards import write_case_papers as write
 
-
-def test_a_flag_for_a_card_that_does_not_exist_is_ignored(uk_sheet):
-    llm = ScriptedLLM({TASK: [GOOD, {}], REVIEW_TASK: {"flags": [{"card": 99, "sentence": "x"}, "nonsense"]}})
-    papers = write_case_papers(uk_sheet, llm, limit=1, review=True)
-    assert papers.model_sheets == 1 and len(llm.calls) == 2
-
-
-def test_plain_cards_always_print_in_the_detective_part(uk_sheet, monkeypatch):
-    from learn.teaching_engine import evidence_cards
-
-    def idea_cards(sheet, facts, lines, standard):  # plain cards whose answers read as ideas
-        return [card(line_ids, "Case file", "A gap in the line …", "Finish the sentence.", "land revenue")
-                for line_ids in ([line] for line in lines)]  # fmt: skip
-
-    monkeypatch.setattr(evidence_cards, "_plain_cards", idea_cards)
-    papers = write_case_papers(uk_sheet)  # no model: every card is plain
-    assert papers.hero_start == len(papers.sheets)  # no hero sheets
-    llm = ScriptedLLM({TASK: [GOOD, {}]})
-    papers = write_case_papers(uk_sheet, llm, limit=1)
-    hero = [c for sheet in papers.sheets[papers.hero_start :] for c in sheet]
-    assert hero and all(c.by_model for c in hero)  # only the model's story cards are hero cards
+    second = {"cards": [card(["F10"], "Old Market Town", "Rohan reads an old map of a small market town.",
+                             "Which city grew from this town?", "Birmingham")]}  # fmt: skip
+    llm = ScriptedLLM({TASK: lambda prompt, _: GOOD if "\nF1 [" in prompt else second})
+    papers = write(uk_sheet, llm, limit=2, workers=1)
+    birmingham = [c for sheet in papers.sheets for c in sheet if c.answer == "Birmingham" and c.by_model]
+    assert len(birmingham) == 2  # two lines, two questions, one answer: both cards stay
