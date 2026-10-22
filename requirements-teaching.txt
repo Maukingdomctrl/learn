@@ -3,7 +3,7 @@ fastapi==0.143.1
 httpx==0.28.1
 Jinja2==3.1.6
 pydantic==2.14.1
-pymupdf==1.28.2
+pymupdf==2.0
 pymupdf-fonts==1.0.5
 python-multipart==0.0.32
 uvicorn==0.54.0
