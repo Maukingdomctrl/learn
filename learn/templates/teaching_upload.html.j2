@@ -8,7 +8,7 @@
   <title>PDF to Printable Study Cards for Grade 8 | Learn</title>
   <meta
     name="description"
-    content="Turn a curriculum PDF into printable study cards for Grade 8 revision. Choose a Detective or Superhero game, preview your cards, and print. No sign-up."
+    content="Turn a curriculum PDF into printable study cards for Grade 8 revision. Choose {% if show_superhero %}a Detective or Superhero game{% else %}the Detective game{% endif %}, preview your cards, and print. No sign-up."
   >
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://learn.mauforge.com/">
@@ -875,7 +875,7 @@
         <p class="intro">
           Less staring at notes. More figuring things out.
           Turn your curriculum PDF into printable question cards,
-          then solve a mystery or take on a superhero mission.
+          then solve a mystery{% if show_superhero %} or take on a superhero mission{% endif %}.
         </p>
 
         <ul class="benefits" aria-label="Features">
@@ -970,6 +970,7 @@
                 </span>
               </label>
 
+              {% if show_superhero %}
               <label class="game-option">
                 <input type="radio" name="output" value="superhero">
                 <span class="game-tile">
@@ -980,6 +981,7 @@
                   </span>
                 </span>
               </label>
+              {% endif %}
             </div>
           </fieldset>
           {% else %}
@@ -1041,7 +1043,7 @@
           <span class="step-number" aria-hidden="true">02</span>
           <h3>Make it a mission</h3>
           <p>
-            Pick Detective or Superhero. Preview your question cards
+            Pick {% if show_superhero %}Detective or Superhero{% else %}Detective mode{% endif %}. Preview your question cards
             and check that the content matches your lesson.
           </p>
         </article>

@@ -233,15 +233,24 @@ def test_prompt_lists_the_sheet_and_review_lines(uk):
 # The card model's client settings
 
 
-def test_cards_go_to_june_with_haiku_at_low_effort_and_no_fallbacks(monkeypatch):
+def test_cards_go_to_june_with_gemini_at_medium_effort_and_no_fallbacks(monkeypatch):
     monkeypatch.setenv("LEARN_PROVIDER", "june")
     monkeypatch.setenv("JUNE_API_KEY", "test-key-not-real")
     monkeypatch.delenv("LEARN_CARDS_MODEL", raising=False)
     monkeypatch.delenv("LEARN_CARDS_EFFORT", raising=False)
     llm = AnthropicLLM.for_cards()
-    assert llm.model == "anthropic/claude-haiku-5.5" and llm.effort == llm.check_effort == "low"
+    assert llm.model == "google/gemini-3.8-flash" and llm.effort == llm.check_effort == "medium"
     assert not llm.fallbacks and llm.key_name == "JUNE_API_KEY"
     assert str(llm.client.base_url).startswith("https://api.blockchain.info/ai/api")
+
+
+def test_haiku_through_june_runs_at_low_effort(monkeypatch):
+    monkeypatch.setenv("LEARN_PROVIDER", "june")
+    monkeypatch.setenv("JUNE_API_KEY", "test-key-not-real")
+    monkeypatch.setenv("LEARN_CARDS_MODEL", "anthropic/claude-haiku-5.5")
+    monkeypatch.delenv("LEARN_CARDS_EFFORT", raising=False)
+    llm = AnthropicLLM.for_cards()
+    assert llm.model == "anthropic/claude-haiku-5.5" and llm.effort == "low"
 
 
 def test_cards_default_to_the_claude_api_with_haiku(monkeypatch):
@@ -283,3 +292,94 @@ def test_a_hidden_river_name_keeps_the_word_river_as_a_hint(uk):
     builder = _Builder(uk.facts, sheet.lines, sheet.review, uk.cases[0].suspects)
     card = builder.build({"kind": "fill", "line": thames, "hide": "River Thames"})
     assert "the River ________ in" in card.lines[0] and card.answer[0].startswith("Thames:")
+
+
+# Study cards chosen by the model
+
+GOOD_STUDY = {
+    "cards": [
+        {"kind": "match", "lines": ["F1", "F7"]},
+        {"kind": "which", "lines": ["F3", "F4", "F9", "F11"]},
+        {"kind": "fill", "line": "F2", "hide": "River Thames"},
+        {"kind": "pick", "line": "F5", "hide": "Europe", "wrong": ["England", "Wales"]},
+        {
+            "kind": "timeline",
+            "events": [
+                {"line": "F10", "words": "Was a medium-sized market town in the medieval period"},
+                {"line": "F10", "words": "grew to international prominence in the 18th century"},
+            ],
+        },
+        {"kind": "fill", "line": "F12", "hide": "steam engine"},
+        {"kind": "mistake", "line": "F6", "wrong_name": "Birmingham"},
+        {"kind": "finish", "line": "F8", "shown": "Major city of the West Midlands,"},
+    ]
+}
+
+
+@pytest.fixture(scope="module")
+def uk_sheet():
+    data = UK.read_bytes()
+    return read_sheet(extract_facts(extract(data).units), data)
+
+
+def test_model_study_cards_replace_the_rule_cards_for_their_lines(uk_sheet):
+    from learn.teaching_engine.ai_cards import STUDY_TASK, write_study_cards
+    from learn.teaching_engine.cards import GAP, plan_cards, render_cards_pdf
+
+    llm = ScriptedLLM({STUDY_TASK: [GOOD_STUDY, {}]})
+    result = write_study_cards(uk_sheet, llm, limit=1)
+    assert result.ai_sheets == 1 and len(llm.calls) == 1
+    ai = [card for card in result.cards if card.kind.startswith("ai_")]
+    assert len(ai) == 8 and result.cards[: len(ai)] == ai  # the first group's cards come first, in sheet order
+    fill = next(card for card in ai if card.kind == "ai_fill")
+    assert f"the River {GAP} in" in fill.clue and fill.answer == "Thames"
+    first_units = {unit for card in ai for unit in card.unit_ids}
+    rule = plan_cards(uk_sheet)
+    kept = [card for card in result.cards if not card.kind.startswith("ai_")]
+    assert all(not first_units & set(card.unit_ids) for card in kept)
+    assert len(kept) == len([card for card in rule if not first_units & set(card.unit_ids)])
+    assert any("1 of" in note for note in result.notes)
+    pdf = render_cards_pdf(result.cards, "study")
+    import pymupdf
+
+    with pymupdf.open(stream=pdf, filetype="pdf") as document:
+        text = " ".join(page.get_text() for page in document)
+    assert "What goes in the gap?" in text and "FILL IN THE BLANKS" in text
+
+
+def test_the_study_model_sees_only_its_group_of_lines(uk_sheet):
+    from learn.teaching_engine.ai_cards import STUDY_TASK, study_lines, write_study_cards
+
+    llm = ScriptedLLM({STUDY_TASK: [GOOD_STUDY, {}]})
+    write_study_cards(uk_sheet, llm, limit=1)
+    prompt = llm.calls[0][1]
+    facts, _ = study_lines(uk_sheet)
+    assert all((f"\n{fact.id} [" in prompt) == (int(fact.id[1:]) <= 12) for fact in facts)
+
+
+def test_failing_or_unreachable_study_models_keep_the_rule_cards(uk_sheet):
+    from learn.teaching_engine.ai_cards import STUDY_TASK, write_study_cards
+    from learn.teaching_engine.cards import plan_cards
+
+    bad = {"cards": [{"kind": "fill", "line": "F2", "hide": "Seine"}]}
+    result = write_study_cards(uk_sheet, ScriptedLLM({STUDY_TASK: [bad, bad, {}]}), limit=1)
+    assert result.cards == plan_cards(uk_sheet) and result.ai_sheets == 0
+    assert any("failed checks twice" in note for note in result.notes)
+
+    class Down:
+        def json(self, task, system, prompt):
+            raise LLMError("Claude API credentials are not configured (set JUNE_API_KEY).")
+
+    result = write_study_cards(uk_sheet, Down())
+    assert result.cards == plan_cards(uk_sheet) and any("JUNE_API_KEY" in note for note in result.notes)
+
+
+def test_too_many_cards_of_a_kind_are_sent_back(uk_sheet):
+    from learn.teaching_engine.ai_cards import STUDY_TASK, write_study_cards
+
+    fills = {
+        "cards": [{"kind": "fill", "line": f"F{n}", "hide": w} for n, w in [(2, "Thames"), (5, "Europe"), (8, "Rea")]]
+    }
+    llm = ScriptedLLM({STUDY_TASK: [fills, GOOD_STUDY, {}]})
+    result = write_study_cards(uk_sheet, llm, limit=1)
+    assert result.ai_sheets == 1 and "3 FILL THE GAP cards, more than 2" in llm.calls[1][1]

@@ -1,20 +1,29 @@
+import re
+from collections import OrderedDict
+from pathlib import Path
+
 import pymupdf
 import pytest
+from conftest import ScriptedLLM
 from fastapi.testclient import TestClient
+from test_evidence_cards import GOOD
 
 import learn.teaching_web as web
+from learn.teaching_engine.evidence_cards import TASK
 
 
 def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sample_pdf, tmp_path, monkeypatch):
     monkeypatch.setenv("LEARN_OUTPUT_DIR", str(tmp_path))
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("JUNE_API_KEY", raising=False)  # no key: the Detective button makes the rule-based case file
     client = TestClient(web.app)
 
     page = client.get("/").text
     assert "No account or API key needed" in page
-    # The games are hidden; the form asks for the same cards titled "STUDY CARDS".
-    assert "<strong>Detective</strong>" not in page and "<strong>Superhero</strong>" not in page
-    assert '<input type="hidden" name="output" value="study">' in page
+    # The page offers the Detective game; Superhero is hidden for now.
+    assert "<strong>Detective</strong>" in page and "<strong>Superhero</strong>" not in page
+    assert "uperhero" not in re.sub(r"(?s)<script.*?</script>", "", page)  # nor in the page's wording
+    assert 'name="output" value="detective" checked' in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
     assert 'aria-controls="output-preview" hidden' in page
@@ -133,13 +142,20 @@ def test_teaching_web_rejects_its_own_generated_card_pdf():
         web._build_pdf(generated_pdf, "", "detective", 8)
 
 
-def test_turning_the_games_back_on_shows_both_choices(monkeypatch):
-    monkeypatch.setattr(web, "SHOW_GAMES", True)
+def test_turning_superhero_back_on_shows_both_games(monkeypatch):
+    monkeypatch.setattr(web, "SHOW_SUPERHERO", True)
     page = TestClient(web.app).get("/").text
 
-    assert 'name="output" value="detective" checked' in page
-    assert 'name="output" value="superhero"' in page
-    assert 'name="output" value="study"' not in page
+    assert 'name="output" value="detective" checked' in page and 'name="output" value="superhero"' in page
+    assert "Pick Detective or Superhero." in page
+
+
+def test_turning_the_games_off_makes_plain_study_cards(monkeypatch):
+    monkeypatch.setattr(web, "SHOW_GAMES", False)
+    page = TestClient(web.app).get("/").text
+
+    assert "<strong>Detective</strong>" not in page and "<strong>Superhero</strong>" not in page
+    assert '<input type="hidden" name="output" value="study">' in page
 
 
 def test_the_page_default_makes_plain_study_cards(sample_pdf):
@@ -204,3 +220,61 @@ def test_scanned_pages_are_read_with_ocr_and_limited_to_what_the_host_can_read_i
     refused = upload(_scanned_pdf(3))
     assert refused.headers["content-type"].startswith("text/html")
     assert "3 of the selected pages are scanned images, and up to 2 can be read" in refused.text
+
+
+UK = Path(__file__).parent / "sheets" / "uk-cities-comparative-table.pdf"
+
+
+@pytest.fixture
+def case_model(monkeypatch):
+    """The Detective button with a scripted model: good cards for the first sheet, then no more replies."""
+    monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
+    llm = ScriptedLLM({TASK: [GOOD, {}]})
+    made = []
+
+    def model():
+        made.append(llm)
+        return llm
+
+    monkeypatch.setattr(web, "_case_paper_model", model)
+    monkeypatch.setenv("LEARN_DETECTIVE_AI_SHEETS", "1")
+    return llm, made
+
+
+def _post(client, path):
+    with open(UK, "rb") as pdf_file:
+        return client.post(path, data={"output": "detective"}, files={"pdf": ("uk.pdf", pdf_file, "application/pdf")})
+
+
+def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
+    llm, made = case_model
+    client = TestClient(web.app)
+    preview = _post(client, "/preview")
+    download = _post(client, "/generate")
+
+    assert preview.headers["content-disposition"] == 'inline; filename="learn_detective_game.pdf"'
+    assert download.headers["content-disposition"] == 'attachment; filename="learn_detective_game.pdf"'
+    text = pymupdf.open(stream=download.content, filetype="pdf")[1].get_text()
+    assert "River Thames" in text and "Sheet says: p. 1" in text  # the sealed key after the first sheet
+    assert download.content == preview.content
+    assert len(made) == 1 and len(llm.calls) == 1  # preview then download: the model is asked once
+
+
+def test_without_a_key_or_past_the_daily_limit_no_model_is_used(monkeypatch):
+    monkeypatch.setenv("LEARN_PROVIDER", "june")
+    monkeypatch.delenv("JUNE_API_KEY", raising=False)
+    assert web._case_paper_model() is None
+    monkeypatch.setenv("JUNE_API_KEY", "test-key")
+    monkeypatch.setenv("LEARN_DETECTIVE_DAILY_LIMIT", "2")
+    monkeypatch.setattr(web, "_ai_uploads", {"day": web.date.min, "count": 0})
+    assert [web._case_paper_model() is not None for _ in range(3)] == [True, True, False]
+
+
+def test_a_model_that_writes_no_good_card_gives_the_rule_based_case_file(monkeypatch):
+    monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
+    broken = {"cards": [{**c, "answer": "Paris"} for c in GOOD["cards"]]}
+    monkeypatch.setattr(web, "_case_paper_model", lambda: ScriptedLLM({TASK: [broken, broken, {}]}))
+    monkeypatch.setenv("LEARN_DETECTIVE_AI_SHEETS", "1")
+    response = _post(TestClient(web.app), "/generate")
+
+    assert "DETECTIVE CASE FILE" in "\n".join(page.get_text() for page in pymupdf.open(stream=response.content))

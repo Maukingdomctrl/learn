@@ -104,13 +104,14 @@ class AnthropicLLM:
         return cls(C.model_name(), C.model_effort(), C.check_effort(), C.max_output_tokens(), C.retry_output_tokens())
 
     @classmethod
-    def for_cards(cls) -> "AnthropicLLM":
-        """The card writer's model (Haiku by default) at low effort, through June when LEARN_PROVIDER=june."""
+    def for_cards(cls, effort: str = "") -> "AnthropicLLM":
+        """The card model (Gemini through June, else Haiku) at the cards' effort, or ``effort`` when given."""
         june = C.provider() == "june"
+        effort = effort or C.cards_effort()
         return cls(
             C.cards_model(),
-            C.cards_effort(),
-            C.cards_effort(),
+            effort,
+            effort,
             C.cards_max_tokens(),
             2 * C.cards_max_tokens(),
             base_url=C.june_base_url() if june else "",

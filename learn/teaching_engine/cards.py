@@ -1463,8 +1463,14 @@ def render_printable_cards_pdf(
     game_mode: str = "detective",
     pages: set[int] | None = None,
     standard: int = 8,
+    llm=None,
+    ai_limit: int | None = None,
 ) -> bytes:
-    """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them."""
+    """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them.
+
+    With ``llm``, a model chooses the cards for up to ``ai_limit`` groups of lines (``ai_cards.py``); code still
+    builds every card from the sheet's words, and the rest keep their rule-based cards.
+    """
     if game_mode not in _THEMES:
         raise ValueError("Choose study cards, Detective or Superhero.")
     if standard not in {7, 8, 9}:
@@ -1474,7 +1480,18 @@ def render_printable_cards_pdf(
     if not inventory.facts and not source_pdf:
         raise ValueError("No source facts were found to turn into cards.")
     sheet = read_sheet(inventory, source_pdf, pages)
-    cards = plan_cards(sheet, standard)
+    ai_notes: list[str] = []
+    if llm is None:
+        cards = plan_cards(sheet, standard)
+    else:
+        from .ai_cards import write_study_cards
+
+        result = write_study_cards(sheet, llm, ai_limit, standard)
+        cards = result.cards
+        ai_notes = [
+            f"A model chose the cards for {result.ai_sheets} of {result.sheets} groups of lines.",
+            *result.notes,
+        ]
     if not cards:
         raise ValueError(
             "No source facts were found to turn into cards. The selected pages need bullet points, sentences or "
@@ -1486,4 +1503,4 @@ def render_printable_cards_pdf(
         "no card. Check that page by eye."
         for page in lost
     )
-    return render_cards_pdf(cards, game_mode, standard, notes)
+    return render_cards_pdf(cards, game_mode, standard, (*notes, *ai_notes))

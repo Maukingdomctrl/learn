@@ -18,11 +18,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default="teaching_lesson.json", help="output JSON file")
     parser.add_argument("--pages", default="", help="optional page range, e.g. 3-5 or 2,4")
     parser.add_argument("--case-file", default="", help="also print a Detective case file PDF to this path")
+    parser.add_argument("--cards", default="", help="also print the study cards PDF to this path")
+    parser.add_argument(
+        "--case-papers", default="", help="also print Detective Mode case papers (everyday-scene Evidence cards)"
+    )
     parser.add_argument(
         "--ai",
         action="store_true",
-        help="let the card model (LEARN_PROVIDER, LEARN_CARDS_MODEL) choose the case file's cards; "
-        "only LEARN_CARDS_AI_SHEETS sheets are sent (default 1)",
+        help="let the card model (LEARN_PROVIDER, LEARN_CARDS_MODEL) choose the cards of --case-file and --cards; "
+        "only LEARN_CARDS_AI_SHEETS sheets or groups of lines are sent (default 1)",
     )
     args = parser.parse_args(argv)
 
@@ -50,28 +54,81 @@ def main(argv: list[str] | None = None) -> int:
         case_path.parent.mkdir(parents=True, exist_ok=True)
         case_path.write_bytes(pdf)
         print(f"Saved Detective case file to {case_path}")
+    if args.cards:
+        from .cards import render_printable_cards_pdf
+
+        llm = _card_model() if args.ai else None
+        try:
+            pdf = render_printable_cards_pdf(
+                extract_facts(source.units), data, "study", page_range, llm=llm, ai_limit=_limit()
+            )
+        except ValueError as error:
+            print(f"No study cards: {error}")
+            return 2
+        if llm is not None:
+            _report(llm)
+        cards_path = Path(args.cards)
+        cards_path.parent.mkdir(parents=True, exist_ok=True)
+        cards_path.write_bytes(pdf)
+        print(f"Saved study cards to {cards_path}")
+    if args.case_papers:
+        from .. import config as C
+        from .evidence_cards import render_case_papers_pdf, write_case_papers
+
+        llm = _card_model(C.evidence_effort()) if args.ai else None
+        try:
+            papers = write_case_papers(read_sheet(extract_facts(source.units), data, page_range), llm, limit=_limit())
+            pdf = render_case_papers_pdf(papers)
+        except ValueError as error:
+            print(f"No case papers: {error}")
+            return 2
+        cards = sum(len(sheet) for sheet in papers.sheets)
+        print(f"Case papers: {cards} cards on {len(papers.sheets)} sheets, {papers.model_cards} written by the model.")
+        for note in papers.notes:
+            print(f"  {note}")
+        if llm is not None:
+            _report(llm)
+        papers_path = Path(args.case_papers)
+        papers_path.parent.mkdir(parents=True, exist_ok=True)
+        papers_path.write_bytes(pdf)
+        print(f"Saved case papers to {papers_path}")
     if source.warnings:
         print("Review source warnings in the JSON output, especially unreadable or diagram-heavy pages.")
     return 0
 
 
-def _with_model(case_file):
-    """The case file with model-chosen cards where they pass every check, and what the calls used."""
-    from .. import config as C
+def _card_model(effort: str = ""):
     from ..llm import AnthropicLLM
-    from .ai_cards import write_with_model
 
-    llm = AnthropicLLM.for_cards()
-    result = write_with_model(case_file, llm, C.cards_sheet_limit())
-    print(f"Model {llm.model} at {llm.effort} effort chose the cards for {result.ai_sheets} of {result.sheets} sheets.")
-    for note in result.notes:
-        print(f"  {note}")
+    return AnthropicLLM.for_cards(effort)
+
+
+def _limit() -> int:
+    from .. import config as C
+
+    return C.cards_sheet_limit()
+
+
+def _report(llm) -> None:
+    """What each model call used, so a test run shows its cost."""
     for call in llm.call_log:
         print(
             f"  call: {call['input_tokens']} tokens in, {call['output_tokens']} out "
             f"({call['thinking_tokens']} thinking), {call['seconds']} s, stop {call['stop_reason']}"
             + (f", error {call['error']}" if call["error"] else "")
         )
+
+
+def _with_model(case_file):
+    """The case file with model-chosen cards where they pass every check, and what the calls used."""
+    from .ai_cards import write_with_model
+
+    llm = _card_model()
+    result = write_with_model(case_file, llm, _limit())
+    print(f"Model {llm.model} at {llm.effort} effort chose the cards for {result.ai_sheets} of {result.sheets} sheets.")
+    for note in result.notes:
+        print(f"  {note}")
+    _report(llm)
     return result.case_file
 
 
