@@ -148,3 +148,83 @@ def test_with_fallbacks_requests_ask_for_the_default_fallback():
     client = FakeClient([msg()])
     make(client).json("generate_lesson", "sys", "prompt")
     assert client.requests[0]["fallbacks"] == "default"
+
+
+# The OpenAI-style client for Gemini on Google's own API, against a fake HTTP transport
+
+
+def google(*replies, **kw):
+    """An OpenAIStyleLLM whose requests are answered in turn by ``replies`` (status, JSON body)."""
+    import httpx
+
+    from learn.llm import OpenAIStyleLLM
+
+    sent: list[httpx.Request] = []
+    queue = list(replies)
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        status, body = queue.pop(0)
+        return httpx.Response(status, json=body)
+
+    client = httpx.Client(transport=httpx.MockTransport(answer))
+    llm = OpenAIStyleLLM("gemini-test", "low", "https://example.test/v1beta/openai/", "key-1", 8000, 16000, http=client)
+    return llm, sent
+
+
+def chat(text='{"ok": 1}', finish="stop"):
+    usage = {"prompt_tokens": 700, "completion_tokens": 300, "completion_tokens_details": {"reasoning_tokens": 0}}
+    return 200, {"choices": [{"message": {"content": text}, "finish_reason": finish}], "usage": usage}
+
+
+def test_google_client_sends_one_chat_request_and_logs_it():
+    import json
+
+    llm, sent = google(chat())
+    assert llm.json("write_evidence_cards", "sys", "prompt") == {"ok": 1}
+    body = json.loads(sent[0].content)
+    assert str(sent[0].url) == "https://example.test/v1beta/openai/chat/completions"
+    assert sent[0].headers["authorization"] == "Bearer key-1"
+    assert body["model"] == "gemini-test" and body["reasoning_effort"] == "low" and body["max_tokens"] == 8000
+    assert body["messages"][0] == {"role": "system", "content": "sys"}
+    assert llm.call_log[0]["input_tokens"] == 700 and llm.call_log[0]["stop_reason"] == "stop"
+
+
+def test_google_client_retries_a_cut_off_reply_once_with_a_larger_budget():
+    import json
+
+    llm, sent = google(chat('{"ok": ', "length"), chat())
+    assert llm.json("t", "s", "p") == {"ok": 1}
+    assert [json.loads(r.content)["max_tokens"] for r in sent] == [8000, 16000]
+    llm, _ = google(chat('{"ok": ', "length"), chat('{"ok": ', "length"))
+    with pytest.raises(LLMError, match="cut off"):
+        llm.json("t", "s", "p")
+
+
+@pytest.mark.parametrize(
+    "status, body, message",
+    [
+        (400, [{"error": {"message": "Please pass a valid API key"}}], "set GOOGLE_API_KEY"),
+        (429, {"error": {"message": "Quota exceeded"}}, "daily quota"),
+        (500, {"error": {"message": "Internal"}}, "Model API error 500: Internal"),
+    ],
+)
+def test_google_client_turns_api_failures_into_clear_errors(status, body, message):
+    llm, _ = google((status, body))
+    with pytest.raises(LLMError, match=message):
+        llm.json("t", "s", "p")
+    assert llm.call_log[0]["error"].startswith(f"HTTP {status}")
+
+
+def test_the_google_provider_picks_flash_lite_and_the_network_secret_stand_in(monkeypatch):
+    from learn.llm import KEY_FROM_NETWORK, OpenAIStyleLLM, card_llm
+
+    monkeypatch.setenv("LEARN_PROVIDER", "google")
+    monkeypatch.delenv("LEARN_CARDS_MODEL", raising=False)
+    monkeypatch.delenv("LEARN_CARDS_EFFORT", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    llm = card_llm("low")
+    assert isinstance(llm, OpenAIStyleLLM) and llm.model == "gemini-3.5-flash-lite" and llm.effort == "low"
+    assert llm.api_key == KEY_FROM_NETWORK and llm.base_url.startswith("https://generativelanguage.googleapis.com")
+    monkeypatch.setenv("GOOGLE_API_KEY", "key-2")
+    assert card_llm().api_key == "key-2" and card_llm().effort == "medium"

@@ -98,9 +98,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _card_model(effort: str = ""):
-    from ..llm import AnthropicLLM
+    from ..llm import card_llm
 
-    return AnthropicLLM.for_cards(effort)
+    return card_llm(effort)
 
 
 def _limit() -> int:
