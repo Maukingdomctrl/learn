@@ -50,8 +50,22 @@ class CallRecord:
     error: Optional[str] = None
 
 
-# Stands in for the June key when the environment's network secret replaces it on the way out.
-JUNE_KEY_FROM_NETWORK = "set-by-network-secret"
+# Stands in for the June or Google key when the environment's network secret replaces it on the way out.
+KEY_FROM_NETWORK = JUNE_KEY_FROM_NETWORK = "set-by-network-secret"
+
+
+def card_llm(effort: str = ""):
+    """The card model for the chosen provider (LEARN_PROVIDER), at the cards' effort or ``effort`` when given."""
+    if C.provider() == "google":
+        return OpenAIStyleLLM(
+            C.cards_model(),
+            effort or C.cards_effort(),
+            C.google_base_url(),
+            C.env("GOOGLE_API_KEY") or KEY_FROM_NETWORK,
+            C.cards_max_tokens(),
+            2 * C.cards_max_tokens(),
+        )
+    return AnthropicLLM.for_cards(effort)
 
 
 class AnthropicLLM:
@@ -248,3 +262,110 @@ class AnthropicLLM:
             },
         ]
         return self._call("ocr", "You are a careful OCR transcriber.", content)
+
+
+class OpenAIStyleLLM:
+    """A model behind an OpenAI-style chat API, such as Gemini through Google's own endpoint, called with httpx.
+
+    Like ``AnthropicLLM`` it logs every request in ``call_log``, retries a reply cut off at its output budget once
+    with a larger budget, and turns API failures into ``LLMError``. A busy or failing server (HTTP 5xx) is asked
+    once more after a short wait. It writes cards only; it does not read images.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        effort: str,
+        base_url: str,
+        api_key: str,
+        max_tokens: int = 8000,
+        retry_max_tokens: int = 16000,
+        key_name: str = "GOOGLE_API_KEY",
+        http=None,
+    ):
+        import httpx
+
+        self._httpx = httpx
+        self.http = http or httpx.Client(timeout=120)
+        self.model, self.effort = model, effort
+        self.base_url, self.api_key, self.key_name = base_url.rstrip("/"), api_key, key_name
+        self.max_tokens, self.retry_max_tokens = max_tokens, max(retry_max_tokens, max_tokens)
+        self.busy_wait = 5.0  # seconds before the one retry of a busy server's reply
+        self.call_log: list[dict] = []
+        self.notes: list[str] = []
+
+    def _request(
+        self, task: str, system: str, prompt: str, max_tokens: int, attempt: int, busy_retry: bool = False
+    ) -> tuple[str, str]:
+        rec = CallRecord(task=task, model=self.model, effort=self.effort, max_tokens=max_tokens, attempt=attempt)
+        body = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+            "max_tokens": max_tokens,
+            "reasoning_effort": self.effort,
+            "response_format": {"type": "json_object"},
+        }
+        start = time.monotonic()
+        try:
+            response = self.http.post(
+                f"{self.base_url}/chat/completions", json=body, headers={"Authorization": f"Bearer {self.api_key}"}
+            )
+        except self._httpx.HTTPError as e:
+            rec.error, rec.seconds = f"{type(e).__name__}: {e}", round(time.monotonic() - start, 2)
+            self.call_log.append(asdict(rec))
+            raise LLMError(f"Cannot reach the model API: {e}") from e
+        rec.seconds = round(time.monotonic() - start, 2)
+        if response.status_code in (500, 502, 503, 504) and not busy_retry:
+            # A busy or failing server, which free-tier requests meet first: wait, then ask once more.
+            rec.error = f"HTTP {response.status_code}: {_error_message(response)}"
+            self.call_log.append(asdict(rec))
+            time.sleep(self.busy_wait)
+            return self._request(task, system, prompt, max_tokens, attempt, busy_retry=True)
+        if response.status_code != 200:
+            message = _error_message(response)
+            rec.error = f"HTTP {response.status_code}: {message}"
+            self.call_log.append(asdict(rec))
+            if response.status_code in (401, 403) or "api key" in message.lower():
+                raise LLMError(f"Model API credentials are missing or invalid (set {self.key_name}).")
+            if response.status_code == 429:
+                raise LLMError("Model API rate limit or daily quota reached; try again later.")
+            raise LLMError(f"Model API error {response.status_code}: {message}")
+        data = response.json()
+        choice = (data.get("choices") or [{}])[0]
+        usage = data.get("usage") or {}
+        rec.stop_reason = choice.get("finish_reason")
+        rec.input_tokens, rec.output_tokens = usage.get("prompt_tokens"), usage.get("completion_tokens")
+        rec.thinking_tokens = (usage.get("completion_tokens_details") or {}).get("reasoning_tokens")
+        self.call_log.append(asdict(rec))
+        return (choice.get("message") or {}).get("content") or "", rec.stop_reason or ""
+
+    def _call(self, task: str, system: str, prompt: str) -> str:
+        text, stop = self._request(task, system, prompt, self.max_tokens, attempt=1)
+        if stop == "length" and self.retry_max_tokens > self.max_tokens:
+            text, stop = self._request(task, system, prompt, self.retry_max_tokens, attempt=2)
+        if stop == "length":
+            raise LLMError(f"{task}: the model response was cut off at its {self.call_log[-1]['max_tokens']}-token "
+                           "output limit. Raise LEARN_CARDS_MAX_TOKENS.")  # fmt: skip
+        return text
+
+    def json(self, task: str, system: str, prompt: str) -> dict:
+        try:
+            return parse_json(self._call(task, system, prompt))
+        except ValueError as e:
+            retry = f"{prompt}\n\nYour previous reply was not valid JSON ({e}). Reply with one JSON object only."
+            try:
+                return parse_json(self._call(task, system, retry))
+            except ValueError as e2:
+                raise LLMError(f"{task}: model did not return valid JSON ({e2})") from e2
+
+    def transcribe_image(self, png: bytes) -> str:
+        raise LLMError("This model client writes cards only; it does not read scanned pages.")
+
+
+def _error_message(response) -> str:
+    try:
+        error = response.json()
+        error = error[0] if isinstance(error, list) else error  # Google sometimes wraps the error in a list
+        return str(error.get("error", {}).get("message") or response.text)[:300]
+    except ValueError:
+        return response.text[:300]

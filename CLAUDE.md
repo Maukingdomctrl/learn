@@ -75,7 +75,9 @@ The offline engine behind the public site (`learn/teaching_web.py`, deployed on 
 - `ai_cards.py` lets a model choose a case file's cards. The model only picks lines and words to hide; code builds every card from the sheet's own words and falls back to the rule-based cards on any failure.
   - It runs only with `--ai` on the command line, for at most `LEARN_CARDS_AI_SHEETS` sheets (default 1). The website doesn't call it yet.
   - `LEARN_PROVIDER=june` sends calls to June's Anthropic-format API. The key comes from the environment's network secret for `api.blockchain.info`, or from `JUNE_API_KEY`.
+  - `LEARN_PROVIDER=google` sends calls to Gemini on Google's OpenAI-style API (`OpenAIStyleLLM` in `llm.py`, plain httpx). The key comes from a network secret for `generativelanguage.googleapis.com`, or from `GOOGLE_API_KEY`. Get card models from `llm.card_llm()`, never by building a client directly.
   - Claude Haiku 5.5 has been run live once, on one sheet. Don't claim more.
+  - The Google client has not been run live yet. Don't claim it has.
 - `evidence_cards.py` makes Detective Mode case papers (`--case-papers`): the model writes everyday-scene Evidence cards from the sheet's numbered lines, and `check_card` holds each card to the sheet.
   - The sheet is the only truth. The answer must be printed in the card's lines, and any number or capitalised name on a card must be on the sheet; only `SCENE_NAMES` and `EVERYDAY_NAMES` are exempt. Don't loosen these checks to raise the model's pass rate.
   - Cards that pass are kept one by one. Lines no passing card teaches get plain rule-based cards.

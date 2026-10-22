@@ -115,8 +115,7 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
 
 def _case_paper_model():
     """The model for Detective case papers, or None when no key is set or today's uploads are used up."""
-    june = C.provider() == "june"
-    if not C.env("JUNE_API_KEY" if june else "ANTHROPIC_API_KEY"):
+    if not C.env(C.card_key_name()):
         return None
     with _lock:
         if _ai_uploads["day"] != date.today():
@@ -124,9 +123,9 @@ def _case_paper_model():
         if _ai_uploads["count"] >= C.detective_daily_limit():
             return None
         _ai_uploads["count"] += 1
-    from .llm import AnthropicLLM
+    from .llm import card_llm
 
-    return AnthropicLLM.for_cards(C.evidence_effort())
+    return card_llm(C.evidence_effort())
 
 
 def _case_papers(data: bytes, inventory, page_range: set[int] | None, standard: int) -> bytes | None:

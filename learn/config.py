@@ -112,7 +112,8 @@ def retry_output_tokens() -> int:
 
 
 def provider() -> str:
-    """Where the card writer's model is called: anthropic (the Claude API) or june (June's Anthropic-format API)."""
+    """Where the card writer's model is called: anthropic (the Claude API), june (June's Anthropic-format API) or
+    google (Gemini through Google's OpenAI-style API)."""
     return env("LEARN_PROVIDER", "anthropic").lower()
 
 
@@ -120,10 +121,20 @@ def june_base_url() -> str:
     return env("JUNE_BASE_URL", "https://api.blockchain.info/ai/api")
 
 
+def google_base_url() -> str:
+    return env("GOOGLE_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai")
+
+
+def card_key_name() -> str:
+    """The environment variable that holds the card model's key for the chosen provider."""
+    return {"june": "JUNE_API_KEY", "google": "GOOGLE_API_KEY"}.get(provider(), "ANTHROPIC_API_KEY")
+
+
 def cards_model() -> str:
-    """The model that chooses cards. Through June the test default is Gemini 3.8 Flash; June names models with a
-    provider prefix and dots."""
-    default = "google/gemini-3.8-flash" if provider() == "june" else "claude-haiku-5-5"
+    """The model that writes cards. Through June the test default is Gemini 3.8 Flash; June names models with a
+    provider prefix and dots. On Google's free tier it is Gemini 3.5 Flash-Lite, whose daily free quota is far larger
+    than 3.8 Flash's (developers report about 500 requests a day against 20)."""
+    default = {"june": "google/gemini-3.8-flash", "google": "gemini-3.5-flash-lite"}.get(provider(), "claude-haiku-5-5")
     return env("LEARN_CARDS_MODEL", default)
 
 

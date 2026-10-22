@@ -261,6 +261,10 @@ def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
 
 
 def test_without_a_key_or_past_the_daily_limit_no_model_is_used(monkeypatch):
+    monkeypatch.setenv("LEARN_PROVIDER", "google")
+    monkeypatch.setenv("JUNE_API_KEY", "a-june-key")
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    assert web._case_paper_model() is None  # the Google provider needs GOOGLE_API_KEY, not June's key
     monkeypatch.setenv("LEARN_PROVIDER", "june")
     monkeypatch.delenv("JUNE_API_KEY", raising=False)
     assert web._case_paper_model() is None
