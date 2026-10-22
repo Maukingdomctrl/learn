@@ -23,12 +23,14 @@ from dataclasses import dataclass, field
 
 import pymupdf
 
+from .ai_cards import KIND_WORDS
 from .cards import _ORANGE, _PAGE_HEIGHT, _PAGE_WIDTH, _Type, plan_cards
 from .detective import Fact
 
 TASK = "write_evidence_cards"
 CARDS_PER_SHEET = 8
-LINES_PER_SHEET = 12  # sheet lines the model turns into one sheet of cards
+LINES_PER_SHEET = 9  # sheet lines the model turns into one sheet of cards: about one card per line
+MAX_LINES_PER_CARD = 2  # a card teaches one concept; two lines only when they say the same thing
 MAX_ANSWER_WORDS = 3
 MAX_EVIDENCE_WORDS = 45  # what fits a printed card at a readable size
 MAX_QUESTION_WORDS = 22
@@ -46,13 +48,27 @@ THE CARD RECIPE (non-negotiable):
    outside. Where did the water come from?"
 5. ANSWER: 1-2 words, at most 3 for a name (e.g. "Condensation", "River Thames", "Harland and Wolff"), copied exactly
    as printed in one of the card's lines. The question must lead straight to that answer.
-6. SIMPLE LANGUAGE: short words, short sentences, warm tone. These children are already busy with schoolwork.
-   Retell the lines in your own everyday words: never copy hard words like "preeminent", "apparatus" or
-   "metropolitan" onto a card. Only the answer must match the lines exactly.
+6. SIMPLE LANGUAGE: the child already has a whole chapter to learn, so a card must add no reading load. Write for a
+   tired 12-year-old: everyday words a Class 5 child knows, one idea per sentence, about 10-12 words per sentence,
+   warm and friendly. Retell the lines in your own easy words; never copy hard words like "preeminent", "apparatus",
+   "metropolitan" or "prominence" onto a card. Only the answer must match the lines exactly.
 7. SUPPLEMENTARY FACTS: small extra facts from the lines (numbers, names, side notes) are folded into a related card's
    evidence, never given their own filler card.
 8. NO FABRICATION: every fact must come from the lines. Do not invent statistics, people, dates or processes.
-9. COVERAGE: every line must be taught by at least one card. Each card lists the ids of the lines it teaches.
+9. COVERAGE: teach every important concept on the sheet, not a summary of it. Write ONE CARD PER LINE; join two
+   lines on one card only when they say the same thing, never more than two. Each card lists the ids of the lines
+   it teaches, and every line must be taught by a card.
+
+EXAMPLES of the style (from a Water chapter):
+- "The Sweating Bottle". Evidence: "A cold bottle of water sits on the table, still sealed. Nobody has opened it. Yet
+  tiny drops of water slowly appear all over the outside." Question: "The bottle is sealed, yet drops appear
+  outside. Where did the water come from?" Answer: "Water vapour".
+- "The Vanishing Puddle". Evidence: "After the morning rain, a wide puddle lies in the courtyard. By afternoon it has
+  shrunk to a wet patch. By evening the ground is dry." Question: "Nobody wiped the puddle away. What is this quiet
+  disappearing act called?" Answer: "Evaporation".
+- "The Well That Digs Deeper". Evidence: "Grandfather says the village well found water at twenty feet in his
+  youth. Today the diggers go down sixty. Each summer, the well fills slower." Question: "What is the hidden level
+  below which the ground stays soaked with water called?" Answer: "Water table".
 
 SELF-CHECK: the answer words must NOT appear in the card's title, evidence or question.
 
@@ -115,7 +131,8 @@ def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[s
     if not any(_contains(facts[line].text, answer) or _contains(facts[line].suspect, answer) for line in lines):
         problems.append(f"{where}: the answer “{answer}” is not printed in its lines {', '.join(lines)}.")
     front = f"{texts['title']} {texts['evidence']} {texts['question']}"
-    leaked = [word for word in _norm(answer).split() if len(word) >= 4 and _contains(front, word)]
+    hints = {word.casefold() for word in KIND_WORDS}  # "Which river…?" may hint at "River Thames"
+    leaked = [word for word in _norm(answer).split() if len(word) >= 4 and word not in hints and _contains(front, word)]
     if _contains(front, answer) or leaked:
         problems.append(f"{where}: the answer “{answer}” appears on the card front.")
     if not texts["question"].strip().endswith("?"):
@@ -126,9 +143,9 @@ def check_card(card: dict, facts: dict[str, Fact], allowed: list[str]) -> list[s
     if len(texts["title"].split()) > 7:
         problems.append(f"{where}: the title should be 3-6 words.")
     if len(texts["evidence"].split()) > MAX_EVIDENCE_WORDS:
-        problems.append(f"{where}: the evidence is too long to print; keep it under {MAX_EVIDENCE_WORDS} words.")
+        problems.append(f"{where}: the evidence is too long; keep it to {MAX_EVIDENCE_WORDS} words.")
     if len(texts["question"].split()) > MAX_QUESTION_WORDS:
-        problems.append(f"{where}: the question is too long to print; keep it under {MAX_QUESTION_WORDS} words.")
+        problems.append(f"{where}: the question is too long; keep it to {MAX_QUESTION_WORDS} words.")
     return problems
 
 
@@ -141,6 +158,12 @@ def _cards_from(reply, facts: dict[str, Fact], lines: list[str]) -> tuple[list[d
     ]
     if len(cards) > CARDS_PER_SHEET:
         problems.append(f"{len(cards)} cards; use at most {CARDS_PER_SHEET}.")
+    least = min(CARDS_PER_SHEET, len(lines)) - 1
+    if len(cards) < least:
+        problems.append(f"Only {len(cards)} cards for {len(lines)} lines; write at least {least}, one per line.")
+    for card in cards:
+        if isinstance(card, dict) and len(card.get("lines") or []) > MAX_LINES_PER_CARD:
+            problems.append(f"Card “{card.get('title')}” teaches {len(card['lines'])} lines; one concept per card.")
     taught = {line for card in cards if isinstance(card, dict) for line in card.get("lines") or []}
     missing = [line for line in lines if line not in taught]
     if missing:
@@ -170,7 +193,28 @@ def _plain_cards(sheet, facts: dict[str, Fact], lines: list[str], standard: int)
                 "key_why": "From the sheet.",
             }
         )
+    covered = {line for card in made for line in card["lines"]}
+    for line in lines:
+        if line not in covered and (plain := _line_card(facts[line])):
+            made.append(plain)
     return made
+
+
+def _line_card(fact: Fact) -> dict | None:
+    """A plain card for one line: its date, number or name hidden, or the topic it is about."""
+    from .detective import _hidden, _name_gap, _value_gap
+
+    card = {"lines": [fact.id], "key_why": "From the sheet."}
+    gap = _value_gap(fact) or _name_gap(fact, (fact.suspect,))
+    if gap:
+        _, answer, shown = gap
+        title, question = fact.suspect or "Case file", "What goes in the gap?"
+        return {**card, "title": title, "evidence": shown, "question": question, "answer": answer}
+    if fact.suspect:
+        question = "Which topic is this line about?"
+        return {**card, "title": "Who or what is this?", "evidence": _hidden(fact), "question": question,
+                "answer": fact.suspect}  # fmt: skip
+    return None
 
 
 def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = None) -> EvidenceSet:
@@ -358,8 +402,8 @@ def _stamp(shape, text: str, centre: pymupdf.Point) -> None:
     width = _TYPEWRITER[True].text_length(text, fontsize=16) + 24
     box = pymupdf.Rect(centre.x - width / 2, centre.y - 15, centre.x + width / 2, centre.y + 15)
     turn = pymupdf.Matrix(-4)
-    shape.draw_rect(box, morph=(centre, turn))
-    shape.finish(color=_MAROON, width=1.6, morph=(centre, turn))
+    shape.draw_quad(box.quad.morph(centre, turn))
+    shape.finish(color=_MAROON, width=1.6)
     shape.insert_text((box.x0 + 12, centre.y + 5.5), text, fontname=_TYPE_BOLD, fontsize=16, color=_MAROON,
                       morph=(centre, turn))  # fmt: skip
 
