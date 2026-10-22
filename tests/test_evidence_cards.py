@@ -18,6 +18,7 @@ from learn.teaching_engine.ai_cards import study_lines
 from learn.teaching_engine.detective import Fact
 from learn.teaching_engine.evidence_cards import (
     CARDS_PER_SHEET,
+    REVIEW_TASK,
     TASK,
     check_card,
     render_case_papers_pdf,
@@ -384,3 +385,32 @@ def test_the_model_title_is_kept_even_when_its_first_sheet_needs_plain_cards(uk_
     partial = {"case_title": "The Case of the Two Big Cities", "cards": GOOD["cards"][:3]}
     papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [partial, partial, {}]}), limit=1)
     assert papers.model_sheets == 0 and papers.title == "The Case of the Two Big Cities"
+
+
+def test_the_review_drops_a_card_that_says_more_than_its_lines_and_sends_that_line_back(uk_sheet):
+    invented = {**GOOD["cards"][1], "evidence": "Boats float past a tall clock tower. Kings built it long ago."}
+    fixed = card(["F2"], "Boats by the Bridge", "Boats float under a bridge. The water runs through the city.",
+                 "Which river flows through this city?", "River Thames")  # fmt: skip
+    first = {**GOOD, "cards": [GOOD["cards"][0], invented, *GOOD["cards"][2:]]}
+    flag = {"flags": [{"card": 2, "sentence": "Kings built it long ago.", "reason": "the line says nothing of kings"}]}
+    llm = ScriptedLLM({TASK: [first, {"cards": [fixed]}, {}], REVIEW_TASK: [flag, {"flags": []}]})
+    papers = write_case_papers(uk_sheet, llm, limit=1, review=True)
+    tasks = [task for task, _ in llm.calls]
+    assert tasks == [TASK, REVIEW_TASK, TASK, REVIEW_TASK]
+    assert "Kings built it long ago." in llm.calls[2][1] and "the line says nothing of kings" in llm.calls[2][1]
+    cards = [c for sheet in papers.sheets for c in sheet if c.by_model]
+    thames = [c for c in cards if c.answer == "River Thames"]
+    assert [c.evidence for c in thames] == [fixed["evidence"]]  # the invented sentence never reaches the page
+    assert "Kings" not in " ".join(c.evidence for c in cards)
+
+
+def test_without_the_review_no_second_request_is_made(uk_sheet):
+    llm = ScriptedLLM({TASK: [GOOD, {}]})
+    write_case_papers(uk_sheet, llm, limit=1, review=False)
+    assert [task for task, _ in llm.calls] == [TASK]
+
+
+def test_a_flag_for_a_card_that_does_not_exist_is_ignored(uk_sheet):
+    llm = ScriptedLLM({TASK: [GOOD, {}], REVIEW_TASK: {"flags": [{"card": 99, "sentence": "x"}, "nonsense"]}})
+    papers = write_case_papers(uk_sheet, llm, limit=1, review=True)
+    assert papers.model_sheets == 1 and len(llm.calls) == 2

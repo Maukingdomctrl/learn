@@ -70,6 +70,10 @@ THE CARD RECIPE (non-negotiable):
    causes, how things work) must come from the card's lines. The everyday scene may add only ordinary, non-factual
    details: a child, a map, a bottle, rain, a classroom. Do not add true facts you know from elsewhere either. For
    children in a scene use only these names: {", ".join(SCENE_NAMES)}.
+   Never add, unless the lines say it: why something happened, what people felt, feared or believed, what came
+   next, words like "first", "famous", "leading", "biggest" or "for hundreds of years", or how something works.
+   Wrong: "Soldiers feared the new gun was against their faith." (the line only says the cartridges were rumoured to
+   be greased with cow and pig fat). Right: "A rumour spread that the new gun's cartridges were greased with fat."
 9. COVERAGE: teach every important concept on the sheet, not a summary of it. Write ONE CARD PER LINE; join two
    lines on one card only when they say the same thing, never more than two. Each card lists the ids of the lines
    it teaches, and every line must be taught by a card.
@@ -297,14 +301,63 @@ def _line_card(fact: Fact) -> dict | None:
     return None
 
 
-def _ask_model(llm, facts: dict[str, Fact], lines: list[str], topics) -> tuple[list[dict], object, list[str]]:
+REVIEW_TASK = "review_evidence_cards"
+REVIEW_SYSTEM = """You check printed study cards for children against the curriculum lines they were written from.
+The lines are the only truth.
+
+A card may add an everyday scene that says nothing about the topic: a child, a map, a classroom, the weather, a
+bottle. A card may also say what its lines say in simpler words.
+
+Flag every sentence of a card's evidence or question that states something about the topic that its lines do not
+say: a fact, name, place, number or date; a cause or reason; what people felt, feared or believed; what came next;
+a claim such as "first", "famous", "leading" or "biggest"; how something works. Do not flag simpler wording of what
+the lines say, and do not flag scene details.
+
+Reply with one JSON object only: {"flags": [{"card": 1, "sentence": "the exact sentence", "reason": "what the lines
+do not say"}]}. Use {"flags": []} when every card keeps to its lines."""
+
+
+def _review(llm, facts: dict[str, Fact], cards: list[dict]) -> dict[int, str]:
+    """The cards (by position) that state something about the topic their lines do not say, with the reason."""
+    listing = "\n\n".join(
+        f"CARD {number}\nLINES: "
+        + " | ".join(facts[line].text for line in card["lines"])
+        + f"\nEVIDENCE: {card['evidence']}\nQUESTION: {card['question']}\nANSWER: {card['answer']}"
+        for number, card in enumerate(cards, start=1)
+    )
+    reply = llm.json(REVIEW_TASK, REVIEW_SYSTEM, listing)
+    flags = reply.get("flags") if isinstance(reply, dict) else None
+    found: dict[int, str] = {}
+    for flag in flags if isinstance(flags, list) else []:
+        number = flag.get("card") if isinstance(flag, dict) else None
+        if isinstance(number, int) and 1 <= number <= len(cards):
+            found.setdefault(number - 1, f"“{flag.get('sentence', '')}” ({flag.get('reason', 'not in its lines')})")
+    return found
+
+
+def _reviewed(llm, facts: dict[str, Fact], kept: list[dict], problems: list[str]) -> list[dict]:
+    """The kept cards without those the review flags; each flag is added to ``problems`` for the retry."""
+    flagged = _review(llm, facts, kept) if kept else {}
+    for index, reason in flagged.items():
+        problems.append(f"Card “{kept[index]['title']}”: says something its lines do not say: {reason}.")
+    return [card for index, card in enumerate(kept) if index not in flagged]
+
+
+def _ask_model(
+    llm, facts: dict[str, Fact], lines: list[str], topics, review: bool = False
+) -> tuple[list[dict], object, list[str]]:
     """One group of lines sent to the model, and back once more with the problems listed when a line is left
-    untaught: the cards that pass every rule, the last reply, and the problems of the last reply."""
+    untaught: the cards that pass every rule, the last reply, and the problems of the last reply.
+
+    With ``review``, a second request checks the passing cards against their lines and drops any that state
+    something the lines do not say; their lines then count as untaught, so they go back to the model once."""
     listing = "\n".join(f"{line} [{facts[line].suspect or '-'}] {facts[line].text}" for line in lines)
     prompt = f"TOPICS: {', '.join(topics) or '-'}\n\nLINES:\n{listing}"
     reply = llm.json(TASK, SYSTEM, prompt)
     cards, problems = _cards_from(reply, facts, lines)
     kept = _keep(cards, facts, lines)
+    if review:
+        kept = _reviewed(llm, facts, kept, problems)
     if problems and not _complete(kept, lines):
         listed = "\n".join(f"- {problem}" for problem in problems)
         retry = (
@@ -314,13 +367,29 @@ def _ask_model(llm, facts: dict[str, Fact], lines: list[str], topics) -> tuple[l
         reply = llm.json(TASK, SYSTEM, retry)
         cards, problems = _cards_from(reply, facts, lines)
         again = _keep(cards, facts, lines)
-        if _taught(again) >= _taught(kept):
-            kept = again
+        if review:
+            again = _reviewed(llm, facts, again, problems)
+        kept = _merged(again, kept) if _taught(again) >= _taught(kept) else _merged(kept, again)
     return kept, reply, problems
 
 
-def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = None, workers: int = 8) -> EvidenceSet:
-    """The sheet's lines as Evidence cards, 8 to a sheet, model-written where they pass every check.
+def _merged(base: list[dict], extra: list[dict]) -> list[dict]:
+    """``base``, plus the ``extra`` cards that teach lines ``base`` leaves untaught with answers of their own."""
+    merged, taught = list(base), _taught(base)
+    answers = {_norm(card["answer"]) for card in base}
+    for card in extra:
+        if len(merged) < CARDS_PER_SHEET and not set(card["lines"]) & taught and _norm(card["answer"]) not in answers:
+            merged.append(card)
+            taught |= set(card["lines"])
+            answers.add(_norm(card["answer"]))
+    return merged
+
+
+def write_case_papers(
+    sheet, llm=None, standard: int = 8, limit: int | None = None, workers: int = 8, review: bool = False
+) -> EvidenceSet:
+    """The sheet's lines as Evidence cards, 8 to a sheet, model-written where they pass every check (and, with
+    ``review``, a second request's check that no card states something its lines do not say).
 
     Up to ``limit`` groups of lines go to the model, ``workers`` of them at a time, so a chapter takes about as long
     as its slowest group rather than the sum of them.
@@ -340,7 +409,7 @@ def write_case_papers(sheet, llm=None, standard: int = 8, limit: int | None = No
 
     def ask(lines):
         try:
-            return _ask_model(llm, facts, lines, topics), None
+            return _ask_model(llm, facts, lines, topics, review), None
         except Exception as error:  # noqa: BLE001 - any model failure falls back to plain cards
             return None, error
 

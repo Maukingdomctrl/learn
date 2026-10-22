@@ -10,7 +10,7 @@ from test_evidence_cards import GOOD
 
 import learn.teaching_web as web
 from learn.llm import LLMError
-from learn.teaching_engine.evidence_cards import TASK
+from learn.teaching_engine.evidence_cards import REVIEW_TASK, TASK
 
 
 def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sample_pdf, tmp_path, monkeypatch):
@@ -230,7 +230,7 @@ UK = Path(__file__).parent / "sheets" / "uk-cities-comparative-table.pdf"
 def case_model(monkeypatch):
     """The Detective button with a scripted model: good cards for the first sheet, then no more replies."""
     monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
-    llm = ScriptedLLM({TASK: [GOOD, {}]})
+    llm = ScriptedLLM({TASK: [GOOD, {}], REVIEW_TASK: {"flags": []}})
     made = []
 
     def model():
@@ -278,7 +278,7 @@ def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
     text = pymupdf.open(stream=download.content, filetype="pdf")[1].get_text()
     assert "River Thames" in text and "Sheet says: p. 1" in text  # the sealed key after the first sheet
     assert download.content == preview.content
-    assert len(made) == 1 and len(llm.calls) == 1  # preview then download: the model is asked once
+    assert len(made) == 1 and [task for task, _ in llm.calls] == [TASK, REVIEW_TASK]  # once, not per download
 
 
 def test_without_a_key_or_past_the_daily_limit_no_model_is_used(monkeypatch):
