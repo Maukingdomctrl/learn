@@ -132,6 +132,12 @@ def cards_effort() -> str:
     return env("LEARN_CARDS_EFFORT", "medium" if "gemini" in cards_model() else "low")
 
 
+def evidence_effort() -> str:
+    """Thinking effort for writing Evidence cards. Low turns Gemini's thinking off: in the first live test it wrote
+    cards as good as at medium for about a tenth of the output tokens."""
+    return env("LEARN_EVIDENCE_EFFORT", "low")
+
+
 def cards_max_tokens() -> int:
     """Output budget for one card sheet, thinking included; a cut-off response is retried once at twice this."""
     return _int_env("LEARN_CARDS_MAX_TOKENS", 8000)

@@ -20,6 +20,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--case-file", default="", help="also print a Detective case file PDF to this path")
     parser.add_argument("--cards", default="", help="also print the study cards PDF to this path")
     parser.add_argument(
+        "--case-papers", default="", help="also print Detective Mode case papers (everyday-scene Evidence cards)"
+    )
+    parser.add_argument(
         "--ai",
         action="store_true",
         help="let the card model (LEARN_PROVIDER, LEARN_CARDS_MODEL) choose the cards of --case-file and --cards; "
@@ -68,15 +71,36 @@ def main(argv: list[str] | None = None) -> int:
         cards_path.parent.mkdir(parents=True, exist_ok=True)
         cards_path.write_bytes(pdf)
         print(f"Saved study cards to {cards_path}")
+    if args.case_papers:
+        from .. import config as C
+        from .evidence_cards import render_case_papers_pdf, write_case_papers
+
+        llm = _card_model(C.evidence_effort()) if args.ai else None
+        try:
+            papers = write_case_papers(read_sheet(extract_facts(source.units), data, page_range), llm, limit=_limit())
+            pdf = render_case_papers_pdf(papers)
+        except ValueError as error:
+            print(f"No case papers: {error}")
+            return 2
+        cards = sum(len(sheet) for sheet in papers.sheets)
+        print(f"Case papers: {cards} cards on {len(papers.sheets)} sheets, {papers.model_sheets} written by the model.")
+        for note in papers.notes:
+            print(f"  {note}")
+        if llm is not None:
+            _report(llm)
+        papers_path = Path(args.case_papers)
+        papers_path.parent.mkdir(parents=True, exist_ok=True)
+        papers_path.write_bytes(pdf)
+        print(f"Saved case papers to {papers_path}")
     if source.warnings:
         print("Review source warnings in the JSON output, especially unreadable or diagram-heavy pages.")
     return 0
 
 
-def _card_model():
+def _card_model(effort: str = ""):
     from ..llm import AnthropicLLM
 
-    return AnthropicLLM.for_cards()
+    return AnthropicLLM.for_cards(effort)
 
 
 def _limit() -> int:
