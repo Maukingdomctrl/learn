@@ -169,6 +169,7 @@ def google(*replies, **kw):
 
     client = httpx.Client(transport=httpx.MockTransport(answer))
     llm = OpenAIStyleLLM("gemini-test", "low", "https://example.test/v1beta/openai/", "key-1", 8000, 16000, http=client)
+    llm.busy_wait = 0
     return llm, sent
 
 
@@ -210,7 +211,7 @@ def test_google_client_retries_a_cut_off_reply_once_with_a_larger_budget():
     ],
 )
 def test_google_client_turns_api_failures_into_clear_errors(status, body, message):
-    llm, _ = google((status, body))
+    llm, _ = google((status, body), (status, body))  # a 5xx is asked twice
     with pytest.raises(LLMError, match=message):
         llm.json("t", "s", "p")
     assert llm.call_log[0]["error"].startswith(f"HTTP {status}")
@@ -228,3 +229,14 @@ def test_the_google_provider_picks_flash_lite_and_the_network_secret_stand_in(mo
     assert llm.api_key == KEY_FROM_NETWORK and llm.base_url.startswith("https://generativelanguage.googleapis.com")
     monkeypatch.setenv("GOOGLE_API_KEY", "key-2")
     assert card_llm().api_key == "key-2" and card_llm().effort == "medium"
+
+
+def test_google_client_asks_a_busy_server_once_more_then_stops():
+    busy = (503, [{"error": {"message": "This model is currently experiencing high demand."}}])
+    llm, sent = google(busy, chat())
+    assert llm.json("t", "s", "p") == {"ok": 1} and len(sent) == 2
+    assert llm.call_log[0]["error"].startswith("HTTP 503") and llm.call_log[1]["error"] is None
+    llm, sent = google(busy, busy, chat())
+    with pytest.raises(LLMError, match="Model API error 503: This model is currently experiencing high demand"):
+        llm.json("t", "s", "p")
+    assert len(sent) == 2  # never a third request

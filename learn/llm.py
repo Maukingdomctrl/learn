@@ -268,7 +268,8 @@ class OpenAIStyleLLM:
     """A model behind an OpenAI-style chat API, such as Gemini through Google's own endpoint, called with httpx.
 
     Like ``AnthropicLLM`` it logs every request in ``call_log``, retries a reply cut off at its output budget once
-    with a larger budget, and turns API failures into ``LLMError``. It writes cards only; it does not read images.
+    with a larger budget, and turns API failures into ``LLMError``. A busy or failing server (HTTP 5xx) is asked
+    once more after a short wait. It writes cards only; it does not read images.
     """
 
     def __init__(
@@ -289,10 +290,13 @@ class OpenAIStyleLLM:
         self.model, self.effort = model, effort
         self.base_url, self.api_key, self.key_name = base_url.rstrip("/"), api_key, key_name
         self.max_tokens, self.retry_max_tokens = max_tokens, max(retry_max_tokens, max_tokens)
+        self.busy_wait = 5.0  # seconds before the one retry of a busy server's reply
         self.call_log: list[dict] = []
         self.notes: list[str] = []
 
-    def _request(self, task: str, system: str, prompt: str, max_tokens: int, attempt: int) -> tuple[str, str]:
+    def _request(
+        self, task: str, system: str, prompt: str, max_tokens: int, attempt: int, busy_retry: bool = False
+    ) -> tuple[str, str]:
         rec = CallRecord(task=task, model=self.model, effort=self.effort, max_tokens=max_tokens, attempt=attempt)
         body = {
             "model": self.model,
@@ -311,6 +315,12 @@ class OpenAIStyleLLM:
             self.call_log.append(asdict(rec))
             raise LLMError(f"Cannot reach the model API: {e}") from e
         rec.seconds = round(time.monotonic() - start, 2)
+        if response.status_code in (500, 502, 503, 504) and not busy_retry:
+            # A busy or failing server, which free-tier requests meet first: wait, then ask once more.
+            rec.error = f"HTTP {response.status_code}: {_error_message(response)}"
+            self.call_log.append(asdict(rec))
+            time.sleep(self.busy_wait)
+            return self._request(task, system, prompt, max_tokens, attempt, busy_retry=True)
         if response.status_code != 200:
             message = _error_message(response)
             rec.error = f"HTTP {response.status_code}: {message}"
