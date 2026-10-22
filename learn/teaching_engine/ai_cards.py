@@ -16,6 +16,7 @@ from dataclasses import dataclass, field, replace
 
 from .detective import (
     _BLANK,
+    _TIME,
     _WRITE,
     GAP,
     LABELS,
@@ -31,11 +32,14 @@ from .detective import (
     _hidden,
     _ordered,
     _Planner,
+    _when,
     sheet_problems,
 )
 
 TASK = "write_cards"
 MAX_HIDDEN_WORDS = 6  # the most words a gap may hide
+# The first word of a name that says what kind of place it is; it stays on the card as a hint ("River ____").
+KIND_WORDS = frozenset("River Mount Mt Lake Sea Ocean Bay Gulf Cape Fort Port Lord Sir Mahatma".split())
 AI_KINDS = ("match", "which", "pick", "timeline", "fill", "number", "who", "finish", "mistake")
 
 SYSTEM = f"""You choose the cards for one sheet of a Detective study game for Indian school children in Standard 7-8.
@@ -49,6 +53,8 @@ Rules:
 - Every line under THIS SHEET must be used by at least one card.
 - Use at least 5 different kinds. At most {MAX_FILLS} "fill" cards and at most 2 cards of any other kind.
 - Hide what a child should remember: a name, place, term, date, number or key phrase of 1-{MAX_HIDDEN_WORDS} words.
+  Leave a kind word such as "River" or "Mount" showing as a hint: hide "Thames", not "River Thames".
+- A timeline event must contain its date or period ("in 1905", "in the 18th century", "in the medieval period").
   Never hide small words such as "the", "major" or "one".
 - Lines under EARLIER SHEET may appear only in "which" and "mistake" cards, as review.
 
@@ -93,10 +99,6 @@ class AIResult:
     sheets: int = 0
 
 
-def _years_in(text: str) -> list[int]:
-    return [int(year) for year in re.findall(r"\b(1[0-9]{3}|20[0-9]{2})\b", text)]
-
-
 class _Builder:
     """Turns one model card choice into a printed card, refusing anything not made of the sheet's own words."""
 
@@ -115,12 +117,16 @@ class _Builder:
             raise CardError(f"needs {least}-{most} different lines")
         return [self.line(value, review) for value in values]
 
-    def hide(self, fact: Fact, words) -> str:
+    def hide(self, fact: Fact, words) -> tuple[str, str]:
+        """(line with the words hidden, the hidden words). "River Thames" hides only "Thames", keeping the hint."""
         if not isinstance(words, str) or not words.strip() or words not in fact.text:
             raise CardError(f"“{words}” is not in line {fact.id} as printed")
+        first, _, rest = words.partition(" ")
+        if first in KIND_WORDS and rest:
+            words = rest
         if len(words.split()) > MAX_HIDDEN_WORDS or len(words.split()) * 2 > len(fact.text.split()):
             raise CardError(f"“{words}” hides too much of line {fact.id}")
-        return fact.text.replace(words, _BLANK, 1)
+        return fact.text.replace(words, _BLANK, 1), words
 
     def build(self, spec: dict) -> CaseCard:
         kind = spec.get("kind") if isinstance(spec, dict) else None
@@ -159,7 +165,7 @@ class _Builder:
 
     def pick(self, spec) -> CaseCard:
         fact = self.line(spec.get("line"))
-        hidden, line = spec.get("hide"), self.hide(fact, spec.get("hide"))
+        line, hidden = self.hide(fact, spec.get("hide"))
         wrong = spec.get("wrong")
         if not isinstance(wrong, list) or not 2 <= len(wrong) <= 3:
             raise CardError("a PICK ONE card needs 2-3 wrong choices")
@@ -175,24 +181,27 @@ class _Builder:
 
     def fill(self, spec) -> CaseCard:
         fact = self.line(spec.get("line"))
-        line = self.hide(fact, spec.get("hide"))
-        answer = (f"{spec['hide']}: {fact.text}",)
+        line, hidden = self.hide(fact, spec.get("hide"))
+        answer = (f"{hidden}: {fact.text}",)
         return CaseCard("fill", TASKS["fill"], (line,), answer, (fact.id,), fact.page, fact.suspect)
 
     def timeline(self, spec) -> CaseCard:
         events = spec.get("events")
         if not isinstance(events, list) or not 2 <= len(events) <= 4:
             raise CardError("a TIMELINE card needs 2-4 events")
-        texts, chosen = [], []
+        texts, times, chosen = [], [], []
         for event in events:
             fact = self.line(event.get("line") if isinstance(event, dict) else None)
             words = event.get("words")
             if not isinstance(words, str) or words not in fact.text or len(words.split()) < 3:
                 raise CardError(f"a TIMELINE event is not part of line {fact.id} as printed")
+            when = _TIME.search(words)
+            if not when:
+                raise CardError(f"the TIMELINE event “{words}” has no date or period, so its order is not on the sheet")
             texts.append(words.strip().rstrip(".;"))
+            times.append(_when(when))
             chosen.append(fact)
-        years = [_years_in(text) for text in texts]
-        if all(years) and [found[0] for found in years] != sorted(found[0] for found in years):
+        if times != sorted(times):
             raise CardError("the TIMELINE events are not earliest first")
         suspects = {fact.suspect for fact in chosen}
         about = chosen[0].suspect if len(suspects) == 1 else ""

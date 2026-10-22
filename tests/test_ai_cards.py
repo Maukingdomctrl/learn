@@ -259,3 +259,27 @@ def test_june_without_a_key_sends_a_bearer_header_for_the_network_secret_to_fill
     llm = AnthropicLLM.for_cards()
     assert llm.client.auth_token == JUNE_KEY_FROM_NETWORK and llm.client.api_key is None
     assert str(llm.client.base_url).startswith("https://api.blockchain.info/ai/api")
+
+
+def test_the_builder_refuses_a_timeline_event_without_a_date(uk):
+    sheet = uk.cases[0].sheets[0]
+    birmingham = [f for f in sheet.lines if uk.facts[f].suspect == "Birmingham"]
+    steam = next(f for f in birmingham if "steam engine" in uk.facts[f].text)
+    market = next(f for f in birmingham if "medieval" in uk.facts[f].text)
+    builder = _Builder(uk.facts, sheet.lines, sheet.review, uk.cases[0].suspects)
+    undated = [
+        {"line": market, "words": "Was a medium-sized market town in the medieval period"},
+        {"line": steam, "words": "The industrial steam engine"},
+    ]
+    with pytest.raises(CardError, match="no date or period"):
+        builder.build({"kind": "timeline", "events": undated})
+    dated = [undated[0], {"line": market, "words": "grew to international prominence in the 18th century"}]
+    assert builder.build({"kind": "timeline", "events": dated}).answer[0].startswith("1. Was a medium-sized")
+
+
+def test_a_hidden_river_name_keeps_the_word_river_as_a_hint(uk):
+    sheet = uk.cases[0].sheets[0]
+    thames = next(f for f in sheet.lines if "River Thames" in uk.facts[f].text)
+    builder = _Builder(uk.facts, sheet.lines, sheet.review, uk.cases[0].suspects)
+    card = builder.build({"kind": "fill", "line": thames, "hide": "River Thames"})
+    assert "the River ________ in" in card.lines[0] and card.answer[0].startswith("Thames:")
