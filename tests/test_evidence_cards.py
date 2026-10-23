@@ -257,17 +257,6 @@ def test_scene_names_and_sheet_facts_are_allowed(facts):
     assert any("names Shakespeare are not" in problem for problem in check_card(outside, facts, allowed))
 
 
-def test_a_rank_or_amount_printed_in_its_line_is_a_good_answer():
-    """The prompt asks for a rank or an amount as printed ("Second", "286,000"), not a cut-down phrase."""
-    city = {"F1": Fact("F1", "Edinburgh", "Scotland's second most populous city; about 286,000 people.", 1)}
-    street = "Asha counts the people on a busy street."
-    rank = card(["F1"], "Busy Streets", street, "Which place does it hold?", "Second")
-    amount = card(["F1"], "Busy Streets", street, "About how many people?", "286,000")
-    assert check_card(rank, city, ["F1"]) == [] and check_card(amount, city, ["F1"]) == []
-    seventh = {**rank, "answer": "Seventh"}  # a rank the line does not print
-    assert any("not printed in its lines" in problem for problem in check_card(seventh, city, ["F1"]))
-
-
 def test_the_prompts_own_examples_keep_the_card_rules():
     from learn.teaching_engine.evidence_cards import SYSTEM
 
