@@ -414,3 +414,21 @@ def test_each_detective_upload_logs_what_the_model_did(case_model, capsys):
 def test_the_upload_page_says_who_uploads():
     page = TestClient(web.app).get("/").text
     assert "For parents and students aged 18+. Younger students: ask a parent to upload your notes." in page
+
+
+def test_a_single_game_is_shown_as_the_game_not_as_a_choice(monkeypatch):
+    page = TestClient(web.app).get("/").text
+    assert "<legend>3. Your adventure</legend>" in page and 'class="game-grid game-grid--single"' in page
+
+    monkeypatch.setattr(web, "SHOW_SUPERHERO", True)
+    page = TestClient(web.app).get("/").text
+    assert "<legend>3. Choose your adventure</legend>" in page and 'class="game-grid"' in page
+
+
+def test_the_library_marks_the_chosen_topic():
+    client = TestClient(web.app)
+
+    page = client.get("/library", params={"region": "Indian Studies"}).text
+    assert '<a href="/library?region=Indian%20Studies" aria-current="page">' in page
+    assert page.count('aria-current="page">') == 1
+    assert '<a href="/library" aria-current="page">' in client.get("/library", params={"region": "other"}).text
