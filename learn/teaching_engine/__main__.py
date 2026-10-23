@@ -25,8 +25,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--ai",
         action="store_true",
-        help="let the card model (LEARN_PROVIDER, LEARN_CARDS_MODEL) choose the cards of --case-file and --cards; "
-        "only LEARN_CARDS_AI_SHEETS sheets or groups of lines are sent (default 1)",
+        help="let the card model (LEARN_PROVIDER, LEARN_CARDS_MODEL) choose the cards of --case-file and --cards "
+        "(only LEARN_CARDS_AI_SHEETS sheets or groups of lines are sent, default 1) and write --case-papers (one "
+        "request for the whole sheet)",
     )
     args = parser.parse_args(argv)
 
@@ -77,7 +78,7 @@ def main(argv: list[str] | None = None) -> int:
 
         llm = _card_model(C.evidence_effort()) if args.ai else None
         try:
-            papers = write_case_papers(read_sheet(extract_facts(source.units), data, page_range), llm, limit=_limit())
+            papers = write_case_papers(read_sheet(extract_facts(source.units), data, page_range), llm)
             pdf = render_case_papers_pdf(papers)
         except ValueError as error:
             print(f"No case papers: {error}")

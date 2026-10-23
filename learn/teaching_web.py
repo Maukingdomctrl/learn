@@ -173,7 +173,7 @@ def _case_papers(data: bytes, inventory, page_range: set[int] | None, standard: 
             _log("daily limit reached", llm, start)
             return None, LIMIT_NOTE
         sheet = read_sheet(inventory, data, page_range)
-        papers = write_case_papers(sheet, llm, standard, C.detective_ai_sheets(), C.detective_workers())
+        papers = write_case_papers(sheet, llm, standard, C.detective_lines_per_request())
     except ValueError:  # no lines to write cards from; the rule-based path says why
         return None, ""
     except Exception as error:  # noqa: BLE001 - a broken model setup must not crash the page
