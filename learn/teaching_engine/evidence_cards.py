@@ -100,6 +100,10 @@ rules, and then its line has no card:
   "Water vapour", the words "water" and "vapour" are on no part of the card: say "the drops" or "it" instead.
 - Every number and every capitalised name on the card is printed in the LINES; only the scene names are extra.
 If a card breaks a rule, rewrite it or pick another short answer printed in its line.
+Then check what code cannot: every fact about the topic on the card (where something is, when, how big, what it does)
+is stated in its lines. To hide the answer, point to it with the line's other facts, never with a clue you made up
+("at the top of the map", "by the water"). Say how things work in the line's own words: a near word can change the
+meaning ("breathes in" is not "takes in").
 
 Reply with one JSON object only, no commentary:
 {{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "title": "3-6 everyday words", "evidence": "2-3

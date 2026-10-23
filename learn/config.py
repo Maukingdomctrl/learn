@@ -195,10 +195,10 @@ def detective_max_pages() -> int:
 
 def detective_lines_per_request() -> int:
     """On the website, the most sheet lines one model request writes Detective cards for. Most uploads are one
-    request. The page waits at most three minutes, and in live tests through June Haiku 5.5 at low effort took about
-    two seconds a line (39 lines in 83 s), so a longer upload is split into the fewest requests, run at the same
-    time."""
-    return _int_env("LEARN_DETECTIVE_LINES_PER_REQUEST", 50)
+    request. The page waits at most three minutes, and in live tests through June Haiku 5.5 at low effort took two to
+    three and a half seconds a line (the same 39 lines took 73-134 s), so a longer upload is split into the fewest
+    requests, run at the same time."""
+    return _int_env("LEARN_DETECTIVE_LINES_PER_REQUEST", 40)
 
 
 def detective_daily_limit() -> int:
