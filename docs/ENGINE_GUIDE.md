@@ -38,7 +38,7 @@ All three files are in `learn/teaching_engine/`. Line numbers are approximate an
 
 ## Rules for any change
 
-1. **Don't touch the upload page.** Leave `learn/templates/teaching_upload.html.j2` alone: its design, motion, wording and script.
+1. **Engine changes leave the upload page alone.** Don't edit `learn/templates/teaching_upload.html.j2` as part of an engine change. Change it only when the task is about the page itself (its design, wording or accessibility), and check it at phone, tablet and desktop widths.
 2. **One short answer per card.** An answer is a word, name, year or number, taken word-for-word from the sheet. No paragraphs, and no facts that aren't on the sheet.
 3. **Keep the page order.** All the cards first, then the fill-in-the-blanks, then the answer sheet at the end.
 4. **Work for every subject.** The rules must work for any ICSE Class 8 subject without being told which one. Add no topic-specific rules (no "water cycle" or "city" special cases).

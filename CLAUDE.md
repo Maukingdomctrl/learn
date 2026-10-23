@@ -70,7 +70,7 @@ Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requi
 
 ## Teaching Engine and Detective game (`learn/teaching_engine/`)
 The offline engine behind the public site (`learn/teaching_web.py`, deployed on Render with the `Dockerfile` and `requirements-teaching.txt`). It needs no API key, and the methodology spec doesn't govern it.
-- `sheet.py` reads the uploaded PDF's layout; `cards.py` plans and prints the study cards. Follow `docs/ENGINE_GUIDE.md`: don't change the upload page template, add no topic-specific rules, never weaken a test.
+- `sheet.py` reads the uploaded PDF's layout; `cards.py` plans and prints the study cards. Follow `docs/ENGINE_GUIDE.md`: engine changes leave the upload page template alone (change it only when the task is about the page itself), add no topic-specific rules, never weaken a test.
 - `detective.py` makes the Detective case file (design in `docs/DETECTIVE_GAME.md`). Rule A: every line of the sheet is on a card. Rule B: card variety and order. `check_case_file` gates printing.
 - `ai_cards.py` lets a model choose a case file's cards. The model only picks lines and words to hide; code builds every card from the sheet's own words and falls back to the rule-based cards on any failure.
   - It runs only with `--ai` on the command line, for at most `LEARN_CARDS_AI_SHEETS` sheets (default 1). The website doesn't call it yet.
