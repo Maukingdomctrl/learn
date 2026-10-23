@@ -59,7 +59,8 @@ THE CARD RECIPE (non-negotiable):
    says in plain, calm words, and never describe people being hurt; picture the place, the warning or the help
    instead. Add no detail that does not help the question (no rain on an earthquake card).
 4. QUESTION: direct but curious, exactly one sentence ending with "?". Model: "The bottle is sealed, yet drops appear
-   outside. Where did the drops come from?"
+   outside. Where did the drops come from?" The card prints no topic, so when the question needs one, name it
+   ("Which river runs through this city?" needs the city's name), unless that name is the answer.
 5. ANSWER: 1-2 words, at most 3 for a name (e.g. "Condensation", "River Thames", "Harland and Wolff"), copied exactly
    as printed in one of the card's lines. A date or formula may be longer ("28 December 1885", "A = l × w"). The
    question must lead straight to that answer. Each card has its own answer.
@@ -109,7 +110,7 @@ Reply with one JSON object only, no commentary:
 {{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "title": "3-6 everyday words", "evidence": "2-3
 sentences.", "question": "One sentence?", "answer": "1-2 words from the lines", "key_why": "One short sentence: why
 the answer follows."}}]}}
-Write the cards in the order of their lines."""
+Write the cards in the order of their lines. The case title names no person, place or term from the lines."""
 
 
 @dataclass(frozen=True)
@@ -123,7 +124,6 @@ class EvidenceCard:
     lines: tuple[str, ...]
     page: int
     by_model: bool = True
-    topic: str = ""
 
 
 @dataclass
@@ -142,6 +142,11 @@ def _norm(text: str) -> str:
 
 def _contains(haystack: str, needle: str) -> bool:
     return bool(needle) and f" {_norm(needle)} " in f" {_norm(haystack)} "
+
+
+def _names_topic(text: str, facts: dict[str, Fact]) -> bool:
+    """Whether the text names one of the sheet's topics, which on a card front can be the answer itself."""
+    return any(_contains(text, fact.suspect) for fact in facts.values() if fact.suspect)
 
 
 def short_answer(answer: str) -> bool:
@@ -257,7 +262,7 @@ def _plain_cards(sheet, facts: dict[str, Fact], lines: list[str], standard: int)
         made.append(
             {
                 "lines": list(dict.fromkeys(by_unit[unit] for unit in shared)),
-                "title": card.about or "Case file",
+                "title": card.about if card.about and not _names_topic(card.about, facts) else "Case file",
                 "evidence": card.clue,
                 "question": card.question,
                 "answer": card.answer,
@@ -287,8 +292,7 @@ def _line_card(fact: Fact) -> dict | None:
     gap = _value_gap(fact) or _name_gap(fact, (fact.suspect,))
     if gap:
         _, answer, shown = gap
-        title, question = fact.suspect or "Case file", "What goes in the gap?"
-        return {**card, "title": title, "evidence": shown, "question": question, "answer": answer}
+        return {**card, "title": "Case file", "evidence": shown, "question": "What goes in the gap?", "answer": answer}
     if fact.suspect:
         question = "Which topic is this line about?"
         return {**card, "title": "Who or what is this?", "evidence": _hidden(fact), "question": question,
@@ -346,7 +350,9 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
             result.problems += problems
             answered.update(lines)
             if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
-                result.title = reply["case_title"].strip()[:70] or result.title
+                title = reply["case_title"].strip()[:70]
+                if title and not _names_topic(title, facts) and not any(_contains(title, c["answer"]) for c in cards):
+                    result.title = title
         for error in dict.fromkeys(str(error) for _, error in answers if error is not None):
             result.notes.append(f"The model could not be used ({error}); plain cards are used.")
         if broken := len(answered - _taught(kept)):
@@ -378,7 +384,6 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
                 lines,
                 facts[lines[0]].page,
                 by_model,
-                facts[lines[0]].suspect,
             )
         )
     result.model_cards = sum(card.by_model for card in every)
@@ -392,7 +397,8 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
 
 
 # Printing, in the look of the owner's Detective Mode case papers: cream paper, maroon typewriter headings, cards with
-# a topic tag and a shaded question strip, and after each sheet a sealed answer key with a score guide.
+# a shaded question strip, and after each sheet a sealed answer key with a score guide. No topic name is printed on
+# the cards or their sheet: a topic is often the answer.
 
 _PAPER = (0.98, 0.965, 0.95)
 _MAROON = (0.50, 0.20, 0.17)
@@ -470,13 +476,6 @@ def _box(position: int) -> pymupdf.Rect:
 def _draw_card(shape, kind: _Type, card: EvidenceCard, box: pymupdf.Rect) -> None:
     inner = box + (12, 10, -12, -8)
     _typed(shape, f"CARD {card.number:02d}", 9.5, inner.x0, inner.y0 + 9, _TEXT)
-    if card.topic:
-        tag, size = _topic_tag(kind, card.topic, inner.width - 70)  # clear of "CARD 01" on the left
-        width = kind.width(tag, size, True) + 12
-        pill = pymupdf.Rect(inner.x1 - width, inner.y0 - 1, inner.x1, inner.y0 + 12)
-        shape.draw_rect(pill)
-        shape.finish(color=_RULE, fill=_ROSE, width=0.5)
-        kind.draw(shape, [tag], size, pill.x0 + 6, pill.y0 + 1.5 + (6.5 - size) / 2, True, _MAROON)
     title = card.title.upper()
     _typed(shape, title, _typed_fit(title, inner.width, 9.5), inner.x0, inner.y0 + 23, _MAROON)
     _typed(shape, "EVIDENCE", 6, inner.x0, inner.y0 + 33, _SOFT, spaced=True)
@@ -493,19 +492,6 @@ def _draw_card(shape, kind: _Type, card: EvidenceCard, box: pymupdf.Rect) -> Non
     kind.draw(shape, ["Y O U R   A N S W E R"], 6, inner.x0, strip.y1 - 13, True, _SOFT)
     shape.draw_line((inner.x0 + 72, strip.y1 - 6), (inner.x1, strip.y1 - 6))
     shape.finish(color=_SOFT, width=0.6, dashes="[2 1] 0")
-
-
-def _topic_tag(kind: _Type, topic: str, room: float) -> tuple[str, float]:
-    """The card's topic tag and its size: letter-spaced when it fits, then plain, then smaller, and only when even
-    that is too wide, cut at a word with "…"."""
-    words = topic.upper().split()
-    for count in range(len(words), 0, -1):
-        text = " ".join(words[:count]) + ("" if count == len(words) else " …")
-        for tag in (" ".join(text.replace(" ", "  ")) if count == len(words) else None, text):
-            for size in (6.5, 6, 5.5, 5):
-                if tag and kind.width(kind.printable(tag, True), size, True) + 12 <= room:
-                    return kind.printable(tag, True), size
-    return kind.printable(words[0][:12], True), 5
 
 
 def _stamp(shape, text: str, centre: pymupdf.Point) -> None:
@@ -573,14 +559,13 @@ def render_case_papers_pdf(papers: EvidenceSet) -> bytes:
     total = len(papers.sheets)
     for index, cards in enumerate(papers.sheets, start=1):
         page, shape = _paper(document, kind)
-        topics = list(dict.fromkeys(card.topic for card in cards if card.topic))
         _page_header(
             shape,
             kind,
             "DETECTIVE MODE · CASE PAPERS",
             papers.title if index == 1 else f"{papers.title} · {index}",
             f"SHEET {index} OF {total}",
-            " · ".join(topics)[:70],
+            "",  # no topic list: a sheet's topics are often its answers
             "Read each little story. Think for a moment. Write your answer in one or two words. "
             "The key waits on the next page, so no peeking.",
         )

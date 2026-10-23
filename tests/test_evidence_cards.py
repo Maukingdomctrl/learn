@@ -389,15 +389,23 @@ def test_model_and_plain_cards_run_in_the_sheets_order(uk_sheet, facts):
     assert firsts == sorted(firsts)  # plain cards sit among the model's, where their lines are on the sheet
 
 
-def test_a_long_topic_tag_fits_its_card_without_being_cut_mid_word():
-    from learn.teaching_engine.cards import _Type
-    from learn.teaching_engine.evidence_cards import _topic_tag
+def test_no_topic_name_is_printed_on_the_cards_or_their_sheet(uk_sheet):
+    """A topic is often the answer ("Which city…?" London), so no tag, header or title names one."""
+    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [GOOD, {}]}))
+    with pymupdf.open(stream=render_case_papers_pdf(papers), filetype="pdf") as document:
+        front = "".join(document[0].get_text().split()).casefold()  # spaced capitals count too
+    assert "london" not in front and "birmingham" not in front  # GOOD's own text names neither
+    plain = write_case_papers(uk_sheet)  # no model: plain cards only
+    topics = {fact.suspect.casefold() for fact in study_lines(uk_sheet)[0] if fact.suspect}
+    assert not [c.title for s in plain.sheets for c in s if any(topic in c.title.casefold() for topic in topics)]
 
-    kind = _Type()
-    tag, size = _topic_tag(kind, "Causes Of The Uprising", 150)
-    assert "UPRISING" in tag.replace(" ", "") and kind.width(tag, size, True) + 12 <= 150
-    tag, size = _topic_tag(kind, "The Very Long Topic Name Of An Important Historical Movement In India", 150)
-    assert tag.endswith("…") and kind.width(tag, size, True) + 12 <= 150
+
+def test_a_case_title_that_names_a_topic_or_an_answer_is_not_printed(uk_sheet):
+    for title in ("The Case of London Town", "The Case of the River Thames"):
+        papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [{**GOOD, "case_title": title}, {}]}))
+        assert papers.title == "The Case of the Study Sheet"
+    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [GOOD, {}]}))
+    assert papers.title == "The Case of the Two Big Cities"
 
 
 @pytest.mark.parametrize("name", ["uk-cities-comparative-table.pdf", "full-physics-forces.pdf", "mumbai-events.pdf"])
