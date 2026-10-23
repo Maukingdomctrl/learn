@@ -1,5 +1,7 @@
 import re
+import threading
 from collections import OrderedDict
+from concurrent.futures import Future
 from pathlib import Path
 
 import pymupdf
@@ -230,6 +232,7 @@ UK = Path(__file__).parent / "sheets" / "uk-cities-comparative-table.pdf"
 def case_model(monkeypatch):
     """The Detective button with a scripted model: good cards for the first sheet, then no more replies."""
     monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
+    monkeypatch.setattr(web, "_WRITING", {})
     llm = ScriptedLLM({TASK: [GOOD, {}]})
     made = []
 
@@ -278,6 +281,39 @@ def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
     assert "River Thames" in text and "Sheet says: p. 1" in text  # the sealed key after the first sheet
     assert download.content == preview.content
     assert len(made) == 1 and len(llm.calls) == 1  # one request for the 5-page upload, then served from memory
+
+
+def test_an_upload_sent_again_while_its_cards_are_written_waits_for_that_model_call(case_model, monkeypatch):
+    """A parent closes the preview while it is still building and clicks Create: the site still pays for one call."""
+    llm, made = case_model
+    called, waiting, release = threading.Event(), threading.Event(), threading.Event()
+    scripted = llm.json
+
+    def slow_json(task, system, prompt):
+        called.set()
+        release.wait(5)
+        return scripted(task, system, prompt)
+
+    class Watched(Future):
+        def result(self, timeout=None):
+            waiting.set()  # the second upload is waiting for the first one's cards
+            return super().result(timeout)
+
+    monkeypatch.setattr(llm, "json", slow_json)
+    monkeypatch.setattr(web, "Future", Watched)
+    got = {}
+    preview = threading.Thread(target=lambda: got.update(preview=_post(TestClient(web.app), "/preview")), daemon=True)
+    create = threading.Thread(target=lambda: got.update(create=_post(TestClient(web.app), "/generate")), daemon=True)
+    preview.start()
+    assert called.wait(5)
+    create.start()
+    waited = waiting.wait(5)
+    release.set()
+    preview.join(10)
+    create.join(10)
+
+    assert waited and len(made) == 1 and len(llm.calls) == 1
+    assert got["create"].content == got["preview"].content and "River Thames" in _text(got["create"])
 
 
 def test_only_an_upload_over_the_lines_per_request_setting_is_split(case_model, monkeypatch):

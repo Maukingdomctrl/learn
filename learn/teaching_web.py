@@ -4,6 +4,7 @@ import hashlib
 import threading
 import time
 from collections import OrderedDict
+from concurrent.futures import Future
 from datetime import date
 from pathlib import Path
 
@@ -33,6 +34,9 @@ SHOW_SUPERHERO = False
 # Detective case papers already made, by upload: "Preview" then "Create" for the same PDF costs one set of model calls.
 _CASE_PAPERS: OrderedDict[str, bytes] = OrderedDict()
 _CASE_PAPERS_KEPT = 16
+# Case papers being written now, by upload. The same upload sent meanwhile (a parent closes the preview while it is
+# still building and clicks "Create") waits for that model call instead of paying for a second one.
+_WRITING: dict[str, Future] = {}
 _ai_uploads = {"day": date.min, "count": 0}
 _lock = threading.Lock()
 app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
@@ -156,13 +160,36 @@ def _case_papers(data: bytes, inventory, page_range: set[int] | None, standard: 
     """Detective case papers written by the model, or None and a note for the parent to make the rule-based case
     file instead. Every upload logs one line for the site's owner.
 
-    The same upload is answered from memory, so previewing and then downloading calls the model once.
+    The same upload is answered from memory, so previewing and then downloading calls the model once. If it comes
+    again while its cards are still being written, it waits for that call and gets the same outcome.
     """
     key = hashlib.sha256(data + repr((sorted(page_range or ()), standard)).encode()).hexdigest()
     with _lock:
         if key in _CASE_PAPERS:
             _CASE_PAPERS.move_to_end(key)
             return _CASE_PAPERS[key], ""
+        writing = _WRITING.get(key)
+        first = writing is None
+        if first:
+            writing = _WRITING[key] = Future()
+    if not first:
+        return writing.result()  # a preview the parent closed early still finishes on the server
+    outcome = None, BUSY_NOTE  # what anyone waiting gets if writing fails outright
+    try:
+        outcome = _write_case_papers(data, inventory, page_range, standard)
+        return outcome
+    finally:
+        with _lock:
+            if outcome[0]:
+                _CASE_PAPERS[key] = outcome[0]
+                while len(_CASE_PAPERS) > _CASE_PAPERS_KEPT:
+                    _CASE_PAPERS.popitem(last=False)
+            del _WRITING[key]
+        writing.set_result(outcome)
+
+
+def _write_case_papers(data: bytes, inventory, page_range: set[int] | None, standard: int) -> tuple[bytes | None, str]:
+    """One model run for an upload's case papers: the PDF, or None and a note for the parent."""
     if not C.env(C.card_key_name()):
         return None, ""  # no model is set up: the site makes its rule-based cards, as it always has
     start = time.monotonic()
@@ -184,12 +211,7 @@ def _case_papers(data: bytes, inventory, page_range: set[int] | None, standard: 
     _log(outcome + "".join(f"; {note}" for note in papers.notes), llm, start)
     if not papers.model_cards:  # the model was unreachable or broke every rule: the rule-based case file is better
         return None, BUSY_NOTE
-    pdf_bytes = render_case_papers_pdf(papers)
-    with _lock:
-        _CASE_PAPERS[key] = pdf_bytes
-        while len(_CASE_PAPERS) > _CASE_PAPERS_KEPT:
-            _CASE_PAPERS.popitem(last=False)
-    return pdf_bytes, ""
+    return render_case_papers_pdf(papers), ""
 
 
 def _log(outcome: str, llm, start: float) -> None:
