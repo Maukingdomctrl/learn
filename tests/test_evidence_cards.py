@@ -120,7 +120,11 @@ def test_a_good_set_becomes_the_first_sheet_with_its_sealed_key(uk_sheet):
     papers = write_case_papers(uk_sheet, llm)
     assert len(llm.calls) == 1 and papers.model_cards == 8 and papers.title == "The Case of the Two Big Cities"
     first = papers.sheets[0]
-    assert [c.answer for c in first][:2] == ["London", "River Thames"] and all(c.by_model for c in first)
+    # The sheet's order, except "Which city has the red star?" London, which may not sit among cards naming London.
+    assert [c.answer for c in first][:2] == ["River Thames", "Southeastern England"]
+    assert all(c.by_model for c in first[:6])
+    london = next(c for s in papers.sheets for c in s if c.answer == "London")
+    assert london.by_model and london not in first
     assert all(len(sheet) <= CARDS_PER_SHEET for sheet in papers.sheets)
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
     assert {f"F{n}" for n in range(1, 10)} <= taught  # every line of the model's sheet is on a card
@@ -173,7 +177,7 @@ def test_a_set_that_misses_lines_keeps_its_good_cards_and_is_not_sent_back(uk_sh
     assert len(llm.calls) == 1
     assert any("broke a rule, so plain cards teach them" in note for note in papers.notes)
     first = papers.sheets[0]
-    assert [c.answer for c in first if c.by_model] == ["London", "River Thames", "Southeastern England"]
+    assert [c.answer for c in first if c.by_model] == ["River Thames", "Southeastern England"]  # London goes later
     assert papers.model_cards == 3 and not all(c.by_model for c in first)
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
     assert {"F1", "F2", "F4"} <= taught  # the model's three good cards
@@ -193,7 +197,8 @@ def test_extra_and_repeated_cards_are_dropped_without_a_second_call(uk_sheet):
     llm = ScriptedLLM({TASK: [extra, {}]})
     papers = write_case_papers(uk_sheet, llm)
     assert len(llm.calls) == 1 and papers.model_cards == len(GOOD["cards"])
-    assert [c.answer for c in papers.sheets[0]] == [c["answer"] for c in GOOD["cards"]]
+    printed = [c.answer for s in papers.sheets for c in s if c.by_model]
+    assert sorted(printed) == sorted(c["answer"] for c in GOOD["cards"])  # each good card once, no extras
 
 
 def test_one_bad_card_is_dropped_and_the_others_are_kept(uk_sheet):
@@ -255,17 +260,6 @@ def test_scene_names_and_sheet_facts_are_allowed(facts):
     assert check_card(owned, facts, allowed) == []  # a scene name or a sheet name with "'s" is still that name
     outside = {**scene, "evidence": "Boats pass Shakespeare's theatre. The water runs past London's tall towers."}
     assert any("names Shakespeare are not" in problem for problem in check_card(outside, facts, allowed))
-
-
-def test_a_rank_or_amount_printed_in_its_line_is_a_good_answer():
-    """The prompt asks for a rank or an amount as printed ("Second", "286,000"), not a cut-down phrase."""
-    city = {"F1": Fact("F1", "Edinburgh", "Scotland's second most populous city; about 286,000 people.", 1)}
-    street = "Asha counts the people on a busy street."
-    rank = card(["F1"], "Busy Streets", street, "Which place does it hold?", "Second")
-    amount = card(["F1"], "Busy Streets", street, "About how many people?", "286,000")
-    assert check_card(rank, city, ["F1"]) == [] and check_card(amount, city, ["F1"]) == []
-    seventh = {**rank, "answer": "Seventh"}  # a rank the line does not print
-    assert any("not printed in its lines" in problem for problem in check_card(seventh, city, ["F1"]))
 
 
 def test_the_prompts_own_examples_keep_the_card_rules():
@@ -394,21 +388,59 @@ def test_model_and_plain_cards_run_in_the_sheets_order(uk_sheet, facts):
     reply = {"cards": [GOOD["cards"][7], GOOD["cards"][1]]}  # F8 and F2, out of order
     papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [reply, {}]}))
     cards = [c for sheet in papers.sheets for c in sheet]
-    order = list(facts)
-    firsts = [min(order.index(line) for line in c.lines) for c in cards]
+    order, topics = list(facts), {fact.suspect.casefold() for fact in facts.values() if fact.suspect}
+    firsts = [min(order.index(line) for line in c.lines) for c in cards if c.answer.casefold() not in topics]
     assert papers.model_cards == 2 and not all(c.by_model for c in cards)
     assert firsts == sorted(firsts)  # plain cards sit among the model's, where their lines are on the sheet
 
 
-def test_a_long_topic_tag_fits_its_card_without_being_cut_mid_word():
-    from learn.teaching_engine.cards import _Type
-    from learn.teaching_engine.evidence_cards import _topic_tag
+def test_a_card_whose_answer_is_a_topic_never_shares_a_sheet_with_a_card_naming_it(uk_sheet, facts):
+    """A card asking "What is this about?" (Birmingham) beside cards starting "Birmingham:" would show its answer."""
+    topics = {fact.suspect.casefold() for fact in facts.values() if fact.suspect}
+    for llm in (None, ScriptedLLM({TASK: [GOOD, {}]})):
+        papers = write_case_papers(uk_sheet, llm)
+        asked = 0
+        for sheet in papers.sheets:
+            for card in (c for c in sheet if c.answer.casefold() in topics):
+                asked += 1
+                fronts = [f"{m.title} {m.evidence} {m.question}".casefold() for m in sheet if m is not card]
+                assert not any(card.answer.casefold() in front for front in fronts), card.answer
+        assert asked and all(len(sheet) == CARDS_PER_SHEET for sheet in papers.sheets[:-1])  # sheets stay full
 
-    kind = _Type()
-    tag, size = _topic_tag(kind, "Causes Of The Uprising", 150)
-    assert "UPRISING" in tag.replace(" ", "") and kind.width(tag, size, True) + 12 <= 150
-    tag, size = _topic_tag(kind, "The Very Long Topic Name Of An Important Historical Movement In India", 150)
-    assert tag.endswith("…") and kind.width(tag, size, True) + 12 <= 150
+
+def test_a_topic_name_is_never_a_ready_answer_but_says_which_subject_a_card_means(uk_sheet):
+    """No topic tag or topic list (a topic is often the answer: "Which city…?" London), and no topic as a title; a
+    card whose answer is not its city names the city, so "this city" is never a guess."""
+    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [GOOD, {}]}))
+    with pymupdf.open(stream=render_case_papers_pdf(papers), filetype="pdf") as document:
+        page = document[0]
+        header = "".join(page.get_text(clip=pymupdf.Rect(0, 0, page.rect.width, 100)).split()).casefold()
+    assert "london" not in header and "birmingham" not in header  # no topic list over the cards
+    cards = {c.answer: c for sheet in papers.sheets for c in sheet}
+    fronts = {answer: f"{c.title} {c.evidence} {c.question}".casefold() for answer, c in cards.items()}
+    assert all(answer.casefold() not in front for answer, front in fronts.items())  # no card shows its own answer
+    assert cards["River Thames"].evidence.startswith("London: ")  # "Which river flows through this city?"
+    assert cards["River Rea"].evidence.startswith("Birmingham: ")
+    assert "London" not in cards["London"].evidence and "Birmingham" not in cards["Birmingham"].evidence
+    plain = write_case_papers(uk_sheet)  # no model: plain cards only
+    topics = {fact.suspect.casefold() for fact in study_lines(uk_sheet)[0] if fact.suspect}
+    assert not [c.title for s in plain.sheets for c in s if any(topic in c.title.casefold() for topic in topics)]
+
+
+def test_a_topic_that_is_part_of_the_answer_is_not_added(facts):
+    from learn.teaching_engine.evidence_cards import _named
+
+    theatre = card(["F9"], "Busy Stage", "Many people visit this theatre.", "Which one is it?", "Birmingham Hippodrome")
+    river = card(["F8"], "Small Stream", "A small stream flows past this city.", "Which river?", "River Rea")
+    assert _named(theatre, facts) == theatre and _named(river, facts)["evidence"].startswith("Birmingham: ")
+
+
+def test_a_case_title_that_names_a_topic_or_an_answer_is_not_printed(uk_sheet):
+    for title in ("The Case of London Town", "The Case of the River Thames"):
+        papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [{**GOOD, "case_title": title}, {}]}))
+        assert papers.title == "The Case of the Study Sheet"
+    papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [GOOD, {}]}))
+    assert papers.title == "The Case of the Two Big Cities"
 
 
 @pytest.mark.parametrize("name", ["uk-cities-comparative-table.pdf", "full-physics-forces.pdf", "mumbai-events.pdf"])

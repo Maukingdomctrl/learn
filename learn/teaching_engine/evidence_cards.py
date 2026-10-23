@@ -51,8 +51,6 @@ separate key.
 THE CARD RECIPE (non-negotiable):
 1. ONE CONCEPT PER CARD. Never stack several facts or concepts onto one card.
 2. EVIDENCE: exactly 2-3 short, clear sentences. Everyday words. If a sentence feels long, split it or cut it.
-   Retell the line's own facts in the story, so the child meets them twice: in the story, then in the answer. Add no
-   reason, result or detail about the topic that the line does not state.
 3. FAMILIAR SITUATIONS: cold bottles, puddles, mirrors, village wells, cooking pots, school bags, rain, taps,
    grandmothers, cricket. Everyday life only. Historical or civic facts still get a scene a child can picture.
    REAL LIFE: let the scene show the line's concept at work where a child meets it: at home, at school, in the street,
@@ -61,18 +59,15 @@ THE CARD RECIPE (non-negotiable):
    says in plain, calm words, and never describe people being hurt; picture the place, the warning or the help
    instead. Add no detail that does not help the question (no rain on an earthquake card).
 4. QUESTION: direct but curious, exactly one sentence ending with "?". Model: "The bottle is sealed, yet drops appear
-   outside. Where did the drops come from?" Each card prints its line's topic (the name in [brackets] after the line
-   id) at the top, so "this city" or "this process" points to that topic.
+   outside. Where did the drops come from?"
 5. ANSWER: 1-2 words, at most 3 for a name (e.g. "Condensation", "River Thames", "Harland and Wolff"), copied exactly
    as printed in one of the card's lines. A date or formula may be longer ("28 December 1885", "A = l × w"). The
-   question must lead straight to that answer. A term may answer more than one card when it comes back on other
-   lines: each time, ask it through that line's own idea, a new angle, never a question close to an earlier card's.
+   question must lead straight to that answer. Each card has its own answer.
    Pick the line's KEY TERM as the answer: a naming word the child should remember ("Humid climate", "Yarn",
    "Recycling"), not a phrase that describes it ("Dries quickly", "Switching off", "Run out"). The card exists so the
    child recalls that term later, so the question asks for it by what it is: "What is this called?", "Which gas...?",
    "Who...?", "In which year...?". Never ask "why", "what happens" or "which is faster": their answers ("Released",
-   "Faster", "Not needed") are not things to remember. When the line gives a rank or an amount ("second most
-   populous", "about 286,000"), ask for the rank or number itself and answer with it as printed ("Second", "286,000").
+   "Faster", "Not needed") are not things to remember.
 6. SIMPLE LANGUAGE: the child already has a whole chapter to learn, so a card must add no reading load. Write for a
    tired 12-year-old: everyday words a Class 5 child knows, one idea per sentence, about 10-12 words per sentence,
    warm and friendly. Retell the lines in your own easy words; never copy hard words like "preeminent", "apparatus",
@@ -128,7 +123,6 @@ class EvidenceCard:
     lines: tuple[str, ...]
     page: int
     by_model: bool = True
-    topic: str = ""
 
 
 @dataclass
@@ -147,6 +141,55 @@ def _norm(text: str) -> str:
 
 def _contains(haystack: str, needle: str) -> bool:
     return bool(needle) and f" {_norm(needle)} " in f" {_norm(haystack)} "
+
+
+def _named(card: dict, facts: dict[str, Fact]) -> dict:
+    """The card with its line's topic before the evidence ("Birmingham: A river runs past this city."), when the card
+    never names it and the topic shows no part of the answer. With no topic printed, "this city" would leave a child
+    guessing which city; a card whose answer is its topic stays unnamed, so the name is never a ready answer."""
+    topic, answer = facts[card["lines"][0]].suspect, card["answer"]
+    front = f"{card['title']} {card['evidence']} {card['question']}"
+    if not topic or _contains(front, topic) or _contains(topic, answer) or _contains(answer, topic):
+        return card
+    if any(len(word) >= 4 and _contains(topic, word) for word in _norm(answer).split()):
+        return card
+    return {**card, "evidence": f"{topic}: {card['evidence']}"}
+
+
+def _apart(cards: list[tuple[dict, bool]], facts: dict[str, Fact]) -> list[tuple[dict, bool]]:
+    """The cards in print order, with each card whose answer is a topic ("What is this about?" Birmingham) put at the
+    latest place where no other card on its printed sheet names that topic: beside cards that start "Birmingham:" its
+    answer would be printed next to it. The other cards keep the sheet's order, and every sheet stays full."""
+    topics = {_norm(fact.suspect) for fact in facts.values() if fact.suspect}
+    asks = [pair for pair in cards if _norm(pair[0]["answer"]) in topics]
+    layout = [pair for pair in cards if _norm(pair[0]["answer"]) not in topics]
+
+    def clashes(order: list[tuple[dict, bool]]) -> int:
+        """How often a card on the same printed sheet names an asking card's answer."""
+        count = 0
+        for start in range(0, len(order), CARDS_PER_SHEET):
+            page = order[start : start + CARDS_PER_SHEET]
+            for ask in (pair for pair in page if any(pair is placed for placed in asks)):
+                fronts = (f"{m[0]['title']} {m[0]['evidence']} {m[0]['question']}" for m in page if m is not ask)
+                count += sum(_contains(front, ask[0]["answer"]) for front in fronts)
+        return count
+
+    for ask in asks:
+        best: tuple[int, list[tuple[dict, bool]]] | None = None
+        for at in range(len(layout), -1, -1):  # as late as possible: after the topic's own cards
+            trial = layout[:at] + [ask] + layout[at:]
+            score = clashes(trial)
+            if best is None or score < best[0]:
+                best = (score, trial)
+            if score == 0:
+                break
+        layout = best[1]
+    return layout
+
+
+def _names_topic(text: str, facts: dict[str, Fact]) -> bool:
+    """Whether the text names one of the sheet's topics, which on a card front can be the answer itself."""
+    return any(_contains(text, fact.suspect) for fact in facts.values() if fact.suspect)
 
 
 def short_answer(answer: str) -> bool:
@@ -262,7 +305,7 @@ def _plain_cards(sheet, facts: dict[str, Fact], lines: list[str], standard: int)
         made.append(
             {
                 "lines": list(dict.fromkeys(by_unit[unit] for unit in shared)),
-                "title": card.about or "Case file",
+                "title": card.about if card.about and not _names_topic(card.about, facts) else "Case file",
                 "evidence": card.clue,
                 "question": card.question,
                 "answer": card.answer,
@@ -292,8 +335,7 @@ def _line_card(fact: Fact) -> dict | None:
     gap = _value_gap(fact) or _name_gap(fact, (fact.suspect,))
     if gap:
         _, answer, shown = gap
-        title, question = fact.suspect or "Case file", "What goes in the gap?"
-        return {**card, "title": title, "evidence": shown, "question": question, "answer": answer}
+        return {**card, "title": "Case file", "evidence": shown, "question": "What goes in the gap?", "answer": answer}
     if fact.suspect:
         question = "Which topic is this line about?"
         return {**card, "title": "Who or what is this?", "evidence": _hidden(fact), "question": question,
@@ -351,7 +393,9 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
             result.problems += problems
             answered.update(lines)
             if index == 0 and isinstance(reply, dict) and isinstance(reply.get("case_title"), str):
-                result.title = reply["case_title"].strip()[:70] or result.title
+                title = reply["case_title"].strip()[:70]
+                if title and not _names_topic(title, facts) and not any(_contains(title, c["answer"]) for c in cards):
+                    result.title = title
         for error in dict.fromkeys(str(error) for _, error in answers if error is not None):
             result.notes.append(f"The model could not be used ({error}); plain cards are used.")
         if broken := len(answered - _taught(kept)):
@@ -366,9 +410,10 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
         if _norm(card["answer"]) not in answers:
             answers.add(_norm(card["answer"]))
             chosen.append((card, False))
-    # The cards run on in the sheet's order, eight to a printed sheet.
+    # The cards run on in the sheet's order, eight to a printed sheet, each saying which topic it means.
     order = {line: index for index, line in enumerate(ids)}
     chosen.sort(key=lambda pair: min(order[line] for line in pair[0]["lines"]))
+    chosen = _apart([(_named(card, facts), by_model) for card, by_model in chosen], facts)
     every = []
     for number, (card, by_model) in enumerate(chosen, start=1):
         lines = tuple(card["lines"])
@@ -383,7 +428,6 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
                 lines,
                 facts[lines[0]].page,
                 by_model,
-                facts[lines[0]].suspect,
             )
         )
     result.model_cards = sum(card.by_model for card in every)
@@ -397,7 +441,8 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
 
 
 # Printing, in the look of the owner's Detective Mode case papers: cream paper, maroon typewriter headings, cards with
-# a topic tag and a shaded question strip, and after each sheet a sealed answer key with a score guide.
+# a shaded question strip, and after each sheet a sealed answer key with a score guide. No topic name is printed on
+# the cards or their sheet: a topic is often the answer.
 
 _PAPER = (0.98, 0.965, 0.95)
 _MAROON = (0.50, 0.20, 0.17)
@@ -475,13 +520,6 @@ def _box(position: int) -> pymupdf.Rect:
 def _draw_card(shape, kind: _Type, card: EvidenceCard, box: pymupdf.Rect) -> None:
     inner = box + (12, 10, -12, -8)
     _typed(shape, f"CARD {card.number:02d}", 9.5, inner.x0, inner.y0 + 9, _TEXT)
-    if card.topic:
-        tag, size = _topic_tag(kind, card.topic, inner.width - 70)  # clear of "CARD 01" on the left
-        width = kind.width(tag, size, True) + 12
-        pill = pymupdf.Rect(inner.x1 - width, inner.y0 - 1, inner.x1, inner.y0 + 12)
-        shape.draw_rect(pill)
-        shape.finish(color=_RULE, fill=_ROSE, width=0.5)
-        kind.draw(shape, [tag], size, pill.x0 + 6, pill.y0 + 1.5 + (6.5 - size) / 2, True, _MAROON)
     title = card.title.upper()
     _typed(shape, title, _typed_fit(title, inner.width, 9.5), inner.x0, inner.y0 + 23, _MAROON)
     _typed(shape, "EVIDENCE", 6, inner.x0, inner.y0 + 33, _SOFT, spaced=True)
@@ -498,19 +536,6 @@ def _draw_card(shape, kind: _Type, card: EvidenceCard, box: pymupdf.Rect) -> Non
     kind.draw(shape, ["Y O U R   A N S W E R"], 6, inner.x0, strip.y1 - 13, True, _SOFT)
     shape.draw_line((inner.x0 + 72, strip.y1 - 6), (inner.x1, strip.y1 - 6))
     shape.finish(color=_SOFT, width=0.6, dashes="[2 1] 0")
-
-
-def _topic_tag(kind: _Type, topic: str, room: float) -> tuple[str, float]:
-    """The card's topic tag and its size: letter-spaced when it fits, then plain, then smaller, and only when even
-    that is too wide, cut at a word with "…"."""
-    words = topic.upper().split()
-    for count in range(len(words), 0, -1):
-        text = " ".join(words[:count]) + ("" if count == len(words) else " …")
-        for tag in (" ".join(text.replace(" ", "  ")) if count == len(words) else None, text):
-            for size in (6.5, 6, 5.5, 5):
-                if tag and kind.width(kind.printable(tag, True), size, True) + 12 <= room:
-                    return kind.printable(tag, True), size
-    return kind.printable(words[0][:12], True), 5
 
 
 def _stamp(shape, text: str, centre: pymupdf.Point) -> None:
@@ -578,14 +603,13 @@ def render_case_papers_pdf(papers: EvidenceSet) -> bytes:
     total = len(papers.sheets)
     for index, cards in enumerate(papers.sheets, start=1):
         page, shape = _paper(document, kind)
-        topics = list(dict.fromkeys(card.topic for card in cards if card.topic))
         _page_header(
             shape,
             kind,
             "DETECTIVE MODE · CASE PAPERS",
             papers.title if index == 1 else f"{papers.title} · {index}",
             f"SHEET {index} OF {total}",
-            " · ".join(topics)[:70],
+            "",  # no topic list: a sheet's topics are often its answers
             "Read each little story. Think for a moment. Write your answer in one or two words. "
             "The key waits on the next page, so no peeking.",
         )
