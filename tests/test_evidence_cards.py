@@ -389,15 +389,31 @@ def test_model_and_plain_cards_run_in_the_sheets_order(uk_sheet, facts):
     assert firsts == sorted(firsts)  # plain cards sit among the model's, where their lines are on the sheet
 
 
-def test_no_topic_name_is_printed_on_the_cards_or_their_sheet(uk_sheet):
-    """A topic is often the answer ("Which city…?" London), so no tag, header or title names one."""
+def test_a_topic_name_is_never_a_ready_answer_but_says_which_subject_a_card_means(uk_sheet):
+    """No topic tag or topic list (a topic is often the answer: "Which city…?" London), and no topic as a title; a
+    card whose answer is not its city names the city, so "this city" is never a guess."""
     papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [GOOD, {}]}))
     with pymupdf.open(stream=render_case_papers_pdf(papers), filetype="pdf") as document:
-        front = "".join(document[0].get_text().split()).casefold()  # spaced capitals count too
-    assert "london" not in front and "birmingham" not in front  # GOOD's own text names neither
+        page = document[0]
+        header = "".join(page.get_text(clip=pymupdf.Rect(0, 0, page.rect.width, 100)).split()).casefold()
+    assert "london" not in header and "birmingham" not in header  # no topic list over the cards
+    cards = {c.answer: c for sheet in papers.sheets for c in sheet}
+    fronts = {answer: f"{c.title} {c.evidence} {c.question}".casefold() for answer, c in cards.items()}
+    assert all(answer.casefold() not in front for answer, front in fronts.items())  # no card shows its own answer
+    assert cards["River Thames"].evidence.startswith("London: ")  # "Which river flows through this city?"
+    assert cards["River Rea"].evidence.startswith("Birmingham: ")
+    assert "London" not in cards["London"].evidence and "Birmingham" not in cards["Birmingham"].evidence
     plain = write_case_papers(uk_sheet)  # no model: plain cards only
     topics = {fact.suspect.casefold() for fact in study_lines(uk_sheet)[0] if fact.suspect}
     assert not [c.title for s in plain.sheets for c in s if any(topic in c.title.casefold() for topic in topics)]
+
+
+def test_a_topic_that_is_part_of_the_answer_is_not_added(facts):
+    from learn.teaching_engine.evidence_cards import _named
+
+    theatre = card(["F9"], "Busy Stage", "Many people visit this theatre.", "Which one is it?", "Birmingham Hippodrome")
+    river = card(["F8"], "Small Stream", "A small stream flows past this city.", "Which river?", "River Rea")
+    assert _named(theatre, facts) == theatre and _named(river, facts)["evidence"].startswith("Birmingham: ")
 
 
 def test_a_case_title_that_names_a_topic_or_an_answer_is_not_printed(uk_sheet):

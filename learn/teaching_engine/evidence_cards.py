@@ -59,8 +59,7 @@ THE CARD RECIPE (non-negotiable):
    says in plain, calm words, and never describe people being hurt; picture the place, the warning or the help
    instead. Add no detail that does not help the question (no rain on an earthquake card).
 4. QUESTION: direct but curious, exactly one sentence ending with "?". Model: "The bottle is sealed, yet drops appear
-   outside. Where did the drops come from?" The card prints no topic, so when the question needs one, name it
-   ("Which river runs through this city?" needs the city's name), unless that name is the answer.
+   outside. Where did the drops come from?"
 5. ANSWER: 1-2 words, at most 3 for a name (e.g. "Condensation", "River Thames", "Harland and Wolff"), copied exactly
    as printed in one of the card's lines. A date or formula may be longer ("28 December 1885", "A = l × w"). The
    question must lead straight to that answer. Each card has its own answer.
@@ -110,7 +109,7 @@ Reply with one JSON object only, no commentary:
 {{"case_title": "The Case of ...", "cards": [{{"lines": ["F3"], "title": "3-6 everyday words", "evidence": "2-3
 sentences.", "question": "One sentence?", "answer": "1-2 words from the lines", "key_why": "One short sentence: why
 the answer follows."}}]}}
-Write the cards in the order of their lines. The case title names no person, place or term from the lines."""
+Write the cards in the order of their lines."""
 
 
 @dataclass(frozen=True)
@@ -142,6 +141,19 @@ def _norm(text: str) -> str:
 
 def _contains(haystack: str, needle: str) -> bool:
     return bool(needle) and f" {_norm(needle)} " in f" {_norm(haystack)} "
+
+
+def _named(card: dict, facts: dict[str, Fact]) -> dict:
+    """The card with its line's topic before the evidence ("Birmingham: A river runs past this city."), when the card
+    never names it and the topic shows no part of the answer. With no topic printed, "this city" would leave a child
+    guessing which city; a card whose answer is its topic stays unnamed, so the name is never a ready answer."""
+    topic, answer = facts[card["lines"][0]].suspect, card["answer"]
+    front = f"{card['title']} {card['evidence']} {card['question']}"
+    if not topic or _contains(front, topic) or _contains(topic, answer) or _contains(answer, topic):
+        return card
+    if any(len(word) >= 4 and _contains(topic, word) for word in _norm(answer).split()):
+        return card
+    return {**card, "evidence": f"{topic}: {card['evidence']}"}
 
 
 def _names_topic(text: str, facts: dict[str, Fact]) -> bool:
@@ -372,6 +384,7 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
     chosen.sort(key=lambda pair: min(order[line] for line in pair[0]["lines"]))
     every = []
     for number, (card, by_model) in enumerate(chosen, start=1):
+        card = _named(card, facts)
         lines = tuple(card["lines"])
         every.append(
             EvidenceCard(
