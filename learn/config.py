@@ -150,8 +150,11 @@ def evidence_effort() -> str:
 
 
 def cards_max_tokens() -> int:
-    """Output budget for one card sheet, thinking included; a cut-off response is retried once at twice this."""
-    return _int_env("LEARN_CARDS_MAX_TOKENS", 8000)
+    """Output budget for one reply of cards, thinking included; a cut-off reply is retried once at twice this. A
+    Detective upload's cards all come in one reply: in live tests Haiku 5.5 at low effort wrote about 500 tokens a
+    line, thinking included. Only the tokens written are billed, and the Claude API's output-tokens-per-minute limit
+    counts only those too."""
+    return _int_env("LEARN_CARDS_MAX_TOKENS", 64000)
 
 
 def cards_sheet_limit() -> int:
@@ -184,23 +187,18 @@ def load_dotenv(path: str = ".env") -> None:
         pass
 
 
-def detective_ai_sheets() -> int:
-    """On the website, how many sheets of Detective cards the model writes per upload; the rest are plain cards.
-    Each sheet is one or two model calls."""
-    return _int_env("LEARN_DETECTIVE_AI_SHEETS", 10)
-
-
-def detective_workers() -> int:
-    """How many sheets of Detective cards the model writes at the same time. The page waits at most three minutes for
-    the PDF, and one sheet takes Haiku about 20-35 seconds (twice that with a retry), so a whole upload must run at
-    once."""
-    return _int_env("LEARN_DETECTIVE_WORKERS", 10)
-
-
 def detective_max_pages() -> int:
-    """On the website, the most pages one Detective upload may have. More pages mean more sheets than can be written
-    before the page stops waiting, and the tokens spent on them would be wasted."""
+    """On the website, the most pages one Detective upload may have, checked before any model call, so a long chapter
+    is made a few pages at a time."""
     return _int_env("LEARN_DETECTIVE_MAX_PAGES", 5)
+
+
+def detective_lines_per_request() -> int:
+    """On the website, the most sheet lines one model request writes Detective cards for. Most uploads are one
+    request. The page waits at most three minutes, and in live tests through June Haiku 5.5 at low effort took two to
+    three and a half seconds a line (the same 39 lines took 73-134 s), so a longer upload is split into the fewest
+    requests, run at the same time."""
+    return _int_env("LEARN_DETECTIVE_LINES_PER_REQUEST", 40)
 
 
 def detective_daily_limit() -> int:

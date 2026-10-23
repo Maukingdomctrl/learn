@@ -238,7 +238,6 @@ def case_model(monkeypatch):
         return llm
 
     monkeypatch.setattr(web, "_case_paper_model", model)
-    monkeypatch.setenv("LEARN_DETECTIVE_AI_SHEETS", "1")
     return llm, made
 
 
@@ -278,7 +277,17 @@ def test_the_detective_button_makes_case_papers_when_a_model_is_set(case_model):
     text = pymupdf.open(stream=download.content, filetype="pdf")[1].get_text()
     assert "River Thames" in text and "Sheet says: p. 1" in text  # the sealed key after the first sheet
     assert download.content == preview.content
-    assert len(made) == 1 and len(llm.calls) == 1  # preview then download: the model is asked once
+    assert len(made) == 1 and len(llm.calls) == 1  # one request for the 5-page upload, then served from memory
+
+
+def test_only_an_upload_over_the_lines_per_request_setting_is_split(case_model, monkeypatch):
+    llm, made = case_model
+    llm.responses[TASK] = lambda prompt, _: GOOD if "\nF1 [" in prompt else {}
+    monkeypatch.setenv("LEARN_DETECTIVE_LINES_PER_REQUEST", "20")
+    response = _post(TestClient(web.app), "/preview")  # the UK sheet's first 5 pages have 40 lines
+
+    assert response.headers["content-type"] == "application/pdf" and len(llm.calls) == 2
+    assert "River Thames" in _text(response)
 
 
 def test_without_a_key_or_past_the_daily_limit_no_model_is_used(monkeypatch):
@@ -300,7 +309,6 @@ def test_a_model_that_writes_no_good_card_gives_the_rule_based_case_file(monkeyp
     monkeypatch.setattr(web, "_CASE_PAPERS", OrderedDict())
     broken = {"cards": [{**c, "answer": "Paris"} for c in GOOD["cards"]]}
     monkeypatch.setattr(web, "_case_paper_model", lambda: ScriptedLLM({TASK: [broken, broken, {}]}))
-    monkeypatch.setenv("LEARN_DETECTIVE_AI_SHEETS", "1")
     response = _post(TestClient(web.app), "/generate")
 
     assert "DETECTIVE CASE FILE" in "\n".join(page.get_text() for page in pymupdf.open(stream=response.content))
