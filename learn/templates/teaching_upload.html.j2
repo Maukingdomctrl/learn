@@ -174,11 +174,14 @@
 
     .brand:hover .brand-mark { transform: rotate(-8deg); }
     .brand-name { font-size: 23px; font-weight: 850; letter-spacing: -.8px; }
-    .brand-caption { display: block; font-size: 11px; color: var(--muted); }
+    .brand-caption { display: block; font-size: 12px; color: var(--muted); }
 
     nav { display: flex; align-items: center; gap: 24px; }
-    nav a { font-size: 13px; font-weight: 700; text-decoration: none; }
+    nav a { font-size: 14px; font-weight: 700; text-decoration: none; }
     nav a:hover { text-decoration: underline; }
+
+    /* Small text links get a taller tap area; the negative margin keeps the layout as it was. */
+    nav a, .text-link, .site-footer a { padding-block: 10px; margin-block: -10px; }
 
     .free-pill {
       display: inline-flex;
@@ -188,7 +191,7 @@
       border: 1px solid #d3dec9;
       border-radius: 100px;
       background: #eef3e7;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 750;
       white-space: nowrap;
     }
@@ -216,7 +219,7 @@
       gap: 9px;
       margin: 0 0 22px;
       color: var(--forest-light);
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 850;
       letter-spacing: .14em;
       text-transform: uppercase;
@@ -273,11 +276,12 @@
       margin: 0;
       list-style: none;
       color: var(--forest);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
     }
 
-    .benefits li::before { content: "✓"; margin-right: 7px; }
+    /* The empty alt text keeps screen readers from announcing the tick; older browsers use the first value. */
+    .benefits li::before { content: "✓"; content: "✓" / ""; margin-right: 7px; }
 
     /* ---------- Animated study-card composition ---------- */
     .study-scene {
@@ -329,11 +333,11 @@
     }
 
     .sample-back {
-      left: 155px;
+      left: 235px;
       top: 19px;
       background: var(--lilac);
       rotate: 11deg;
-      animation: bob 7s ease-in-out infinite;
+      animation: bob 4.5s ease-in-out .4s;
     }
 
     .sample-front {
@@ -342,7 +346,7 @@
       color: white;
       background: var(--forest);
       rotate: -8deg;
-      animation: bob 7s ease-in-out -3s infinite;
+      animation: bob 4.5s ease-in-out;
     }
 
     .sample-top {
@@ -387,24 +391,36 @@
     }
 
     /* ---------- Builder ---------- */
+    /* The panel is its own stacking context with the white surface on ::after, so the tilted backing card
+       stays behind it. Painted on .builder itself, the surface sat under the backing card in Chrome: the
+       entrance animation fills forwards, which keeps .builder a stacking context after it ends. */
     .builder {
       position: relative;
+      isolation: isolate;
       padding: 30px;
-      border: 1px solid white;
       border-radius: 32px;
-      background: rgb(255 255 255 / 94%);
-      box-shadow: var(--shadow), 0 0 0 1px rgb(24 53 44 / 5%);
+    }
+
+    .builder::before, .builder::after {
+      content: "";
+      position: absolute;
+      border-radius: 32px;
     }
 
     .builder::before {
-      content: "";
-      position: absolute;
       inset: 12px -9px -12px 12px;
-      z-index: -1;
-      border-radius: 32px;
+      z-index: -2;
       border: 1px solid #dce3d3;
       background: #e9efdf;
       rotate: 2deg;
+    }
+
+    .builder::after {
+      inset: 0;
+      z-index: -1;
+      border: 1px solid white;
+      background: rgb(255 255 255 / 94%);
+      box-shadow: var(--shadow), 0 0 0 1px rgb(24 53 44 / 5%);
     }
 
     .builder-heading {
@@ -425,8 +441,10 @@
     .builder-heading p {
       margin: 5px 0 0;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 14px;
     }
+
+    .builder-heading .hint { font-size: 13px; }
 
     .mini-icon {
       display: grid;
@@ -441,7 +459,7 @@
     .field-label, legend {
       display: block;
       margin-bottom: 9px;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 800;
     }
 
@@ -460,6 +478,8 @@
       text-align: center;
       transition: background .2s, border-color .2s, transform .3s var(--ease);
     }
+
+    .upload.has-file { border-style: solid; border-color: var(--forest-light); background: #f0f6e6; }
 
     .upload:hover, .upload.dragging {
       background: #eff5e3;
@@ -492,10 +512,10 @@
     .upload strong {
       max-width: 100%;
       overflow-wrap: anywhere;
-      font-size: 13px;
+      font-size: 15px;
     }
 
-    .upload small { color: var(--muted); font-size: 11px; }
+    .upload small { color: var(--muted); font-size: 13px; }
 
     input[type="text"] {
       width: 100%;
@@ -505,7 +525,7 @@
       border-radius: 12px;
       background: #fbfcf9;
       color: var(--ink);
-      font-size: 13px;
+      font-size: 16px;  /* below 16px, iPhones zoom the page in when the field gets focus */
       transition: border-color .2s, box-shadow .2s;
     }
 
@@ -514,16 +534,19 @@
       box-shadow: 0 0 0 4px #edf3e5;
     }
 
+    input[type="text"]::placeholder { color: var(--muted); opacity: 1; }
+
     .hint {
       margin: 6px 0 0;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 13px;
       line-height: 1.6;
     }
 
     fieldset { min-width: 0; padding: 0; border: 0; margin: 21px 0 0; }
     legend { padding: 0; }
     .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .game-grid--single { grid-template-columns: 1fr; }
 
     .game-option { position: relative; cursor: pointer; }
 
@@ -546,8 +569,8 @@
       transition: background .2s, border-color .2s, transform .2s;
     }
 
-    .game-tile strong { display: block; font-size: 12px; }
-    .game-tile small { display: block; color: var(--muted); font-size: 10px; }
+    .game-tile strong { display: block; font-size: 14px; }
+    .game-tile small { display: block; color: var(--muted); font-size: 12px; }
     .game-symbol { font-size: 20px; }
 
     .game-option input:checked + .game-tile {
@@ -575,7 +598,7 @@
       border-radius: 13px;
       background: var(--forest);
       color: white;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 750;
       text-decoration: none;
       transition: transform .25s var(--ease), background .2s, box-shadow .25s;
@@ -603,10 +626,10 @@
       margin: 14px 0 0;
       color: var(--muted);
       text-align: center;
-      font-size: 10px;
+      font-size: 12px;
     }
 
-    .form-error { margin: 12px 0 0; color: #a32c26; font-size: 12px; }
+    .form-error { margin: 12px 0 0; color: #a32c26; font-size: 13px; }
 
     /* ---------- Helpful, crawlable content ---------- */
     .how-section {
@@ -625,14 +648,14 @@
     .section-kicker {
       margin-bottom: 8px;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 850;
       letter-spacing: .14em;
       text-transform: uppercase;
     }
 
     h2 { margin-bottom: 0; font-size: clamp(25px, 3vw, 34px); letter-spacing: -1.2px; line-height: 1.2; }
-    .text-link { font-size: 12px; font-weight: 750; }
+    .text-link { font-size: 14px; font-weight: 750; }
 
     .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
@@ -641,10 +664,7 @@
       border: 1px solid var(--line);
       border-radius: 20px;
       background: rgb(255 255 255 / 55%);
-      transition: transform .3s var(--ease), box-shadow .3s;
     }
-
-    .step:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
 
     .step-number {
       display: grid;
@@ -660,8 +680,8 @@
 
     .step:nth-child(2) .step-number { background: var(--lilac); }
     .step:nth-child(3) .step-number { background: var(--peach); }
-    .step h3 { margin-bottom: 8px; font-size: 15px; letter-spacing: -.3px; }
-    .step p { margin: 0; color: var(--muted); font-size: 13px; }
+    .step h3 { margin-bottom: 8px; font-size: 17px; letter-spacing: -.3px; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; }
 
     .faq {
       display: grid;
@@ -670,22 +690,22 @@
       padding-block: 12px 70px;
     }
 
-    .faq-intro p:last-child { margin-top: 16px; color: var(--muted); font-size: 14px; }
+    .faq-intro p:last-child { margin-top: 16px; color: var(--muted); font-size: 15px; }
 
     details { border-bottom: 1px solid var(--line); }
     summary {
       padding: 18px 32px 18px 0;
       position: relative;
       list-style: none;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 750;
       cursor: pointer;
     }
 
     summary::-webkit-details-marker { display: none; }
-    summary::after { content: "+"; position: absolute; right: 4px; font-size: 20px; top: 12px; }
-    details[open] summary::after { content: "−"; }
-    details p { padding-right: 26px; color: var(--muted); font-size: 13px; }
+    summary::after { content: "+"; content: "+" / ""; position: absolute; right: 4px; font-size: 20px; top: 15px; }
+    details[open] summary::after { content: "−"; content: "−" / ""; }
+    details p { padding-right: 26px; color: var(--muted); font-size: 15px; }
 
     .site-footer {
       display: flex;
@@ -695,7 +715,7 @@
       padding-block: 23px;
       border-top: 1px solid var(--line);
       color: var(--muted);
-      font-size: 11px;
+      font-size: 13px;
     }
 
     /* ---------- Native modal preview ---------- */
@@ -757,7 +777,7 @@
       overflow: auto;
     }
 
-    .preview-status { margin: 0; color: var(--muted); font-size: 13px; }
+    .preview-status { margin: 0; color: var(--muted); font-size: 14px; }
 
     .preview-frame {
       width: 100%;
@@ -786,6 +806,7 @@
     }
 
     /* ---------- Motion ---------- */
+    /* The sample cards float once and stop: decorative motion beside the form ends within five seconds. */
     @keyframes bob { 50% { translate: 0 -9px; } }
     @keyframes drawer-in { from { transform: translateX(100%); } to { transform: none; } }
     @keyframes loading { from { transform: translateX(-110%); } to { transform: translateX(390%); } }
@@ -805,11 +826,12 @@
     @media (max-width: 1000px) {
       .hero { gap: 36px; }
       .builder { padding: 24px; }
-      .sample-back { left: 115px; }
+      .sample-back { left: 215px; top: 0; }
       .scene-sticker { right: 0; }
     }
 
-    @media (max-width: 800px) {
+    /* One column from 900px down: two columns left the form about 300px wide on small tablets. */
+    @media (max-width: 900px) {
       .container { width: min(600px, calc(100% - 40px)); }
       .hero { grid-template-columns: 1fr; gap: 32px; padding-block: 44px; }
       h1 { max-width: 15ch; font-size: clamp(43px, 8vw, 62px); }
@@ -822,12 +844,13 @@
       .faq { grid-template-columns: 1fr; gap: 15px; }
       .section-top { align-items: start; flex-direction: column; gap: 14px; }
       .builder::before { inset: 10px -5px -8px 8px; rotate: 1deg; }
+      .site-footer > span { flex-basis: 100%; }
     }
 
     @media (max-width: 380px) {
       .container { width: calc(100% - 28px); }
       .builder { padding: 20px; }
-      .free-pill { padding: 7px 9px; font-size: 10px; }
+      .free-pill { padding: 7px 9px; font-size: 12px; }
       .game-grid { grid-template-columns: 1fr; }
       .brand-caption { display: none; }
     }
@@ -902,7 +925,7 @@
               <span class="sample-foot">Think it through. Then check your answer.</span>
             </div>
           </div>
-          <div class="scene-sticker">A fresh way<br>to revise ↗</div>
+          <div class="scene-sticker">A fresh way<br>to revise</div>
         </div>
       </div>
 
@@ -961,8 +984,8 @@
 
           {% if show_games %}
           <fieldset>
-            <legend>3. Choose your adventure</legend>
-            <div class="game-grid">
+            <legend>3. {% if show_superhero %}Choose your adventure{% else %}Your adventure{% endif %}</legend>
+            <div class="game-grid{% if not show_superhero %} game-grid--single{% endif %}">
               <label class="game-option">
                 <input type="radio" name="output" value="detective" checked>
                 <span class="game-tile">
@@ -1262,8 +1285,10 @@
 
       function updateFile() {
         const file = fileInput.files[0];
+        const message = validateFile();
         fileName.textContent = file ? file.name : "Choose a PDF or drop it here";
-        showError(validateFile());
+        upload.classList.toggle("has-file", Boolean(file) && !message);
+        showError(message);
       }
 
       fileInput.addEventListener("change", updateFile);

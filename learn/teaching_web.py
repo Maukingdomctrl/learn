@@ -78,7 +78,7 @@ def blank_cards():
 def visual_library(region: str = "all"):
     if region not in {"all", "Indian Studies", "UK comparison"}:
         region = "all"
-    return _page("visual_library.html.j2", visuals=list_visuals(region))
+    return _page("visual_library.html.j2", visuals=list_visuals(region), region=region)
 
 
 def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[bytes, str]:
