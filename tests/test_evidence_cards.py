@@ -120,7 +120,11 @@ def test_a_good_set_becomes_the_first_sheet_with_its_sealed_key(uk_sheet):
     papers = write_case_papers(uk_sheet, llm)
     assert len(llm.calls) == 1 and papers.model_cards == 8 and papers.title == "The Case of the Two Big Cities"
     first = papers.sheets[0]
-    assert [c.answer for c in first][:2] == ["London", "River Thames"] and all(c.by_model for c in first)
+    # The sheet's order, except "Which city has the red star?" London, which may not sit among cards naming London.
+    assert [c.answer for c in first][:2] == ["River Thames", "Southeastern England"]
+    assert all(c.by_model for c in first[:6])
+    london = next(c for s in papers.sheets for c in s if c.answer == "London")
+    assert london.by_model and london not in first
     assert all(len(sheet) <= CARDS_PER_SHEET for sheet in papers.sheets)
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
     assert {f"F{n}" for n in range(1, 10)} <= taught  # every line of the model's sheet is on a card
@@ -173,7 +177,7 @@ def test_a_set_that_misses_lines_keeps_its_good_cards_and_is_not_sent_back(uk_sh
     assert len(llm.calls) == 1
     assert any("broke a rule, so plain cards teach them" in note for note in papers.notes)
     first = papers.sheets[0]
-    assert [c.answer for c in first if c.by_model] == ["London", "River Thames", "Southeastern England"]
+    assert [c.answer for c in first if c.by_model] == ["River Thames", "Southeastern England"]  # London goes later
     assert papers.model_cards == 3 and not all(c.by_model for c in first)
     taught = {line for sheet in papers.sheets for c in sheet for line in c.lines}
     assert {"F1", "F2", "F4"} <= taught  # the model's three good cards
@@ -193,7 +197,8 @@ def test_extra_and_repeated_cards_are_dropped_without_a_second_call(uk_sheet):
     llm = ScriptedLLM({TASK: [extra, {}]})
     papers = write_case_papers(uk_sheet, llm)
     assert len(llm.calls) == 1 and papers.model_cards == len(GOOD["cards"])
-    assert [c.answer for c in papers.sheets[0]] == [c["answer"] for c in GOOD["cards"]]
+    printed = [c.answer for s in papers.sheets for c in s if c.by_model]
+    assert sorted(printed) == sorted(c["answer"] for c in GOOD["cards"])  # each good card once, no extras
 
 
 def test_one_bad_card_is_dropped_and_the_others_are_kept(uk_sheet):
@@ -383,10 +388,24 @@ def test_model_and_plain_cards_run_in_the_sheets_order(uk_sheet, facts):
     reply = {"cards": [GOOD["cards"][7], GOOD["cards"][1]]}  # F8 and F2, out of order
     papers = write_case_papers(uk_sheet, ScriptedLLM({TASK: [reply, {}]}))
     cards = [c for sheet in papers.sheets for c in sheet]
-    order = list(facts)
-    firsts = [min(order.index(line) for line in c.lines) for c in cards]
+    order, topics = list(facts), {fact.suspect.casefold() for fact in facts.values() if fact.suspect}
+    firsts = [min(order.index(line) for line in c.lines) for c in cards if c.answer.casefold() not in topics]
     assert papers.model_cards == 2 and not all(c.by_model for c in cards)
     assert firsts == sorted(firsts)  # plain cards sit among the model's, where their lines are on the sheet
+
+
+def test_a_card_whose_answer_is_a_topic_never_shares_a_sheet_with_a_card_naming_it(uk_sheet, facts):
+    """A card asking "What is this about?" (Birmingham) beside cards starting "Birmingham:" would show its answer."""
+    topics = {fact.suspect.casefold() for fact in facts.values() if fact.suspect}
+    for llm in (None, ScriptedLLM({TASK: [GOOD, {}]})):
+        papers = write_case_papers(uk_sheet, llm)
+        asked = 0
+        for sheet in papers.sheets:
+            for card in (c for c in sheet if c.answer.casefold() in topics):
+                asked += 1
+                fronts = [f"{m.title} {m.evidence} {m.question}".casefold() for m in sheet if m is not card]
+                assert not any(card.answer.casefold() in front for front in fronts), card.answer
+        assert asked and all(len(sheet) == CARDS_PER_SHEET for sheet in papers.sheets[:-1])  # sheets stay full
 
 
 def test_a_topic_name_is_never_a_ready_answer_but_says_which_subject_a_card_means(uk_sheet):

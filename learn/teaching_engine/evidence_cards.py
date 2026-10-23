@@ -156,6 +156,37 @@ def _named(card: dict, facts: dict[str, Fact]) -> dict:
     return {**card, "evidence": f"{topic}: {card['evidence']}"}
 
 
+def _apart(cards: list[tuple[dict, bool]], facts: dict[str, Fact]) -> list[tuple[dict, bool]]:
+    """The cards in print order, with each card whose answer is a topic ("What is this about?" Birmingham) put at the
+    latest place where no other card on its printed sheet names that topic: beside cards that start "Birmingham:" its
+    answer would be printed next to it. The other cards keep the sheet's order, and every sheet stays full."""
+    topics = {_norm(fact.suspect) for fact in facts.values() if fact.suspect}
+    asks = [pair for pair in cards if _norm(pair[0]["answer"]) in topics]
+    layout = [pair for pair in cards if _norm(pair[0]["answer"]) not in topics]
+
+    def clashes(order: list[tuple[dict, bool]]) -> int:
+        """How often a card on the same printed sheet names an asking card's answer."""
+        count = 0
+        for start in range(0, len(order), CARDS_PER_SHEET):
+            page = order[start : start + CARDS_PER_SHEET]
+            for ask in (pair for pair in page if any(pair is placed for placed in asks)):
+                fronts = (f"{m[0]['title']} {m[0]['evidence']} {m[0]['question']}" for m in page if m is not ask)
+                count += sum(_contains(front, ask[0]["answer"]) for front in fronts)
+        return count
+
+    for ask in asks:
+        best: tuple[int, list[tuple[dict, bool]]] | None = None
+        for at in range(len(layout), -1, -1):  # as late as possible: after the topic's own cards
+            trial = layout[:at] + [ask] + layout[at:]
+            score = clashes(trial)
+            if best is None or score < best[0]:
+                best = (score, trial)
+            if score == 0:
+                break
+        layout = best[1]
+    return layout
+
+
 def _names_topic(text: str, facts: dict[str, Fact]) -> bool:
     """Whether the text names one of the sheet's topics, which on a card front can be the answer itself."""
     return any(_contains(text, fact.suspect) for fact in facts.values() if fact.suspect)
@@ -379,12 +410,12 @@ def write_case_papers(sheet, llm=None, standard: int = 8, lines_per_request: int
         if _norm(card["answer"]) not in answers:
             answers.add(_norm(card["answer"]))
             chosen.append((card, False))
-    # The cards run on in the sheet's order, eight to a printed sheet.
+    # The cards run on in the sheet's order, eight to a printed sheet, each saying which topic it means.
     order = {line: index for index, line in enumerate(ids)}
     chosen.sort(key=lambda pair: min(order[line] for line in pair[0]["lines"]))
+    chosen = _apart([(_named(card, facts), by_model) for card, by_model in chosen], facts)
     every = []
     for number, (card, by_model) in enumerate(chosen, start=1):
-        card = _named(card, facts)
         lines = tuple(card["lines"])
         every.append(
             EvidenceCard(
