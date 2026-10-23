@@ -8,7 +8,7 @@
   <title>PDF to Printable Study Cards | Learn</title>
   <meta
     name="description"
-    content="Turn a curriculum PDF into printable study cards for revision. Choose {% if show_superhero %}a Detective or Superhero game{% else %}the Detective game{% endif %}, preview your cards, and print. No sign-up."
+    content="{% if show_superhero %}Turn a curriculum PDF into printable study cards for revision. Choose a Detective or Superhero game, preview your cards, and print.{% else %}Turn a curriculum PDF into printable Detective clue cards for revision. Preview them, print them and solve the case.{% endif %} No sign-up."
   >
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://learn.mauforge.com/">
@@ -546,7 +546,20 @@
     fieldset { min-width: 0; padding: 0; border: 0; margin: 21px 0 0; }
     legend { padding: 0; }
     .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .game-grid--single { grid-template-columns: 1fr; }
+
+    .product-note {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 21px;
+      padding: 13px 14px;
+      border-radius: 13px;
+      background: #f0f6e6;
+    }
+
+    .product-note strong { display: block; font-size: 14px; }
+    .product-note small { display: block; color: var(--muted); font-size: 13px; }
+    .product-note a, .form-note a { padding-block: 6px; white-space: nowrap; }  /* inline padding moves no lines */
 
     .game-option { position: relative; cursor: pointer; }
 
@@ -630,6 +643,33 @@
     }
 
     .form-error { margin: 12px 0 0; color: #a32c26; font-size: 13px; }
+
+    /* ---------- Real sample ---------- */
+    .proof-section {
+      display: grid;
+      grid-template-columns: 1fr minmax(0, 420px);
+      align-items: center;
+      gap: 56px;
+      padding-block: 48px 64px;
+      border-top: 1px solid var(--line);
+    }
+
+    .proof-copy h2 { margin-bottom: 14px; }
+    .proof-copy > p:not(.section-kicker) { color: var(--muted); font-size: 15px; }
+    .proof-points { margin: 18px 0; padding-left: 20px; font-size: 15px; }
+    .proof-points li { margin: 6px 0; }
+    .proof-links { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 15px; font-weight: 750; }
+    .proof-links a { color: var(--forest-light); }
+
+    .proof-page img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
 
     /* ---------- Helpful, crawlable content ---------- */
     .how-section {
@@ -845,6 +885,8 @@
       .section-top { align-items: start; flex-direction: column; gap: 14px; }
       .builder::before { inset: 10px -5px -8px 8px; rotate: 1deg; }
       .site-footer > span { flex-basis: 100%; }
+      .proof-section { grid-template-columns: 1fr; gap: 28px; }
+      .proof-page { max-width: 420px; }
     }
 
     @media (max-width: 380px) {
@@ -932,7 +974,7 @@
       <section class="builder" aria-labelledby="builder-title">
         <div class="builder-heading">
           <div>
-            <h2 id="builder-title">Build your study cards</h2>
+            <h2 id="builder-title">{% if show_games and not show_superhero %}Make your Detective cards{% else %}Build your study cards{% endif %}</h2>
             <p>Your notes. A new way to know them.</p>
             <p class="hint" id="audience-note">
               For parents and students aged 18+. Younger students: ask a parent to upload your notes.
@@ -982,10 +1024,10 @@
 
           <input type="hidden" name="standard" value="8">
 
-          {% if show_games %}
+          {% if show_games and show_superhero %}
           <fieldset>
-            <legend>3. {% if show_superhero %}Choose your adventure{% else %}Your adventure{% endif %}</legend>
-            <div class="game-grid{% if not show_superhero %} game-grid--single{% endif %}">
+            <legend>3. Choose your adventure</legend>
+            <div class="game-grid">
               <label class="game-option">
                 <input type="radio" name="output" value="detective" checked>
                 <span class="game-tile">
@@ -997,7 +1039,6 @@
                 </span>
               </label>
 
-              {% if show_superhero %}
               <label class="game-option">
                 <input type="radio" name="output" value="superhero">
                 <span class="game-tile">
@@ -1008,9 +1049,18 @@
                   </span>
                 </span>
               </label>
-              {% endif %}
             </div>
           </fieldset>
+          {% elif show_games %}
+          <input type="hidden" name="output" value="detective">
+          <div class="product-note">
+            <span class="game-symbol" aria-hidden="true">⌕</span>
+            <span>
+              <strong>Detective</strong>
+              <small>Clue cards to solve, with the answers on a separate page.{% if ai_cards %}
+                <a href="#sample">See a sample</a>{% endif %}</small>
+            </span>
+          </div>
           {% else %}
           <input type="hidden" name="output" value="study">
           {% endif %}
@@ -1019,7 +1069,7 @@
 
           <div class="actions">
             <button class="button" type="submit">
-              Create my study cards
+              {% if show_games and not show_superhero %}Create my Detective cards{% else %}Create my study cards{% endif %}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" aria-hidden="true">
                 <path d="M5 12h14m-6-6 6 6-6 6"/>
@@ -1035,6 +1085,7 @@
 
           <p class="form-note">
             No account or API key needed. Check your answers before class.
+            <a href="/privacy">How we handle your PDF</a>
           </p>
         </form>
 
@@ -1045,6 +1096,33 @@
         </noscript>
       </section>
     </section>
+
+    {% if show_games and ai_cards %}
+    <section class="proof-section container" id="sample" aria-labelledby="proof-title">
+      <div class="proof-copy">
+        <p class="section-kicker">A real sample</p>
+        <h2 id="proof-title">What you'll print</h2>
+        <p>
+          Learn's AI wrote this case paper from a short example sheet written for this page, not taken from any
+          textbook. Your cards come from the pages you upload.
+        </p>
+        <ul class="proof-points">
+          <li><strong>Clue cards, eight to a page.</strong> Each is a short everyday scene with one question.</li>
+          <li><strong>An answer key for the adult.</strong> Each answer shows the line of the sheet it comes from.</li>
+          <li><strong>A score box</strong> to close the case.</li>
+        </ul>
+        <p class="proof-links">
+          <a href="/sample-case-papers.pdf">Open the sample (PDF)</a>
+          <a href="/sample-sheet.pdf">See the example sheet</a>
+        </p>
+        <p class="hint">When the day's AI cards are used up, you get basic Detective cards instead, with a note saying why.</p>
+      </div>
+      <a class="proof-page" href="/sample-case-papers.pdf">
+        <img src="/sample-case-papers.png" width="910" height="1287" loading="lazy"
+          alt="Page 1 of the sample case paper, The Case of the Green Kitchen: eight clue cards, each a short scene with a question">
+      </a>
+    </section>
+    {% endif %}
 
     <section class="how-section container" id="how-it-works"
       aria-labelledby="how-title">
@@ -1070,8 +1148,10 @@
           <span class="step-number" aria-hidden="true">02</span>
           <h3>Make it a mission</h3>
           <p>
-            Pick {% if show_superhero %}Detective or Superhero{% else %}Detective mode{% endif %}. Preview your question cards
-            and check that the content matches your lesson.
+            {% if show_superhero %}Pick Detective or Superhero. Preview your question cards
+            and check that the content matches your lesson.{% elif show_games %}Your cards come as a Detective case to
+            solve. Preview them and check that the content matches your lesson.{% else %}Preview your question cards
+            and check that the content matches your lesson.{% endif %}
           </p>
         </article>
 
@@ -1103,6 +1183,15 @@
             Use a text-based curriculum PDF, lesson handout, or study sheet
             up to 30 MB. PDFs with selectable text work best.
             Scanned pages or photos may not produce useful cards.
+          </p>
+        </details>
+
+        <details>
+          <summary>What happens to my PDF?</summary>
+          <p>
+            It's read on our server to make your cards, and it isn't saved.{% if ai_cards %} To write Detective cards,
+            the text of the pages you choose is sent to an AI model.{% endif %}
+            <a href="/privacy">How we handle your PDF</a>
           </p>
         </details>
 
@@ -1148,6 +1237,7 @@
     <span>Learn Teaching Engine · Make room for curiosity.</span>
     <a href="/blank-cards" download>Blank study cards (PDF) ↓</a>
     <a href="/library">Study Visual Library ↗</a>
+    <a href="/privacy">Privacy and your PDF</a>
   </footer>
 
   <dialog class="preview" id="output-preview"

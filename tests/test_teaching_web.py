@@ -26,7 +26,7 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
     # The page offers the Detective game; Superhero is hidden for now.
     assert "<strong>Detective</strong>" in page and "<strong>Superhero</strong>" not in page
     assert "uperhero" not in re.sub(r"(?s)<script.*?</script>", "", page)  # nor in the page's wording
-    assert 'name="output" value="detective" checked' in page
+    assert '<input type="hidden" name="output" value="detective">' in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
     assert 'aria-controls="output-preview" hidden' in page
@@ -418,11 +418,53 @@ def test_the_upload_page_says_who_uploads():
 
 def test_a_single_game_is_shown_as_the_game_not_as_a_choice(monkeypatch):
     page = TestClient(web.app).get("/").text
-    assert "<legend>3. Your adventure</legend>" in page and 'class="game-grid game-grid--single"' in page
+    assert "<fieldset>" not in page and 'type="radio"' not in page
+    assert '<input type="hidden" name="output" value="detective">' in page and "Create my Detective cards" in page
 
     monkeypatch.setattr(web, "SHOW_SUPERHERO", True)
     page = TestClient(web.app).get("/").text
-    assert "<legend>3. Choose your adventure</legend>" in page and 'class="game-grid"' in page
+    assert "<legend>3. Choose your adventure</legend>" in page and page.count('type="radio"') == 2
+
+
+def _no_card_model(monkeypatch):
+    for name in ("LEARN_PROVIDER", "ANTHROPIC_API_KEY", "JUNE_API_KEY", "GOOGLE_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _card_model_key(monkeypatch):
+    """Only pages are fetched with this key set; nothing here asks the model for cards."""
+    monkeypatch.setenv("LEARN_PROVIDER", "google")
+    monkeypatch.setenv("GOOGLE_API_KEY", "not-a-real-key")
+
+
+def test_the_privacy_page_says_where_the_pdf_goes(monkeypatch):
+    client = TestClient(web.app)
+    _no_card_model(monkeypatch)
+    page = client.get("/privacy").text
+    assert "No AI model is used right now" in page and "When AI writes your Detective cards" not in page
+
+    _card_model_key(monkeypatch)
+    page = client.get("/privacy").text
+    assert "the text of the pages you choose is sent to Google, running" in page
+    assert f"Only the {web._CASE_PAPERS_KEPT} most recent are kept" in page
+    assert page.count('href="/privacy"') == 0 and client.get("/").text.count('href="/privacy"') == 3
+
+
+def test_the_home_page_sample_is_case_papers_made_from_the_example_sheet(monkeypatch):
+    client = TestClient(web.app)
+    papers = pymupdf.open(stream=client.get("/sample-case-papers.pdf").content, filetype="pdf")
+    sheet = pymupdf.open(stream=client.get("/sample-sheet.pdf").content, filetype="pdf")[0].get_text()
+    key = papers[-1].get_text()
+    assert "The Case of the Green Kitchen" in papers[0].get_text() and "Answer Key" in key
+    said = re.findall(r"Sheet says: p\. 1: (.+)", key)
+    assert len(said) == 8 and all(line.strip() in sheet for line in said)
+    picture = client.get("/sample-case-papers.png")
+    assert picture.headers["content-type"] == "image/png" and picture.content.startswith(b"\x89PNG")
+
+    _card_model_key(monkeypatch)
+    assert 'src="/sample-case-papers.png"' in client.get("/").text
+    _no_card_model(monkeypatch)  # without a card model the site prints basic cards, so the sample would mislead
+    assert 'id="sample"' not in client.get("/").text
 
 
 def test_the_library_marks_the_chosen_topic():

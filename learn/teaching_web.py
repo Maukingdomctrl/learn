@@ -1,5 +1,6 @@
 """Standalone Teaching Engine web app; its optional Commons gallery loads external images."""
 
+import functools
 import hashlib
 import threading
 import time
@@ -56,7 +57,69 @@ def index():
         show_games=SHOW_GAMES,
         show_superhero=SHOW_SUPERHERO,
         detective_max_pages=C.detective_max_pages(),
+        ai_cards=_ai_cards_on(),
     )
+
+
+def _ai_cards_on() -> bool:
+    """Whether the Detective button can ask a card model: its provider's key is set and the daily limit isn't 0."""
+    return bool(C.env(C.card_key_name())) and C.detective_daily_limit() > 0
+
+
+def _ai_service() -> str:
+    """Who receives the page text when the card model writes Detective cards, for the privacy page."""
+    model = C.cards_model()
+    return {"june": f"June, an AI service, running {model}", "google": f"Google, running {model}"}.get(
+        C.provider(), f"Anthropic, running {model}"
+    )
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy():
+    return _page(
+        "privacy.html.j2",
+        ai_cards=_ai_cards_on(),
+        ai_service=_ai_service(),
+        daily_limit=C.detective_daily_limit(),
+        kept=_CASE_PAPERS_KEPT,
+        max_mb=MAX_UPLOAD_BYTES // (1024 * 1024),
+    )
+
+
+# The home page's sample: case papers the card model wrote from an example sheet written for Learn, not taken from a
+# book or a school's sheet. sample/README.md says how they were made.
+SAMPLE = Path(__file__).parent / "teaching_engine" / "sample"
+_SAMPLE_HEADERS = {"Cache-Control": "public, max-age=86400"}
+
+
+@app.get("/sample-case-papers.pdf")
+def sample_case_papers():
+    return _sample_pdf("case-papers.pdf", "learn_sample_case_papers.pdf")
+
+
+@app.get("/sample-sheet.pdf")
+def sample_sheet():
+    return _sample_pdf("example-sheet.pdf", "learn_example_sheet.pdf")
+
+
+@app.get("/sample-case-papers.png")
+def sample_case_papers_picture():
+    return Response(_sample_picture(), media_type="image/png", headers=_SAMPLE_HEADERS)
+
+
+def _sample_pdf(name: str, filename: str) -> Response:
+    return Response(
+        (SAMPLE / name).read_bytes(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{filename}"', **_SAMPLE_HEADERS},
+    )
+
+
+@functools.cache
+def _sample_picture() -> bytes:
+    """The sample's first page as a picture for the home page, drawn once from the PDF."""
+    with pymupdf.open(SAMPLE / "case-papers.pdf") as document:
+        return document[0].get_pixmap(dpi=110).tobytes("png")
 
 
 @app.get("/healthz")
