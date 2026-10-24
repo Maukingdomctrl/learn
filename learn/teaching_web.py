@@ -34,7 +34,8 @@ SHOW_GAMES = True
 # The Superhero game is hidden from the page for now; /generate still makes it when asked.
 SHOW_SUPERHERO = False
 # Key Facts: free cards on what the sheet prints in bold, as bullets or as numbered points, made without AI. The parent
-# can take out cards before printing.
+# can take out cards before printing. It is the page's first choice and the default for an upload that names none, so
+# no AI credits are spent unless Detective is picked.
 SHOW_FACTS = True
 # Detective case papers already made, by upload: "Preview" then "Create" for the same PDF costs one set of model calls.
 _CASE_PAPERS: OrderedDict[str, bytes] = OrderedDict()
@@ -362,7 +363,7 @@ def _process_upload(pdf: UploadFile, pages: str, output: str, standard: int, inl
 def generate(
     pdf: UploadFile = File(...),
     pages: str = Form(""),
-    output: str = Form("detective"),
+    output: str = Form("facts"),
     standard: int = Form(8),
     skip: str = Form(""),
 ):
@@ -373,7 +374,7 @@ def generate(
 def preview(
     pdf: UploadFile = File(...),
     pages: str = Form(""),
-    output: str = Form("detective"),
+    output: str = Form("facts"),
     standard: int = Form(8),
     skip: str = Form(""),
 ):

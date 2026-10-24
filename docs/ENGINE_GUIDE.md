@@ -19,7 +19,8 @@ All three files are in `learn/teaching_engine/`. Line numbers are approximate an
 | `_hide_name()` (~line 208) | Hides the answer's name, so a riddle doesn't give it away |
 | `_finish()`, `_key_cloze()`, `_recall_question()` (~lines 341–376) | Other card shapes |
 | `_table_cards()` (~line 586) | Cards made from tables |
-| `_key_fact_cards()`, `_bold_terms()`, `_bold_groups()` (~lines 840–1020) | Key Facts: bold words as answers, lists of bold words on one card, the usual card for bold sentences and bullet points |
+| `_key_fact_cards()`, `_bold_terms()`, `_bold_groups()` (~lines 850–1200) | Key Facts: bold words as answers, lists of bold words on one card |
+| `_fact_cards()`, `_end_gap()`, `_subject_split()` (same place) | Key Facts for bold sentences and bullet points: hide the word the sentence ends on, else show its subject and ask for the rest |
 | `_practice_prompt()`, `_practice_reinforcement()` (~lines 1031–1102) | The fill-in-the-blank pages |
 | `render_cards_pdf()` (~line 1298) | Page order and printing |
 | `render_printable_cards_pdf()` (~line 1377) | What the site calls: reads the sheet, plans the cards, prints them |

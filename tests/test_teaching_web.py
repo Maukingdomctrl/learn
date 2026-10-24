@@ -24,10 +24,10 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
 
     page = client.get("/").text
     assert "No account or API key needed" in page
-    # The page offers the Detective game and Key Facts, Detective first; Superhero is hidden for now.
+    # The page offers Key Facts, chosen to start with since it needs no AI, and Detective; Superhero is hidden for now.
     assert "<strong>Detective</strong>" in page and "<strong>Superhero</strong>" not in page
     assert "uperhero" not in re.sub(r"(?s)<script.*?</script>", "", page)  # nor in the page's wording
-    assert 'name="output" value="detective" checked' in page and 'name="output" value="facts"' in page
+    assert 'name="output" value="facts" checked' in page and 'name="output" value="detective">' in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
     assert 'aria-controls="output-preview" hidden' in page
@@ -35,7 +35,9 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
     assert "Study Visual Library" in page
     assert "Preview before printing" in page
     with open(sample_pdf, "rb") as pdf_file:
-        response = client.post("/generate", files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")})
+        response = client.post(
+            "/generate", data={"output": "detective"}, files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")}
+        )
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/pdf")
@@ -148,10 +150,15 @@ def test_teaching_web_rejects_its_own_generated_card_pdf():
 
 def test_turning_superhero_back_on_shows_both_games(monkeypatch):
     monkeypatch.setattr(web, "SHOW_SUPERHERO", True)
+    monkeypatch.setattr(web, "SHOW_FACTS", False)
     page = TestClient(web.app).get("/").text
 
     assert 'name="output" value="detective" checked' in page and 'name="output" value="superhero"' in page
     assert "Pick Detective or Superhero." in page
+
+    monkeypatch.setattr(web, "SHOW_FACTS", True)  # with Key Facts on too, it is still the one chosen to start with
+    page = TestClient(web.app).get("/").text
+    assert 'name="output" value="facts" checked' in page and page.count('type="radio"') == 3
 
 
 def test_turning_the_games_off_makes_plain_study_cards(monkeypatch):
@@ -428,12 +435,19 @@ def test_a_single_game_is_shown_as_the_game_not_as_a_choice(monkeypatch):
     assert "<legend>3. Choose your adventure</legend>" in page and page.count('type="radio"') == 2
 
 
-def test_key_facts_is_offered_beside_detective():
-    page = TestClient(web.app).get("/").text
+def test_key_facts_is_offered_first_and_chosen_so_no_ai_is_spent_unless_detective_is_picked(sample_pdf):
+    client = TestClient(web.app)
+    page = client.get("/").text
     assert "<legend>3. Choose your cards</legend>" in page and page.count('type="radio"') == 2
-    assert 'name="output" value="detective" checked' in page and 'name="output" value="facts">' in page
-    assert "<strong>Key Facts</strong>" in page and "Detective or Key Facts?" in page
+    assert 'name="output" value="facts" checked' in page and 'name="output" value="detective">' in page
+    assert page.index('value="facts"') < page.index('value="detective"')
+    assert "<strong>Key Facts</strong>" in page and "Key Facts or Detective?" in page
     assert "Create my study cards" in page and 'id="skip-cards"' in page and 'id="card-picker" hidden' in page
+
+    # An upload that names no kind of card gets Key Facts too.
+    with open(sample_pdf, "rb") as pdf_file:
+        response = client.post("/generate", files={"pdf": ("curriculum.pdf", pdf_file, "application/pdf")})
+    assert response.headers["content-disposition"] == 'attachment; filename="learn_key_facts.pdf"'
 
 
 def _no_card_model(monkeypatch):
