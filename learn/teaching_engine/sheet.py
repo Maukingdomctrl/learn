@@ -12,7 +12,7 @@ nothing is reworded.
 import re
 from dataclasses import dataclass, field
 from functools import cached_property
-from itertools import pairwise
+from itertools import combinations, pairwise
 from statistics import median
 
 import pymupdf
@@ -120,6 +120,11 @@ _RUN_IN_QUESTION = re.compile(r"\s+(?=Question\s+\d{1,2}\s+[A-Z‘“'\"(])")
 _LEADING_QUESTION = re.compile(r"^(?P<label>Question\s+\d{1,2})\s+(?=[A-Z‘“'\"(])")
 # "Note: Water is also a reactant, but the question asks for the gas." explains the answer to whoever checks it.
 _COMMENT = re.compile(r"^(?:notes?|n\.?\s?b\.?)\s*[:–—-]\s", re.I)
+# A bold face named in its font's name: "Arial-BoldMT", "Calibri,Bold", "Lato-Black", "Roboto-SemiBold" (not
+# "Blackadder").
+_BOLD_FONT = re.compile(r"(?:[Bb]old|BOLD|[Bb]lack|BLACK|[Hh]eavy|HEAVY)(?![a-z])")
+# Punctuation around a bold run that is not part of the bold words: "Evaporation:" or "“Swaraj”,".
+_BOLD_EDGES = " \t:;,.!?\"'“”‘’…–—"
 
 
 @dataclass(frozen=True)
@@ -147,6 +152,8 @@ class Item:
     table: Table | None = None
     top: float = 0.0  # position on the page, when read from the PDF layout
     bottom: float = 0.0
+    bullet: bool = False  # printed with a bullet
+    bold: tuple[str, ...] = ()  # the words printed in bold, as they appear in ``text``, in reading order
 
     @property
     def number(self) -> str:
@@ -219,6 +226,9 @@ class _Line:
     size: float
     units: tuple[str, ...]
     bullet: bool = False
+    bold: tuple[str, ...] = ()  # runs of bold words
+    bold_start: bool = False  # the line's first word is bold
+    bold_end: bool = False  # and its last
 
 
 @dataclass
@@ -232,6 +242,8 @@ class _Paragraph:
     bottom: float = 0.0
     table: Table | None = None
     lines: list[_Line] = field(default_factory=list)
+    bold: list[str] = field(default_factory=list)
+    bold_end: bool = False  # the text so far ends in bold, so a bold run at the start of the next line continues it
 
 
 def join_lines(first: str, second: str) -> str:
@@ -297,7 +309,7 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
                 continue  # sideways text (a running title printed up the margin) would cut through the paragraphs
             # A dingbat font at the start of a line draws its bullet; inside the text it stands in for a letter the
             # main font lacked (some PDF makers print a box instead of "₃" or "₹"), so that letter is lost.
-            chunks, dingbat_bullet = [], False
+            chunks, in_bold, dingbat_bullet = [], [], False
             for index, span in enumerate(raw["spans"]):
                 chunk = span["text"]
                 if "dingbat" in span["font"].casefold() and chunk.strip():
@@ -312,6 +324,7 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
                         continue
                     chunk = "".join(char if char.isspace() else "\ufffd" for char in chunk)
                 chunks.append(chunk)
+                in_bold.append(bool(span["flags"] & pymupdf.TEXT_FONT_BOLD) or bool(_BOLD_FONT.search(span["font"])))
             text = " ".join("".join(chunks).split())
             box = pymupdf.Rect(spans[0]["bbox"])
             for span in spans[1:]:
@@ -326,6 +339,7 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
             unit = next((unit_id for rect, unit_id in units if centre in rect), "")
             line = _Line(text, box.x0, box.y0, box.x1, box.y1, max(sizes, key=sizes.get), (unit,) if unit else ())
             line.bullet = dingbat_bullet
+            line.bold, line.bold_start, line.bold_end = _bold_runs(chunks, in_bold)
             if text[0] in BULLETS:
                 line.text = text.lstrip(BULLETS + " ")
                 line.bullet = True
@@ -346,6 +360,44 @@ def _page_lines(page: pymupdf.Page, pno: int) -> list[_Line]:
                 break
     lines.sort(key=lambda line: (round(line.y0, 0), line.x0))
     return lines
+
+
+def _bold_runs(chunks: list[str], in_bold: list[bool]) -> tuple[tuple[str, ...], bool, bool]:
+    """A line's runs of bold words, and whether its first and last words are bold.
+
+    Spaces between two bold words belong to the run; a bullet before the first word is not a word."""
+    runs: list[str] = []
+    run: list[str] = []
+    first: bool | None = None
+    last = False
+    for chunk, bold in zip(chunks, in_bold, strict=True):
+        if not chunk.strip():
+            if run:
+                run.append(chunk)
+            continue
+        if first is None and not chunk.strip().strip(BULLETS).strip():
+            continue
+        first = bold if first is None else first
+        last = bold
+        if bold:
+            run.append(chunk)
+        elif run:
+            runs.append(" ".join("".join(run).split()))
+            run = []
+    if run:
+        runs.append(" ".join("".join(run).split()))
+    return tuple(runs), bool(first), last
+
+
+def _add_bold(runs: list[str], ends_bold: bool, line: _Line, join=join_lines) -> bool:
+    """Add a line's bold runs to the runs before it: bold words that run on from one line to the next are one run.
+
+    Returns whether the text now ends in bold."""
+    added = list(line.bold)
+    if runs and added and ends_bold and line.bold_start and not _ends_sentence(runs[-1]):
+        runs[-1] = join(runs[-1], added.pop(0))
+    runs.extend(added)
+    return line.bold_end
 
 
 def _join_justified(lines: list[_Line]) -> list[_Line]:
@@ -399,6 +451,11 @@ def _join_justified(lines: list[_Line]) -> list[_Line]:
         top, bottom = min(piece.y0 for piece in row), max(piece.y1 for piece in row)
         merged = _Line(text, first.x0, top, final.x1, bottom, first.size, units)
         merged.bullet = first.bullet
+        runs: list[str] = []
+        ends_bold = False
+        for piece in row:
+            ends_bold = _add_bold(runs, ends_bold, piece, lambda left, right: f"{left} {right}")
+        merged.bold, merged.bold_start, merged.bold_end = tuple(runs), first.bold_start, ends_bold
         joined.append(merged)
     return joined
 
@@ -591,8 +648,10 @@ def _layout_paragraphs(page: pymupdf.Page, pno: int, lines: list[_Line]) -> list
             current.lines.append(line)
             current.bottom = max(current.bottom, line.y1)
             current.units.extend(unit for unit in line.units if unit not in current.units)
+            current.bold_end = _add_bold(current.bold, current.bold_end, line)
             continue
         current = _Paragraph(line.text, pno, list(line.units), line.bullet, line.size, line.y0, line.y1, lines=[line])
+        current.bold, current.bold_end = list(line.bold), line.bold_end
         paragraphs.append(current)
     paragraphs = _without_labels([part for paragraph in paragraphs for part in _split_inline(paragraph)])
     for table, members in tables:
@@ -706,6 +765,7 @@ def _split_inline(paragraph: _Paragraph) -> list[_Paragraph]:
     for start, end in pairwise([0, *cuts, len(paragraph.text)]):
         part = _Paragraph(paragraph.text[start:end].strip(), paragraph.page, list(paragraph.units), paragraph.bullet)
         part.size, part.top, part.bottom, part.lines = paragraph.size, paragraph.top, paragraph.bottom, paragraph.lines
+        part.bold = list(paragraph.bold)  # each item keeps the runs printed in its own text
         parts.append(part)
     return parts
 
@@ -849,6 +909,8 @@ def _classify(paragraphs: list[_Paragraph]) -> list[Item]:
                 context=(note or context) if kind in {"point", "summary", "question"} else "",
                 top=paragraph.top,
                 bottom=paragraph.bottom,
+                bullet=paragraph.bullet,
+                bold=_bold_in(paragraph.bold, text),
                 **extra,
             )
         )
@@ -1129,6 +1191,33 @@ def _split_answer(text: str) -> tuple[str, str]:
     return text.strip(), ""
 
 
+def _bold_in(runs: list[str], text: str) -> tuple[str, ...]:
+    """The paragraph's bold runs that are printed in this item's text, as they appear in it."""
+    found = []
+    for run in runs:
+        words = _trim_bold(run)
+        if words and re.search(rf"(?<!\w){re.escape(words)}(?!\w)", text):
+            found.append(words)
+    return tuple(found)
+
+
+def _trim_bold(run: str) -> str:
+    """A bold run without its list marker or the punctuation around it: "1. Evaporation:" → "Evaporation".
+
+    A bracket the run does not close is dropped ("(CO2" → "CO2"); "carbon dioxide (CO2)" stays whole."""
+    words = split_marker(run.strip().lstrip(BULLETS).strip())[1].strip(_BOLD_EDGES)
+    words = re.sub(r"^-\s+|\s+-$", "", words)
+    for _ in range(4):
+        opened = words.count("(") + words.count("[") - words.count(")") - words.count("]")
+        if opened > 0 and words.startswith(("(", "[")):
+            words = words[1:].strip(_BOLD_EDGES)
+        elif opened < 0 and words.endswith((")", "]")):
+            words = words[:-1].strip(_BOLD_EDGES)
+        else:
+            break
+    return words
+
+
 def _extend(item: Item, paragraph: _Paragraph, **changes) -> Item:
     units = tuple(dict.fromkeys([*item.unit_ids, *paragraph.units]))
     values = {**item.__dict__, "unit_ids": units, "bottom": max(item.bottom, paragraph.bottom), **changes}
@@ -1178,6 +1267,7 @@ def _across_pages(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
         ):
             cut.text = join_lines(cut.text, paragraph.text)
             cut.units.extend(unit for unit in paragraph.units if unit not in cut.units)
+            cut.bold = [*cut.bold, *paragraph.bold]
             continue
         joined.append(paragraph)
     return joined
@@ -1189,11 +1279,32 @@ def _running_key(text: str) -> str:
 
 
 def _without_running_lines(paragraphs: list[_Paragraph]) -> list[_Paragraph]:
-    """Drop page headers and footers: short lines printed on two or more pages ("Page 1 of 2" counts as one)."""
-    pages: dict[str, set[int]] = {}
+    """Drop page headers and footers: short lines printed at the same height at the top or foot of two or more pages
+    ("Page 1 of 2" counts as one). A heading that each page repeats among its text ("Facts to Remember") stays."""
+    edges = _page_edges(paragraphs)
+    places: dict[str, list[_Paragraph]] = {}
     for paragraph in paragraphs:
-        if paragraph.table is None and len(paragraph.text.split()) <= 14:
-            pages.setdefault(_running_key(paragraph.text), set()).add(paragraph.page)
-    running = {key for key, found in pages.items() if len(found) >= 2}
-    # A table has no text of its own: tables on two pages are not a running header.
-    return [p for p in paragraphs if p.table is not None or _running_key(p.text) not in running]
+        # A table has no text of its own: tables on two pages are not a running header.
+        if paragraph.table is None and len(paragraph.text.split()) <= 14 and id(paragraph) in edges:
+            places.setdefault(_running_key(paragraph.text), []).append(paragraph)
+    running = {
+        key
+        for key, found in places.items()
+        if any(one.page != other.page and abs(one.top - other.top) <= 4 for one, other in combinations(found, 2))
+    }
+    return [p for p in paragraphs if p.table is not None or id(p) not in edges or _running_key(p.text) not in running]
+
+
+def _page_edges(paragraphs: list[_Paragraph]) -> set[int]:
+    """The paragraphs printed first, second, or last or last but one on their page: where a header or footer sits.
+    Every paragraph counts when its place on the page is unknown (read from the inventory, not the layout)."""
+    pages: dict[int, list[_Paragraph]] = {}
+    for paragraph in paragraphs:
+        pages.setdefault(paragraph.page, []).append(paragraph)
+    edges = set()
+    for found in pages.values():
+        placed = sorted(found, key=lambda paragraph: paragraph.top)
+        for index, paragraph in enumerate(placed):
+            if index < 2 or index >= len(placed) - 2 or not paragraph.bottom:
+                edges.add(id(paragraph))
+    return edges

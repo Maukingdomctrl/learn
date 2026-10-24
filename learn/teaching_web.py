@@ -2,6 +2,7 @@
 
 import functools
 import hashlib
+import re
 import threading
 import time
 from collections import OrderedDict
@@ -11,14 +12,14 @@ from pathlib import Path
 
 import pymupdf
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import config as C
 from .extraction import MIN_PAGE_CHARS, ExtractionError, choose_ocr, extract, pdf_page_count
 from .grounding import InputError, parse_page_range
 from .teaching_engine import create_teaching_lesson, extract_facts, render_printable_cards_pdf, render_teaching_pdf
-from .teaching_engine.cards import render_blank_cards_pdf
+from .teaching_engine.cards import plan_printable_cards, render_blank_cards_pdf
 from .teaching_engine.evidence_cards import render_case_papers_pdf, write_case_papers
 from .teaching_engine.sheet import read_sheet
 from .teaching_engine.visual_library import list_visuals
@@ -32,6 +33,9 @@ MAX_SCANNED_PAGES = 8
 SHOW_GAMES = True
 # The Superhero game is hidden from the page for now; /generate still makes it when asked.
 SHOW_SUPERHERO = False
+# Key Facts: free cards on what the sheet prints in bold, as bullets or as numbered points, made without AI. The parent
+# can take out cards before printing.
+SHOW_FACTS = True
 # Detective case papers already made, by upload: "Preview" then "Create" for the same PDF costs one set of model calls.
 _CASE_PAPERS: OrderedDict[str, bytes] = OrderedDict()
 _CASE_PAPERS_KEPT = 16
@@ -44,6 +48,13 @@ app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
 )
+# Who runs the site, shown on its pages so a parent can ask a question or about their data.
+_env.globals["contact"] = {
+    "name": "Pooja Pendurkar",
+    "email": "mau.pooja51@gmail.com",
+    "city": "Mumbai",
+    "address": ("8 Amar Apartment, Manchubhai Road", "Malad East, Mumbai 400097"),
+}
 
 
 def _page(name: str, **ctx) -> HTMLResponse:
@@ -52,12 +63,15 @@ def _page(name: str, **ctx) -> HTMLResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index():
+    ai_cards = _ai_cards_on()
     return _page(
         "teaching_upload.html.j2",
         show_games=SHOW_GAMES,
         show_superhero=SHOW_SUPERHERO,
+        show_facts=SHOW_FACTS,
         detective_max_pages=C.detective_max_pages(),
-        ai_cards=_ai_cards_on(),
+        ai_cards=ai_cards,
+        sample_pages=len(_sample_pictures()) if SHOW_GAMES and ai_cards else 0,
     )
 
 
@@ -78,6 +92,7 @@ def _ai_service() -> str:
 def privacy():
     return _page(
         "privacy.html.j2",
+        show_facts=SHOW_FACTS,
         ai_cards=_ai_cards_on(),
         ai_service=_ai_service(),
         daily_limit=C.detective_daily_limit(),
@@ -102,9 +117,12 @@ def sample_sheet():
     return _sample_pdf("example-sheet.pdf", "learn_example_sheet.pdf")
 
 
-@app.get("/sample-case-papers.png")
-def sample_case_papers_picture():
-    return Response(_sample_picture(), media_type="image/png", headers=_SAMPLE_HEADERS)
+@app.get("/sample-case-papers-{page}.png")
+def sample_case_papers_picture(page: int):
+    pictures = _sample_pictures()
+    if not 1 <= page <= len(pictures):
+        raise HTTPException(404, "The sample has no such page.")
+    return Response(pictures[page - 1], media_type="image/png", headers=_SAMPLE_HEADERS)
 
 
 def _sample_pdf(name: str, filename: str) -> Response:
@@ -116,10 +134,11 @@ def _sample_pdf(name: str, filename: str) -> Response:
 
 
 @functools.cache
-def _sample_picture() -> bytes:
-    """The sample's first page as a picture for the home page, drawn once from the PDF."""
+def _sample_pictures() -> tuple[bytes, ...]:
+    """The sample's pages as pictures, drawn once from the PDF: the home page shows the first, and "Try it with our
+    example sheet" shows them all, since many phones can't show a PDF inside a page."""
     with pymupdf.open(SAMPLE / "case-papers.pdf") as document:
-        return document[0].get_pixmap(dpi=110).tobytes("png")
+        return tuple(page.get_pixmap(dpi=110).tobytes("png") for page in document)
 
 
 @app.get("/healthz")
@@ -144,7 +163,8 @@ def visual_library(region: str = "all"):
     return _page("visual_library.html.j2", visuals=list_visuals(region), region=region)
 
 
-def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[bytes, str]:
+def _read_upload(data: bytes, pages: str, output: str):
+    """Check an upload and read the pages chosen from it: their fact inventory, the page range and any warnings."""
     with pymupdf.open(stream=data, filetype="pdf") as document:
         metadata = document.metadata or {}
     if metadata.get("author") == "Learn Teaching Engine" and (metadata.get("title") or "").startswith(
@@ -171,8 +191,12 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         raise ValueError(
             "No readable text was found in the selected pages. Scanned PDFs need OCR before they can be used."
         )
+    return extract_facts(source.units), page_range, source.warnings
 
-    inventory = extract_facts(source.units)
+
+def _build_pdf(data: bytes, pages: str, output: str, standard: int, skip: frozenset[int] = frozenset()):
+    """The PDF for an upload and its file name. ``skip`` holds the Key Facts cards the parent took out."""
+    inventory, page_range, warnings = _read_upload(data, pages, output)
     notes: tuple[str, ...] = ()
     if output == "detective":
         pdf_bytes, note = _case_papers(data, inventory, page_range, standard)
@@ -181,20 +205,27 @@ def _build_pdf(data: bytes, pages: str, output: str, standard: int) -> tuple[byt
         notes = (note,) if note else ()
     if output == "lesson":
         lesson = create_teaching_lesson(inventory)
-        pdf_bytes = render_teaching_pdf(lesson, source.warnings)
-        filename = "learn_teaching_plan.pdf"
-    else:
-        if output not in {"study", "detective", "superhero"}:
-            raise ValueError("Choose study cards, Detective, Superhero, or lesson PDF.")
-        try:
-            pdf_bytes = render_printable_cards_pdf(
-                inventory, source_pdf=data, game_mode=output, pages=page_range, standard=standard, notes=notes
-            )
-        except ValueError:
-            raise
-        filename = "learn_study_cards.pdf" if output == "study" else f"learn_{output}_game.pdf"
+        return render_teaching_pdf(lesson, warnings), "learn_teaching_plan.pdf"
+    if output not in {"study", "detective", "superhero", "facts"}:
+        raise ValueError("Choose study cards, Detective, Superhero, Key Facts, or lesson PDF.")
+    pdf_bytes = render_printable_cards_pdf(
+        inventory,
+        source_pdf=data,
+        game_mode=output,
+        pages=page_range,
+        standard=standard,
+        notes=notes,
+        skip=skip if output == "facts" else frozenset(),
+    )
+    names = {"study": "learn_study_cards.pdf", "facts": "learn_key_facts.pdf"}
+    return pdf_bytes, names.get(output, f"learn_{output}_game.pdf")
 
-    return pdf_bytes, filename
+
+def _skipped(text: str) -> frozenset[int]:
+    """The card numbers a parent took out in the Key Facts preview, sent as "3,7,12"."""
+    if len(text) > 5000 or not re.fullmatch(r"\s*(?:\d{1,4}\s*(?:,\s*\d{1,4}\s*)*)?", text):
+        raise ValueError("The cards you took out could not be read. Open the preview and try again.")
+    return frozenset(int(number) for number in re.findall(r"\d+", text))
 
 
 def _case_paper_model():
@@ -300,15 +331,20 @@ def _scanned_pages(data: bytes, page_range: set[int] | None) -> list[int]:
         ]
 
 
-def _process_upload(pdf: UploadFile, pages: str, output: str, standard: int, inline: bool) -> Response:
+def _upload_bytes(pdf: UploadFile) -> bytes:
     data = pdf.file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, "PDF is larger than 30 MB")
+    return data
+
+
+def _process_upload(pdf: UploadFile, pages: str, output: str, standard: int, inline: bool, skip: str = "") -> Response:
+    data = _upload_bytes(pdf)
     if not data.startswith(b"%PDF"):
         return _page("teaching_result.html.j2", job=None, error="That file does not appear to be a PDF.", warnings=[])
 
     try:
-        pdf_bytes, filename = _build_pdf(data, pages, output, standard)
+        pdf_bytes, filename = _build_pdf(data, pages, output, standard, _skipped(skip))
     except (InputError, ExtractionError, ValueError) as error:
         page = _page("teaching_result.html.j2", job=None, error=str(error), warnings=[])
         # The preview reads the reason from this header, so the parent sees it instead of a generic message.
@@ -328,8 +364,9 @@ def generate(
     pages: str = Form(""),
     output: str = Form("detective"),
     standard: int = Form(8),
+    skip: str = Form(""),
 ):
-    return _process_upload(pdf, pages, output, standard, inline=False)
+    return _process_upload(pdf, pages, output, standard, inline=False, skip=skip)
 
 
 @app.post("/preview", response_class=HTMLResponse)
@@ -338,5 +375,32 @@ def preview(
     pages: str = Form(""),
     output: str = Form("detective"),
     standard: int = Form(8),
+    skip: str = Form(""),
 ):
-    return _process_upload(pdf, pages, output, standard, inline=True)
+    return _process_upload(pdf, pages, output, standard, inline=True, skip=skip)
+
+
+@app.post("/key-facts")
+def key_facts(pdf: UploadFile = File(...), pages: str = Form(""), standard: int = Form(8)):
+    """The Key Facts cards an upload makes, in print order, for the parent to look through before printing. The PDF
+    is made again from the upload with the cards they take out left out, so it holds only the engine's own cards."""
+    data = _upload_bytes(pdf)
+    if not data.startswith(b"%PDF"):
+        return JSONResponse({"error": "That file does not appear to be a PDF."}, status_code=422)
+    try:
+        inventory, page_range, _ = _read_upload(data, pages, "facts")
+        cards, notes = plan_printable_cards(inventory, data, "facts", page_range, standard)
+    except (InputError, ExtractionError, ValueError) as error:
+        return JSONResponse({"error": str(error)}, status_code=422)
+    shown = [
+        {
+            "number": number,
+            "about": card.about,
+            "question": card.question,
+            "clue": card.clue if card.image is None else "A picture from your sheet",
+            "answer": card.answer,
+            "page": card.page,
+        }
+        for number, card in enumerate(cards, start=1)
+    ]
+    return {"cards": shown, "notes": list(notes)}

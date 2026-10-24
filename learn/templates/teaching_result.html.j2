@@ -27,6 +27,7 @@
     .error { margin: 0 0 24px; padding: 12px 14px; border-radius: 12px; background: #fbeeea; color: #8b331c; }
     .button { display: inline-flex; align-items: center; min-height: 48px; padding: 12px 20px; border-radius: 13px; background: var(--forest); color: white; font-size: 15px; font-weight: 750; text-decoration: none; }
     .button:hover { background: var(--forest-light); }
+    .help { margin: 20px 0 0; color: var(--muted); font-size: 15px; }
   </style>
 </head>
 <body>
@@ -36,6 +37,7 @@
     <h1>We couldn’t make your study cards</h1>
     <p class="error">{{ error }}</p>
     <p><a class="button" id="try-again" href="/">Try again</a></p>
+    <p class="help">If this keeps happening, email <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>.</p>
     <script>
       // Going back keeps the chosen PDF and page range in the form when the browser still has that page.
       document.getElementById("try-again").addEventListener("click", (event) => {

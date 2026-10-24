@@ -70,7 +70,9 @@ python -m learn.teaching_engine path/to/curriculum.pdf --out teaching_lesson.jso
 
 `--ai` lets a model (Claude Haiku, directly or through June) choose the case file's cards for one sheet per run; code still builds every card from the sheet's words and checks it. See `.env.example` for the settings. It has not yet been run against a real model.
 
-This writes a source-linked JSON teaching scaffold. The standalone teaching web app offers ICSE Standard 7-9 Detective and Superhero card games (Standard 8 by default), plus the original lesson-plan PDF and a source-credited social-studies visual library at `/library`; it remains separate from the older printable-PDF command above.
+This writes a source-linked JSON teaching scaffold. The standalone teaching web app offers ICSE Standard 7-9 Detective cards and Key Facts cards (Standard 8 by default; the Superhero game can be switched back on), plus the original lesson-plan PDF and a source-credited social-studies visual library at `/library`; it remains separate from the older printable-PDF command above.
+
+Key Facts asks only about what a sheet marks to learn: the words it prints in bold are the answers, and sentences printed all in bold, bullet points and numbered points get the engine's usual cards. It uses no AI, and the page lets a parent take out cards before printing. On the repo's PDFs it asks 168 of the 169 bold terms printed in points. The one it misses is half of a chemical equation printed in bold, which no usual card asks either. These are synthetic or sample sheets, not proof of how well the cards teach.
 
 **Offline Teaching Engine web app:**
 

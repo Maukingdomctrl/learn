@@ -12,6 +12,7 @@ from test_evidence_cards import GOOD
 
 import learn.teaching_web as web
 from learn.llm import LLMError
+from learn.teaching_engine.cards import GAP
 from learn.teaching_engine.evidence_cards import TASK
 
 
@@ -23,10 +24,10 @@ def test_keyless_teaching_web_returns_printable_cards_without_saving_files(sampl
 
     page = client.get("/").text
     assert "No account or API key needed" in page
-    # The page offers the Detective game; Superhero is hidden for now.
+    # The page offers the Detective game and Key Facts, Detective first; Superhero is hidden for now.
     assert "<strong>Detective</strong>" in page and "<strong>Superhero</strong>" not in page
     assert "uperhero" not in re.sub(r"(?s)<script.*?</script>", "", page)  # nor in the page's wording
-    assert '<input type="hidden" name="output" value="detective">' in page
+    assert 'name="output" value="detective" checked' in page and 'name="output" value="facts"' in page
     assert '<dialog class="preview" id="output-preview"' in page
     assert 'aria-haspopup="dialog"' in page
     assert 'aria-controls="output-preview" hidden' in page
@@ -109,7 +110,7 @@ def test_teaching_web_rejects_unknown_game_mode(sample_pdf):
         )
 
     assert response.status_code == 200
-    assert "Choose study cards, Detective, Superhero, or lesson PDF." in response.text
+    assert "Choose study cards, Detective, Superhero, Key Facts, or lesson PDF." in response.text
 
 
 def test_teaching_web_rejects_bad_file_and_page_range(sample_pdf):
@@ -417,6 +418,7 @@ def test_the_upload_page_says_who_uploads():
 
 
 def test_a_single_game_is_shown_as_the_game_not_as_a_choice(monkeypatch):
+    monkeypatch.setattr(web, "SHOW_FACTS", False)
     page = TestClient(web.app).get("/").text
     assert "<fieldset>" not in page and 'type="radio"' not in page
     assert '<input type="hidden" name="output" value="detective">' in page and "Create my Detective cards" in page
@@ -424,6 +426,14 @@ def test_a_single_game_is_shown_as_the_game_not_as_a_choice(monkeypatch):
     monkeypatch.setattr(web, "SHOW_SUPERHERO", True)
     page = TestClient(web.app).get("/").text
     assert "<legend>3. Choose your adventure</legend>" in page and page.count('type="radio"') == 2
+
+
+def test_key_facts_is_offered_beside_detective():
+    page = TestClient(web.app).get("/").text
+    assert "<legend>3. Choose your cards</legend>" in page and page.count('type="radio"') == 2
+    assert 'name="output" value="detective" checked' in page and 'name="output" value="facts">' in page
+    assert "<strong>Key Facts</strong>" in page and "Detective or Key Facts?" in page
+    assert "Create my study cards" in page and 'id="skip-cards"' in page and 'id="card-picker" hidden' in page
 
 
 def _no_card_model(monkeypatch):
@@ -458,13 +468,29 @@ def test_the_home_page_sample_is_case_papers_made_from_the_example_sheet(monkeyp
     assert "The Case of the Green Kitchen" in papers[0].get_text() and "Answer Key" in key
     said = re.findall(r"Sheet says: p\. 1: (.+)", key)
     assert len(said) == 8 and all(line.strip() in sheet for line in said)
-    picture = client.get("/sample-case-papers.png")
-    assert picture.headers["content-type"] == "image/png" and picture.content.startswith(b"\x89PNG")
+    pictures = [client.get(f"/sample-case-papers-{page}.png") for page in range(1, papers.page_count + 1)]
+    assert all(p.headers["content-type"] == "image/png" and p.content.startswith(b"\x89PNG") for p in pictures)
+    assert client.get(f"/sample-case-papers-{papers.page_count + 1}.png").status_code == 404
 
     _card_model_key(monkeypatch)
-    assert 'src="/sample-case-papers.png"' in client.get("/").text
+    page = client.get("/").text
+    assert 'src="/sample-case-papers-1.png"' in page
+    # "Try it with our example sheet" opens the preview with every page of the sample as a picture.
+    assert 'id="try-sample"' in page and page.count('src="/sample-case-papers-') == 1 + papers.page_count
     _no_card_model(monkeypatch)  # without a card model the site prints basic cards, so the sample would mislead
-    assert 'id="sample"' not in client.get("/").text
+    page = client.get("/").text
+    assert 'id="sample"' not in page and 'id="try-sample"' not in page and 'id="sample-pages"' not in page
+
+
+def test_every_page_says_who_runs_learn_and_how_to_reach_them():
+    client = TestClient(web.app)
+    mail = 'href="mailto:mau.pooja51@gmail.com"'
+    home = client.get("/").text
+    assert "Learn is made by Pooja Pendurkar in Mumbai." in home and mail in home
+    assert mail in client.get("/library").text
+    privacy = client.get("/privacy").text
+    assert mail in privacy and "8 Amar Apartment, Manchubhai Road<br>Malad East, Mumbai 400097" in privacy
+    assert mail in client.post("/generate", files={"pdf": ("bad.pdf", b"not a pdf", "application/pdf")}).text
 
 
 def test_the_library_marks_the_chosen_topic():
@@ -474,3 +500,58 @@ def test_the_library_marks_the_chosen_topic():
     assert '<a href="/library?region=Indian%20Studies" aria-current="page">' in page
     assert page.count('aria-current="page">') == 1
     assert '<a href="/library" aria-current="page">' in client.get("/library", params={"region": "other"}).text
+
+
+def test_key_facts_are_listed_then_printed_without_the_cards_taken_out_and_never_ask_a_model(monkeypatch):
+    _card_model_key(monkeypatch)  # a key is set, yet Key Facts never asks a model
+    monkeypatch.setattr(web, "_case_papers", lambda *args: pytest.fail("Key Facts asked for case papers"))
+    client = TestClient(web.app)
+    upload = {"pdf": ("sheet.pdf", (web.SAMPLE / "example-sheet.pdf").read_bytes(), "application/pdf")}
+
+    listed = client.post("/key-facts", files=upload).json()
+    assert listed["notes"] == [] and len(listed["cards"]) == 8
+    assert listed["cards"][1] == {
+        "number": 2,
+        "about": "",
+        "question": "Which words fit the gaps?",
+        "clue": f"They use {GAP}, {GAP} and {GAP} from the air.",
+        "answer": "sunlight, water and carbon dioxide",
+        "page": 1,
+    }
+
+    response = client.post("/preview", data={"output": "facts", "skip": "2"}, files=upload)
+    assert response.headers["content-disposition"] == 'inline; filename="learn_key_facts.pdf"'
+    text = " ".join(" ".join(page.get_text().split()) for page in pymupdf.open(stream=response.content))
+    assert "KEY FACTS" in text and "They use" not in text and "Green plants make their own food" in text
+
+    response = client.post("/generate", data={"output": "facts"}, files=upload)
+    assert response.headers["content-disposition"] == 'attachment; filename="learn_key_facts.pdf"'
+    assert "They use" in "".join(page.get_text() for page in pymupdf.open(stream=response.content, filetype="pdf"))
+
+
+def test_key_facts_take_any_number_of_pages_and_say_what_went_wrong(monkeypatch):
+    _no_card_model(monkeypatch)
+    client = TestClient(web.app)
+    document = pymupdf.open()
+    for number in range(1, 8):
+        page = document.new_page()
+        page.insert_text((60, 80), f"River {number}", fontsize=16)
+        page.insert_text((60, 120), f"River {number} flows for about {number * 100} km to the sea.", fontsize=11)
+    upload = {"pdf": ("notes.pdf", document.tobytes(), "application/pdf")}
+
+    assert client.post("/preview", data={"output": "facts"}, files=upload).headers["content-type"] == "application/pdf"
+    detective = client.post("/preview", data={"output": "detective"}, files=upload)
+    assert "up to 5 pages" in detective.headers["x-learn-error"]
+
+    every = client.post("/preview", data={"output": "facts", "skip": ",".join(map(str, range(1, 60)))}, files=upload)
+    assert "Keep at least one card" in every.headers["x-learn-error"]
+    garbled = client.post("/preview", data={"output": "facts", "skip": "1; 2"}, files=upload)
+    assert "could not be read" in garbled.headers["x-learn-error"]
+    not_pdf = client.post("/key-facts", files={"pdf": ("notes.pdf", b"not a pdf", "application/pdf")})
+    assert not_pdf.status_code == 422 and not_pdf.json() == {"error": "That file does not appear to be a PDF."}
+
+
+def test_the_privacy_page_says_key_facts_use_no_ai(monkeypatch):
+    _card_model_key(monkeypatch)
+    page = TestClient(web.app).get("/privacy").text
+    assert "Key Facts cards never use AI" in page
