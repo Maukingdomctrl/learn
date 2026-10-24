@@ -458,13 +458,29 @@ def test_the_home_page_sample_is_case_papers_made_from_the_example_sheet(monkeyp
     assert "The Case of the Green Kitchen" in papers[0].get_text() and "Answer Key" in key
     said = re.findall(r"Sheet says: p\. 1: (.+)", key)
     assert len(said) == 8 and all(line.strip() in sheet for line in said)
-    picture = client.get("/sample-case-papers.png")
-    assert picture.headers["content-type"] == "image/png" and picture.content.startswith(b"\x89PNG")
+    pictures = [client.get(f"/sample-case-papers-{page}.png") for page in range(1, papers.page_count + 1)]
+    assert all(p.headers["content-type"] == "image/png" and p.content.startswith(b"\x89PNG") for p in pictures)
+    assert client.get(f"/sample-case-papers-{papers.page_count + 1}.png").status_code == 404
 
     _card_model_key(monkeypatch)
-    assert 'src="/sample-case-papers.png"' in client.get("/").text
+    page = client.get("/").text
+    assert 'src="/sample-case-papers-1.png"' in page
+    # "Try it with our example sheet" opens the preview with every page of the sample as a picture.
+    assert 'id="try-sample"' in page and page.count('src="/sample-case-papers-') == 1 + papers.page_count
     _no_card_model(monkeypatch)  # without a card model the site prints basic cards, so the sample would mislead
-    assert 'id="sample"' not in client.get("/").text
+    page = client.get("/").text
+    assert 'id="sample"' not in page and 'id="try-sample"' not in page and 'id="sample-pages"' not in page
+
+
+def test_every_page_says_who_runs_learn_and_how_to_reach_them():
+    client = TestClient(web.app)
+    mail = 'href="mailto:mau.pooja51@gmail.com"'
+    home = client.get("/").text
+    assert "Learn is made by Pooja Pendurkar in Mumbai." in home and mail in home
+    assert mail in client.get("/library").text
+    privacy = client.get("/privacy").text
+    assert mail in privacy and "8 Amar Apartment, Manchubhai Road<br>Malad East, Mumbai 400097" in privacy
+    assert mail in client.post("/generate", files={"pdf": ("bad.pdf", b"not a pdf", "application/pdf")}).text
 
 
 def test_the_library_marks_the_chosen_topic():

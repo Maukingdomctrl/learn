@@ -44,6 +44,13 @@ app = FastAPI(title="Learn Teaching Engine", docs_url=None, redoc_url=None)
 _env = Environment(
     loader=FileSystemLoader(str(Path(__file__).parent / "templates")), autoescape=select_autoescape(["j2", "html"])
 )
+# Who runs the site, shown on its pages so a parent can ask a question or about their data.
+_env.globals["contact"] = {
+    "name": "Pooja Pendurkar",
+    "email": "mau.pooja51@gmail.com",
+    "city": "Mumbai",
+    "address": ("8 Amar Apartment, Manchubhai Road", "Malad East, Mumbai 400097"),
+}
 
 
 def _page(name: str, **ctx) -> HTMLResponse:
@@ -52,12 +59,14 @@ def _page(name: str, **ctx) -> HTMLResponse:
 
 @app.get("/", response_class=HTMLResponse)
 def index():
+    ai_cards = _ai_cards_on()
     return _page(
         "teaching_upload.html.j2",
         show_games=SHOW_GAMES,
         show_superhero=SHOW_SUPERHERO,
         detective_max_pages=C.detective_max_pages(),
-        ai_cards=_ai_cards_on(),
+        ai_cards=ai_cards,
+        sample_pages=len(_sample_pictures()) if SHOW_GAMES and ai_cards else 0,
     )
 
 
@@ -102,9 +111,12 @@ def sample_sheet():
     return _sample_pdf("example-sheet.pdf", "learn_example_sheet.pdf")
 
 
-@app.get("/sample-case-papers.png")
-def sample_case_papers_picture():
-    return Response(_sample_picture(), media_type="image/png", headers=_SAMPLE_HEADERS)
+@app.get("/sample-case-papers-{page}.png")
+def sample_case_papers_picture(page: int):
+    pictures = _sample_pictures()
+    if not 1 <= page <= len(pictures):
+        raise HTTPException(404, "The sample has no such page.")
+    return Response(pictures[page - 1], media_type="image/png", headers=_SAMPLE_HEADERS)
 
 
 def _sample_pdf(name: str, filename: str) -> Response:
@@ -116,10 +128,11 @@ def _sample_pdf(name: str, filename: str) -> Response:
 
 
 @functools.cache
-def _sample_picture() -> bytes:
-    """The sample's first page as a picture for the home page, drawn once from the PDF."""
+def _sample_pictures() -> tuple[bytes, ...]:
+    """The sample's pages as pictures, drawn once from the PDF: the home page shows the first, and "Try it with our
+    example sheet" shows them all, since many phones can't show a PDF inside a page."""
     with pymupdf.open(SAMPLE / "case-papers.pdf") as document:
-        return document[0].get_pixmap(dpi=110).tobytes("png")
+        return tuple(page.get_pixmap(dpi=110).tobytes("png") for page in document)
 
 
 @app.get("/healthz")

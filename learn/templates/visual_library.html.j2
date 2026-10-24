@@ -40,6 +40,7 @@
     .topic, .region, .credits, .empty { color: var(--muted); }
     .region { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .credits { margin-top: 12px; font-size: 14px; }
+    .site-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 20px; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
   </style>
 </head>
 <body>
@@ -74,6 +75,10 @@
     <p class="empty">No visuals for this topic yet.</p>
     {% endfor %}
   </section>
+  <footer class="site-footer">
+    <span>Learn is made by {{ contact.name }} in {{ contact.city }}. <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></span>
+    <a href="/privacy">Privacy and your PDF</a>
+  </footer>
 </main>
 </body>
 </html>

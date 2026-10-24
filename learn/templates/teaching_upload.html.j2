@@ -516,6 +516,8 @@
     }
 
     .upload small { color: var(--muted); font-size: 13px; }
+    .try-sample { margin: 10px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
+    .try-sample a { padding-block: 6px; color: var(--forest-light); font-weight: 750; white-space: nowrap; }
 
     input[type="text"] {
       width: 100%;
@@ -828,6 +830,9 @@
       background: white;
     }
 
+    .preview-pages { display: grid; gap: 16px; }
+    .preview-pages img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; }
+
     .preview-loading {
       height: 3px;
       overflow: hidden;
@@ -1008,6 +1013,12 @@
               aria-describedby="file-help file-name">
           </div>
 
+          {% if show_games and ai_cards %}
+          <p class="try-sample">
+            No PDF to hand? <a href="/sample-case-papers.pdf" id="try-sample">Try it with our example sheet</a>
+          </p>
+          {% endif %}
+
           <div class="field">
             <label class="field-label" for="pages">
               2. Pick your pages <span class="optional">(optional)</span>
@@ -1118,7 +1129,7 @@
         <p class="hint">When the day's AI cards are used up, you get basic Detective cards instead, with a note saying why.</p>
       </div>
       <a class="proof-page" href="/sample-case-papers.pdf">
-        <img src="/sample-case-papers.png" width="910" height="1287" loading="lazy"
+        <img src="/sample-case-papers-1.png" width="910" height="1287" loading="lazy"
           alt="Page 1 of the sample case paper, The Case of the Green Kitchen: eight clue cards, each a short scene with a question">
       </a>
     </section>
@@ -1234,7 +1245,10 @@
   </main>
 
   <footer class="site-footer container">
-    <span>Learn Teaching Engine · Make room for curiosity.</span>
+    <span>
+      Learn is made by {{ contact.name }} in {{ contact.city }}.
+      <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+    </span>
     <a href="/blank-cards" download>Blank study cards (PDF) ↓</a>
     <a href="/library">Study Visual Library ↗</a>
     <a href="/privacy">Privacy and your PDF</a>
@@ -1258,6 +1272,14 @@
         aria-hidden="true" hidden></div>
       <iframe class="preview-frame" id="preview-frame"
         title="Generated study cards PDF preview" src="about:blank"></iframe>
+      {% if sample_pages %}
+      <div class="preview-pages" id="sample-pages" hidden>
+        {% for page in range(1, sample_pages + 1) %}
+        <img src="/sample-case-papers-{{ page }}.png" width="910" height="1287" loading="lazy"
+          alt="Sample case paper, page {{ page }} of {{ sample_pages }}">
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
 
     <div class="preview-foot">
@@ -1285,6 +1307,10 @@
       const status = $("preview-status");
       const loading = $("preview-loading");
       const download = $("download-preview");
+      const trySample = $("try-sample");
+      const samplePages = $("sample-pages");
+      const doneButton = $("done-preview");
+      let opener = previewButton;
 
       const MAX_BYTES = 30 * 1024 * 1024;
       let previewURL = null;
@@ -1434,12 +1460,12 @@
       }
 
       $("close-preview").addEventListener("click", closeDialog);
-      $("done-preview").addEventListener("click", closeDialog);
+      doneButton.addEventListener("click", closeDialog);
 
       dialog.addEventListener("close", () => {
         cancelRequest();
         document.body.classList.remove("modal-open");
-        previewButton.focus();
+        opener.focus();
       });
 
       // Native dialog supplies modal focus handling and Escape-to-close.
@@ -1454,10 +1480,37 @@
         if (outside) closeDialog();
       });
 
+      // The dialog shows a PDF made from the upload, or the sample's pages as pictures.
+      function showSample(on) {
+        frame.hidden = on;
+        if (samplePages) samplePages.hidden = !on;
+        doneButton.textContent = on ? "Close" : "Back to my cards";
+        $("preview-title").textContent = on ? "A sample case paper" : "Your print preview";
+      }
+
+      if (trySample && samplePages && typeof dialog.showModal === "function") {
+        trySample.addEventListener("click", (event) => {
+          event.preventDefault();
+          invalidatePreview();
+          opener = trySample;
+          showSample(true);
+          download.href = trySample.href;
+          download.download = "learn_sample_case_papers.pdf";
+          download.hidden = false;
+          status.textContent =
+            "This sample was made from our example sheet, “How green plants make food”. " +
+            "Add your own PDF to make cards from your notes.";
+          document.body.classList.add("modal-open");
+          dialog.showModal();
+        });
+      }
+
       previewButton.addEventListener("click", async () => {
         if (!validateForm()) return;
 
         invalidatePreview();
+        opener = previewButton;
+        showSample(false);
 
         const version = requestVersion;
         const activeController = new AbortController();
