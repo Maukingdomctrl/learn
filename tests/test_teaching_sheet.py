@@ -97,7 +97,8 @@ def test_cards_from_a_sheet_ask_who_fill_gaps_compare_and_reuse_its_questions():
     )
     assert any(card.clue == "Championed Swaraj (Self-Rule), Swadeshi, and Boycott" for card in by_kind["riddle"])
     born = next(card for card in by_kind["gap"] if card.answer == "1 August 1920")
-    assert born.question == "Which date fits the gap?" and born.about == "Lokmanya Bal Gangadhar Tilak"
+    # His name answers the "Who is this?" card, so the label says what the heading says about him instead.
+    assert born.question == "Which date fits the gap?" and born.about == "Leader of Assertive Nationalism"
     titles = by_kind["compare"][0]
     assert titles.question == "What is each one's Popular Title?"
     assert titles.answer.splitlines()[0] == "Dadabhai Naoroji: Grand Old Man of India"

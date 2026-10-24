@@ -8,7 +8,7 @@ behind a gap; the only added words are the fixed questions and labels.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 
 import pymupdf
@@ -922,7 +922,38 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
         elif item.kind == "tip" and (tip := _tip_card(item, standard)) is not None:
             cards.append(tip)
     cards.extend(_picture_cards(sheet, headings, standard))
-    return [card for card in cards if _readable(card.clue) and _readable(card.answer)]
+    readable = [card for card in cards if _readable(card.clue) and _readable(card.answer)]
+    return _no_answer_labels(readable, headings)
+
+
+def _no_answer_labels(cards: list[Card], headings: dict[str, Heading]) -> list[Card]:
+    """A card's label never prints another card's answer: the cut-out cards are played together, so "RAJA RAM MOHAN
+    ROY" over a date gap would answer the "Who is this?" card about him. Such a label says what the heading says about
+    the topic instead ("Social reformer"), or nothing when that shows an answer too."""
+    answers = {words for card in cards if (words := _plain_words(card.answer))}
+
+    def shows_answer(label: str) -> bool:
+        return any(f" {answer} " in f" {_plain_words(label)} " for answer in answers)
+
+    described = {heading.name: _description(heading.after) for heading in headings.values()}
+    labelled = []
+    for card in cards:
+        if card.about and shows_answer(card.about):
+            label = described.get(card.about, "")
+            card = replace(card, about=label if label and not shows_answer(label) else "")
+        labelled.append(card)
+    return labelled
+
+
+def _description(after: str) -> str:
+    """What a heading says about its topic, as a short label: "– Social reformer (1772–1833)" gives "Social reformer".
+    Life years are left out, since a card may ask for one of them."""
+    text = re.sub(r"\s*\([^)]*\d[^)]*\)", "", after).strip(" –—-:")
+    return text if _readable(text) and len(text.split()) <= 8 else ""
+
+
+def _plain_words(text: str) -> str:
+    return " ".join(re.findall(r"\w+", text.casefold()))
 
 
 def _picture_cards(sheet: Sheet, headings: dict[str, Heading], standard: int) -> list[Card]:

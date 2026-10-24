@@ -1,3 +1,4 @@
+import re
 import sys
 from pathlib import Path
 from time import perf_counter
@@ -342,6 +343,29 @@ def test_abstract_topic_titles_and_unreadable_process_lines_are_not_printed_as_c
     assert cards == []
 
 
+def _sample_cards(name: str):
+    pdf = (SAMPLES / f"{name}-sheet.pdf").read_bytes()
+    return plan_cards(read_sheet(extract_facts(extract(pdf).units), pdf))
+
+
+def _words(text: str) -> str:
+    return " ".join(re.findall(r"\w+", text.casefold()))
+
+
+def test_no_card_label_gives_away_another_cards_answer():
+    """The cards are cut out and played together, so a card's label must not print another card's answer."""
+    decks = {name: _sample_cards(name) for name in ("people", "civics", "industries", "processes", "sample")}
+    for name, cards in decks.items():
+        answers = {_words(card.answer) for card in cards} - {""}
+        shown = [card.about for card in cards if any(f" {a} " in f" {_words(card.about)} " for a in answers)]
+        assert shown == [], name
+
+    # The label says what the heading says about the topic, without its name or life years.
+    assert next(card for card in decks["people"] if card.answer == "1828").about == "Social reformer"
+    term = next(card for card in decks["civics"] if card.clue.startswith("Term: ______ years, unless"))
+    assert term.about == "Lower House of Parliament"
+
+
 def test_uk_sheet_cards_drop_list_numbers_titles_footers_and_table_fragments():
     cards = _cards(UK_SHEET)
     shown = [text for card in cards for text in (card.clue, card.answer, card.about)]
@@ -356,7 +380,8 @@ def test_uk_sheet_cards_drop_list_numbers_titles_footers_and_table_fragments():
     names = {card.answer: card.clue for card in cards if card.kind == "name"}
     assert names["LONDON"] == "______ – Capital of the United Kingdom & England"
     gaps = {card.answer: card for card in cards if card.kind == "gap"}
-    assert gaps["18th"].question == "Which century fits the gap?" and gaps["18th"].about == "BIRMINGHAM"
+    # No label: "BIRMINGHAM" answers the riddles about it, and its heading's "West Midlands" a practice question.
+    assert gaps["18th"].question == "Which century fits the gap?" and gaps["18th"].about == ""
     assert "______ visitors" in gaps["520,000"].clue
     assert any(card.kind == "summary" and card.answer == "Belfast" for card in cards)
 
