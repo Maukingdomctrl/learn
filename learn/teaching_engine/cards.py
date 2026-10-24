@@ -69,6 +69,8 @@ _QUESTIONS = {
     "sort": ("Which one is it: {}?", "Which one is it: {}?", "Classify it: {}?"),
     "which": ("Which {} is it?", "Which {} is it?", "Identify the {}."),
     "year_of": ("Which year is it?", "Which year goes with it?", "Give its year."),
+    "when": ("When was it?", "When did it happen?", "State when it happened."),
+    "when_day": ("When is it?", "When is it?", "Give its date."),
     "order": ("Put them in order.", "Put them in time order.", "Arrange them chronologically."),
 }
 
@@ -858,7 +860,11 @@ def _key_fact_cards(item: Item, heading: Heading | None, pieces: list[str], term
     for index, (piece, (start, end)) in enumerate(zip(pieces, places, strict=True)):
         here = [group for group, owner in zip(groups, owners, strict=True) if owner == index]
         if here:
-            cards.extend(card for group in here if (card := _bold_card(item, about, group, (start, end), standard)))
+            # The whole point gives a gap more to go on, unless it would print the answers of its other sentences.
+            alone = len(here) == len(groups)
+            for group in here:
+                card = _bold_card(item, about, group, (start, end), alone, standard)
+                cards.extend([card] if card is not None else [])
         elif listed or _bold_share(text, start, end, spans) >= 0.7:
             # No riddle ("What is this about?"): its answer is the topic, which every other card's label then
             # could not show.
@@ -964,26 +970,51 @@ def _bold_groups(text: str, terms: list[tuple[int, int]]) -> list[list[tuple[int
 
 
 def _bold_card(
-    item: Item, about: str, group: list[tuple[int, int]], place: tuple[int, int], standard: int
+    item: Item, about: str, group: list[tuple[int, int]], place: tuple[int, int], alone: bool, standard: int
 ) -> Card | None:
-    """The card for one bold word or list: the point with the words hidden, or a bold label's meaning to name."""
+    """The card for one bold word or list: the point with the words hidden, or a bold label's meaning to name.
+
+    The clue is the sentence the words are printed in, or the whole point when it is short and its other sentences
+    print no bold words of their own (their cards' answers)."""
     text = item.text
     first, last = group[0][0], group[-1][1]
     words = [text[start:end] for start, end in group]
     label = _LEADING_LABEL.match(text, last) if len(group) == 1 and first == 0 else None
     if label is not None:
         # "Evaporation: Heat from the Sun changes …" asks for the term its meaning describes.
-        kind, question, clue = "term", _ask("term", standard), _blank(text[label.end() :], words)
+        meaning = text[label.end() :]
+        kind, question, clue = "term", _label_question(words[0], meaning, standard), _blank(meaning, words)
     else:
         start, end = place
         inside = start <= first and last <= end
-        source = text[start:end] if inside and len(text) > KEY_FACT_CLUE else text
+        source = text if (alone and len(text) <= KEY_FACT_CLUE) or not inside else text[start:end]
         kind, question, clue = "gap", _bold_question(text, group, place, standard), _blank(source, words)
         if GAP not in clue:
             return None
     if len(clue.replace(GAP, " ").split()) < 2:
         return None  # nothing left to go on
     return _card(kind, question, clue, text[first:last], item, about, source=text)
+
+
+# A date with its year, or a year: "9 December 1946", "December 9, 1946", "June 1757", "1857", "1920–22", "326 BCE".
+_DAY_TEXT = rf"\d{{1,2}}(?:st|nd|rd|th)?\s+(?:{_MONTHS})|(?:{_MONTHS})\s+\d{{1,2}}(?:st|nd|rd|th)?"
+_WHEN = re.compile(
+    rf"(?:(?:{_DAY_TEXT}),?\s+|(?:{_MONTHS})\s+)?"
+    r"(?:c\.\s*)?(?:1[0-9]{3}|20[0-9]{2}|\d{1,4}\s*(?:BCE|BC|CE|AD))(?:\s*[–—-]\s*\d{2,4})?",
+    re.I,
+)
+_DAY_OF_YEAR = re.compile(_DAY_TEXT, re.I)  # "26 January", which comes round every year
+_INITIALS = re.compile(r"\b(?:[A-Z]\.\s?){1,3}[A-Z][a-z]")  # "B. R. Ambedkar", "A. O. Hume"
+
+
+def _label_question(term: str, meaning: str, standard: int) -> str:
+    """What a bold label asks of its meaning: "When …?" for a date, "Who …?" for a person, else its name."""
+    if _WHEN.fullmatch(term):
+        return _ask("when", standard)
+    if _DAY_OF_YEAR.fullmatch(term):
+        return _ask("when_day", standard)
+    person = _PERSON_TITLE.match(term) or _INITIALS.search(term) or _PERSON_WORDS.search(meaning)
+    return _ask("who" if person and not _NOT_PERSON.search(term) else "term", standard)
 
 
 def _bold_question(text: str, group: list[tuple[int, int]], place: tuple[int, int], standard: int) -> str:

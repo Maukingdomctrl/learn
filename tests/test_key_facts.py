@@ -242,3 +242,49 @@ def test_a_sheet_that_marks_nothing_gets_cards_for_every_line_with_a_note_saying
     marked = _sheet_pdf([*lines, [("• The ", False), ("Yamuna", True), (" joins the Ganga at Prayagraj.", False)]])
     cards, notes = plan_printable_cards(extract_facts(extract(marked).units), marked, "facts")
     assert [card.answer for card in cards] == ["Yamuna"] and UNMARKED_NOTE not in notes
+
+
+def _dates_sheet() -> bytes:
+    return _sheet_pdf(
+        [
+            "The Constituent Assembly",
+            [("The Assembly first met on ", False), ("9 December 1946", True), (".", False)],
+            "Adoption of the Constitution",
+            [
+                ("The Constituent Assembly adopted the Constitution on ", False),
+                ("26 November 1949", True),
+                (".", False),
+            ],
+            [("It came into effect on ", False), ("26 January 1950", True), (", when India became a republic.", False)],
+            "Key Dates",
+            [("• ", False), ("9 December 1946", True), (" – First meeting of the Constituent Assembly", False)],
+            [("• ", False), ("Dr. B. R. Ambedkar", True), (" – Chairman of the Drafting Committee", False)],
+            [("• ", False), ("26 January", True), (" – Republic Day", False)],
+            [("• ", False), ("Evaporation:", True), (" Heat from the Sun changes water into water vapour.", False)],
+            "Republic Day",
+            [("The Constitution was written by the Assembly. It came into effect on ", False)]
+            + [("26 January 1950", True), (".", False)],
+        ]
+    )
+
+
+def test_a_bold_date_label_asks_when_and_a_bold_name_asks_who():
+    cards = _key_facts(_dates_sheet())
+    labels = {card.answer: (card.question, card.clue) for card in cards if card.kind == "term"}
+
+    assert labels == {
+        "9 December 1946": ("When did it happen?", "First meeting of the Constituent Assembly"),
+        "Dr. B. R. Ambedkar": ("Who is this?", "Chairman of the Drafting Committee"),
+        "26 January": ("When is it?", "Republic Day"),  # a day that comes round every year
+        "Evaporation": ("What is it called?", "Heat from the Sun changes water into water vapour."),
+    }
+
+
+def test_a_gap_shows_its_own_sentence_when_the_point_has_other_bold_answers():
+    clues = [card.clue for card in _key_facts(_dates_sheet()) if card.kind == "gap"]
+
+    # Each date's card shows only its sentence, so neither prints the other's answer.
+    assert f"The Constituent Assembly adopted the Constitution on {GAP}." in clues
+    assert f"It came into effect on {GAP}, when India became a republic." in clues
+    # With one bold answer, the whole point is shown: its first sentence says what "It" is.
+    assert f"The Constitution was written by the Assembly. It came into effect on {GAP}." in clues
