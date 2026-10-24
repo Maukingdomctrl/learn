@@ -22,7 +22,8 @@ fi
 
 # Cloud images ship Chromium under /opt/pw-browsers; Playwright's own download is disabled there,
 # so point Learn's renderer at the preinstalled browser instead of running `playwright install`.
-chrome="$(ls -d /opt/pw-browsers/chromium-*/chrome-linux/chrome 2>/dev/null | sort -V | tail -n 1 || true)"
+# Older images keep it in chrome-linux/, newer ones in chrome-linux64/.
+chrome="$(ls -d /opt/pw-browsers/chromium-*/chrome-linux*/chrome 2>/dev/null | sort -V | tail -n 1 || true)"
 
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   {
