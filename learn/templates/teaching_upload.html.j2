@@ -766,7 +766,7 @@
     .preview {
       position: fixed;
       inset: 0 0 0 auto;
-      width: min(700px, 100%);
+      width: min(100%, max(700px, 75vw));  /* three quarters of a wide screen: room to look through the cards */
       max-width: 100%;
       height: 100%;
       height: 100dvh;
@@ -866,7 +866,14 @@
       background: #fff8e6;
       font-size: 13px;
     }
-    .pick-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .pick-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
 
     .pick-card {
       position: relative;
@@ -1117,20 +1124,11 @@
           <fieldset>
             <legend>{% if show_superhero %}3. Choose your adventure{% else %}3. Choose your cards{% endif %}</legend>
             <div class="game-grid">
-              <label class="game-option">
-                <input type="radio" name="output" value="detective" checked>
-                <span class="game-tile">
-                  <span class="game-symbol" aria-hidden="true">⌕</span>
-                  <span>
-                    <strong>Detective</strong>
-                    <small>{% if show_facts %}Story clues to solve{% else %}Follow the clues{% endif %}</small>
-                  </span>
-                </span>
-              </label>
-
+              {# Key Facts comes first and is chosen to start with: it needs no AI, so nothing is spent on a model
+                 unless a parent picks Detective. #}
               {% if show_facts %}
               <label class="game-option">
-                <input type="radio" name="output" value="facts">
+                <input type="radio" name="output" value="facts" checked>
                 <span class="game-tile">
                   <span class="game-symbol" aria-hidden="true">★</span>
                   <span>
@@ -1140,6 +1138,17 @@
                 </span>
               </label>
               {% endif %}
+
+              <label class="game-option">
+                <input type="radio" name="output" value="detective"{% if not show_facts %} checked{% endif %}>
+                <span class="game-tile">
+                  <span class="game-symbol" aria-hidden="true">⌕</span>
+                  <span>
+                    <strong>Detective</strong>
+                    <small>{% if show_facts %}Story clues to solve{% else %}Follow the clues{% endif %}</small>
+                  </span>
+                </span>
+              </label>
 
               {% if show_superhero %}
               <label class="game-option">
@@ -1253,9 +1262,9 @@
           <h3>Make it a mission</h3>
           <p>
             {% if show_superhero %}Pick Detective or Superhero. Preview your question cards
-            and check that the content matches your lesson.{% elif show_facts %}Pick Detective for a case to solve,
-            or Key Facts for quick questions on what your sheet marks to learn. Preview them, and take out any Key
-            Facts card you don't want.{% elif show_games %}Your cards come as a Detective case to
+            and check that the content matches your lesson.{% elif show_facts %}Key Facts asks quick questions on what
+            your sheet marks to learn, and you can take out any card you don't want. Or pick Detective for a case to
+            solve. Preview your cards before you print.{% elif show_games %}Your cards come as a Detective case to
             solve. Preview them and check that the content matches your lesson.{% else %}Preview your question cards
             and check that the content matches your lesson.{% endif %}
           </p>
@@ -1294,12 +1303,12 @@
 
         {% if show_games and show_facts %}
         <details>
-          <summary>Detective or Key Facts?</summary>
+          <summary>Key Facts or Detective?</summary>
           <p>
-            Detective turns your sheet into clue cards, each a short scene to solve.{% if ai_cards %} An AI writes
-            them, so there are a limited number each day.{% endif %} Key Facts asks about the words your sheet prints
-            in bold, its bullet points and its numbered points, with the answer word for word from the sheet. It uses
-            no AI, has no daily limit, and lets you take out any card before you print.
+            Key Facts asks about the words your sheet prints in bold, its bullet points and its numbered points, with
+            the answer word for word from the sheet. It uses no AI, has no daily limit, and lets you take out any card
+            before you print. Detective turns your sheet into clue cards, each a short scene to solve.{% if ai_cards %}
+            An AI writes them, so there are a limited number each day.{% endif %}
           </p>
         </details>
         {% endif %}
