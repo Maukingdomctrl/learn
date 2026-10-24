@@ -54,7 +54,8 @@
       <li>No account and no sign-up. Learn sets no cookies.</li>
       <li>Your PDF is read on our server to make your cards. It isn't saved.</li>
       {% if ai_cards %}
-      <li>To write Detective cards, the text of the pages you choose is sent to an AI model.</li>
+      <li>To write Detective cards, the text of the pages you choose is sent to an AI model.{% if show_facts %} Key
+        Facts cards are made on our server without AI.{% endif %}</li>
       {% else %}
       <li>No AI model is used right now: your cards are made by Learn's own rules on our server.</li>
       {% endif %}
@@ -72,6 +73,9 @@
   <p>To write the clue cards, the text of the pages you choose is sent to {{ ai_service }}. The PDF file itself isn't sent, and nothing about you is sent with the text.</p>
   <p>The finished cards, not your PDF, stay in the server's memory for a short time, so previewing and then downloading the same PDF doesn't ask the AI twice. Only the {{ kept }} most recent are kept, and they are gone when the server restarts.</p>
   <p>Up to {{ daily_limit }} uploads a day get AI-written cards. After that, or if the AI can't be reached, you get basic Detective cards made on our server, with a note on the cards saying why.</p>
+  {% if show_facts %}
+  <p>Key Facts cards never use AI. To let you take out cards before printing, your browser sends your PDF once to list the cards and again to make the PDF. Neither is kept.</p>
+  {% endif %}
   {% else %}
   <h2>AI</h2>
   <p>The site isn't set up to use an AI model right now, so the text of your PDF stays on our server.</p>

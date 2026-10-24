@@ -622,6 +622,15 @@ def test_headers_printed_on_every_page_are_dropped_but_numbered_questions_stay()
     assert [p.text for p in _without_running_lines(paragraphs)] == ["Question 1", "Question 2"]
 
 
+def test_a_range_is_one_answer():
+    cards = _cards([(1, "• The Right to Education covers children aged 6–14 years.")])
+    gap = next(card for card in cards if card.kind == "gap")
+    assert gap.answer == "6–14" and gap.clue == f"The Right to Education covers children aged {GAP} years."
+
+    cards = _cards([(1, "• The Right to Education covers children for 14 years.")])
+    assert next(card for card in cards if card.kind == "gap").answer == "14"  # one number is still one number
+
+
 def test_a_chapter_title_is_not_a_riddle_answer():
     rows = [
         (1, "Ratios Compare Quantities"),

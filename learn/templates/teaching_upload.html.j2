@@ -1,3 +1,5 @@
+{#- A choice of cards is offered when more than one kind is on. -#}
+{%- set choose = show_games and (show_superhero or show_facts) -%}
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,7 +10,7 @@
   <title>PDF to Printable Study Cards | Learn</title>
   <meta
     name="description"
-    content="{% if show_superhero %}Turn a curriculum PDF into printable study cards for revision. Choose a Detective or Superhero game, preview your cards, and print.{% else %}Turn a curriculum PDF into printable Detective clue cards for revision. Preview them, print them and solve the case.{% endif %} No sign-up."
+    content="{% if show_superhero %}Turn a curriculum PDF into printable study cards for revision. Choose a Detective or Superhero game, preview your cards, and print.{% elif show_facts %}Turn a curriculum PDF into printable revision cards: Detective clue cards to solve, or free Key Facts cards on the sheet's bold words and key points.{% else %}Turn a curriculum PDF into printable Detective clue cards for revision. Preview them, print them and solve the case.{% endif %} No sign-up."
   >
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://learn.mauforge.com/">
@@ -850,6 +852,79 @@
       animation: loading 1.2s ease-in-out infinite;
     }
 
+    /* ---------- Key Facts: take out cards before printing ---------- */
+    .picker { display: grid; gap: 14px; }
+    .pick-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; }
+    .pick-count { margin: 0; font-size: 15px; font-weight: 750; }
+    .pick-notes {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding: 12px 14px 12px 30px;
+      border: 1px solid #ead7a8;
+      border-radius: 13px;
+      background: #fff8e6;
+      font-size: 13px;
+    }
+    .pick-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+
+    .pick-card {
+      position: relative;
+      padding: 14px 62px 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: white;
+    }
+
+    .pick-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 10px;
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .pick-number { color: var(--forest); }
+    .pick-clue { margin: 0; font-size: 15px; font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-line; }
+    .pick-question { margin: 7px 0 0; color: var(--forest-light); font-size: 13px; font-weight: 750; }
+    .pick-answer { margin: 3px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+    .pick-answer strong { color: var(--ink); }
+
+    .pick-remove {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      color: var(--muted);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background .2s, border-color .2s, color .2s;
+    }
+
+    .pick-remove:hover { border-color: #e7b7a8; background: #fbeeea; color: #8b331c; }
+
+    .link-button {
+      padding: 10px 0;
+      border: 0;
+      background: none;
+      color: var(--forest-light);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      cursor: pointer;
+    }
+
     /* ---------- Motion ---------- */
     /* The sample cards float once and stop: decorative motion beside the form ends within five seconds. */
     @keyframes bob { 50% { translate: 0 -9px; } }
@@ -945,7 +1020,8 @@
         <p class="intro">
           Less staring at notes. More figuring things out.
           Turn your curriculum PDF into printable question cards,
-          then solve a mystery{% if show_superhero %} or take on a superhero mission{% endif %}.
+          then solve a mystery{% if show_superhero %} or take on a superhero mission{% elif show_facts %} or
+          quiz yourself on the key facts{% endif %}.
         </p>
 
         <ul class="benefits" aria-label="Features">
@@ -979,7 +1055,7 @@
       <section class="builder" aria-labelledby="builder-title">
         <div class="builder-heading">
           <div>
-            <h2 id="builder-title">{% if show_games and not show_superhero %}Make your Detective cards{% else %}Build your study cards{% endif %}</h2>
+            <h2 id="builder-title">{% if show_games and not choose %}Make your Detective cards{% else %}Build your study cards{% endif %}</h2>
             <p>Your notes. A new way to know them.</p>
             <p class="hint" id="audience-note">
               For parents and students aged 18+. Younger students: ask a parent to upload your notes.
@@ -1029,15 +1105,17 @@
               spellcheck="false">
             <p class="hint" id="pages-help">
               Use the PDF's page numbers. Leave blank to use all pages.{% if show_games %}
-              Detective works on up to {{ detective_max_pages }} pages at a time.{% endif %}
+              Detective works on up to {{ detective_max_pages }} pages at a time.{% if show_facts %} Key Facts
+              takes any number.{% endif %}{% endif %}
             </p>
           </div>
 
           <input type="hidden" name="standard" value="8">
+          <input type="hidden" name="skip" id="skip-cards" value="">
 
-          {% if show_games and show_superhero %}
+          {% if choose %}
           <fieldset>
-            <legend>3. Choose your adventure</legend>
+            <legend>{% if show_superhero %}3. Choose your adventure{% else %}3. Choose your cards{% endif %}</legend>
             <div class="game-grid">
               <label class="game-option">
                 <input type="radio" name="output" value="detective" checked>
@@ -1045,11 +1123,25 @@
                   <span class="game-symbol" aria-hidden="true">⌕</span>
                   <span>
                     <strong>Detective</strong>
-                    <small>Follow the clues</small>
+                    <small>{% if show_facts %}Story clues to solve{% else %}Follow the clues{% endif %}</small>
                   </span>
                 </span>
               </label>
 
+              {% if show_facts %}
+              <label class="game-option">
+                <input type="radio" name="output" value="facts">
+                <span class="game-tile">
+                  <span class="game-symbol" aria-hidden="true">★</span>
+                  <span>
+                    <strong>Key Facts</strong>
+                    <small>Bold words and key points</small>
+                  </span>
+                </span>
+              </label>
+              {% endif %}
+
+              {% if show_superhero %}
               <label class="game-option">
                 <input type="radio" name="output" value="superhero">
                 <span class="game-tile">
@@ -1060,6 +1152,7 @@
                   </span>
                 </span>
               </label>
+              {% endif %}
             </div>
           </fieldset>
           {% elif show_games %}
@@ -1080,7 +1173,7 @@
 
           <div class="actions">
             <button class="button" type="submit">
-              {% if show_games and not show_superhero %}Create my Detective cards{% else %}Create my study cards{% endif %}
+              {% if show_games and not choose %}Create my Detective cards{% else %}Create my study cards{% endif %}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8" aria-hidden="true">
                 <path d="M5 12h14m-6-6 6 6-6 6"/>
@@ -1160,7 +1253,9 @@
           <h3>Make it a mission</h3>
           <p>
             {% if show_superhero %}Pick Detective or Superhero. Preview your question cards
-            and check that the content matches your lesson.{% elif show_games %}Your cards come as a Detective case to
+            and check that the content matches your lesson.{% elif show_facts %}Pick Detective for a case to solve,
+            or Key Facts for quick questions on what your sheet marks to learn. Preview them, and take out any Key
+            Facts card you don't want.{% elif show_games %}Your cards come as a Detective case to
             solve. Preview them and check that the content matches your lesson.{% else %}Preview your question cards
             and check that the content matches your lesson.{% endif %}
           </p>
@@ -1197,11 +1292,24 @@
           </p>
         </details>
 
+        {% if show_games and show_facts %}
+        <details>
+          <summary>Detective or Key Facts?</summary>
+          <p>
+            Detective turns your sheet into clue cards, each a short scene to solve.{% if ai_cards %} An AI writes
+            them, so there are a limited number each day.{% endif %} Key Facts asks about the words your sheet prints
+            in bold, its bullet points and its numbered points, with the answer word for word from the sheet. It uses
+            no AI, has no daily limit, and lets you take out any card before you print.
+          </p>
+        </details>
+        {% endif %}
+
         <details>
           <summary>What happens to my PDF?</summary>
           <p>
             It's read on our server to make your cards, and it isn't saved.{% if ai_cards %} To write Detective cards,
-            the text of the pages you choose is sent to an AI model.{% endif %}
+            the text of the pages you choose is sent to an AI model.{% if show_facts %} Key Facts cards are made on
+            our server without AI.{% endif %}{% endif %}
             <a href="/privacy">How we handle your PDF</a>
           </p>
         </details>
@@ -1272,6 +1380,14 @@
         aria-hidden="true" hidden></div>
       <iframe class="preview-frame" id="preview-frame"
         title="Generated study cards PDF preview" src="about:blank"></iframe>
+      <div class="picker" id="card-picker" hidden>
+        <div class="pick-tools">
+          <p class="pick-count" id="pick-count" tabindex="-1" aria-live="polite"></p>
+          <button class="link-button" id="pick-restore" type="button" hidden>Put them all back</button>
+        </div>
+        <ul class="pick-notes" id="pick-notes" hidden></ul>
+        <ol class="pick-list" id="pick-list" aria-label="Your Key Facts cards"></ol>
+      </div>
       {% if sample_pages %}
       <div class="preview-pages" id="sample-pages" hidden>
         {% for page in range(1, sample_pages + 1) %}
@@ -1284,6 +1400,8 @@
 
     <div class="preview-foot">
       <a class="button" id="download-preview" hidden>Download PDF ↗</a>
+      <button class="button" id="final-preview" type="button" hidden>See the final PDF</button>
+      <button class="button button-secondary" id="edit-cards" type="button" hidden>Back to the cards</button>
       <button class="button button-secondary" id="done-preview" type="button">
         Back to my cards
       </button>
@@ -1310,12 +1428,23 @@
       const trySample = $("try-sample");
       const samplePages = $("sample-pages");
       const doneButton = $("done-preview");
+      const picker = $("card-picker");
+      const pickList = $("pick-list");
+      const pickCount = $("pick-count");
+      const pickNotes = $("pick-notes");
+      const pickRestore = $("pick-restore");
+      const finalButton = $("final-preview");
+      const editButton = $("edit-cards");
+      const skipInput = $("skip-cards");
       let opener = previewButton;
 
       const MAX_BYTES = 30 * 1024 * 1024;
       let previewURL = null;
       let controller = null;
       let requestVersion = 0;
+      // Key Facts: the cards the upload makes, in print order, and the numbers of those the parent took out.
+      let cards = [];
+      const removed = new Set();
 
       // Progressive enhancement: the normal POST form also works without JS.
       if (typeof dialog.showModal === "function") {
@@ -1394,9 +1523,19 @@
         frame.removeAttribute("aria-busy");
       }
 
+      function clearCards() {
+        cards = [];
+        removed.clear();
+        skipInput.value = "";
+        pickList.replaceChildren();
+        pickNotes.replaceChildren();
+        pickNotes.hidden = true;
+      }
+
       function invalidatePreview() {
         cancelRequest();
         clearPreview();
+        clearCards();
       }
 
       function updateFile() {
@@ -1416,6 +1555,15 @@
       });
 
       form.addEventListener("change", invalidatePreview);
+
+      // Key Facts cards can be looked through, and taken out, before the PDF is made.
+      function updateMode() {
+        const mode = form.elements.output?.value;
+        previewButton.textContent = mode === "facts" ? "Preview and take out cards" : "Preview before printing";
+      }
+
+      form.addEventListener("change", updateMode);
+      updateMode();
 
       form.addEventListener("submit", (event) => {
         if (!validateForm()) event.preventDefault();
@@ -1480,12 +1628,19 @@
         if (outside) closeDialog();
       });
 
-      // The dialog shows a PDF made from the upload, or the sample's pages as pictures.
-      function showSample(on) {
-        frame.hidden = on;
-        if (samplePages) samplePages.hidden = !on;
-        doneButton.textContent = on ? "Close" : "Back to my cards";
-        $("preview-title").textContent = on ? "A sample case paper" : "Your print preview";
+      // The dialog shows a PDF made from the upload, the Key Facts cards to look through, or the sample's pages.
+      function showStage(stage) {
+        frame.hidden = stage !== "pdf";
+        picker.hidden = stage !== "pick";
+        if (samplePages) samplePages.hidden = stage !== "sample";
+        finalButton.hidden = stage !== "pick";
+        editButton.hidden = !(stage === "pdf" && cards.length);
+        // Key Facts has its own way on (see the PDF) and back (to the cards); the header's × still closes.
+        doneButton.hidden = stage === "pick" || !editButton.hidden;
+        doneButton.textContent = stage === "sample" ? "Close" : "Back to my cards";
+        $("preview-title").textContent = {
+          sample: "A sample case paper", pick: "Your Key Facts cards"
+        }[stage] || "Your print preview";
       }
 
       if (trySample && samplePages && typeof dialog.showModal === "function") {
@@ -1493,7 +1648,7 @@
           event.preventDefault();
           invalidatePreview();
           opener = trySample;
-          showSample(true);
+          showStage("sample");
           download.href = trySample.href;
           download.download = "learn_sample_case_papers.pdf";
           download.hidden = false;
@@ -1505,30 +1660,132 @@
         });
       }
 
-      previewButton.addEventListener("click", async () => {
-        if (!validateForm()) return;
+      function element(tag, className, text = "") {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        node.textContent = text;  // the sheet's words go in as text, never as HTML
+        return node;
+      }
 
-        invalidatePreview();
-        opener = previewButton;
-        showSample(false);
+      function cardItem(card) {
+        const item = element("li", "pick-card");
+        const meta = element("p", "pick-meta");
+        meta.append(element("span", "pick-number", `Card ${card.number}`));
+        if (card.about) meta.append(element("span", "", card.about));
+        meta.append(element("span", "", `p. ${card.page}`));
+        const answer = element("p", "pick-answer", "Answer: ");
+        answer.append(element("strong", "", card.answer || "Not on the sheet"));
+        const remove = element("button", "pick-remove", "×");
+        remove.type = "button";
+        remove.setAttribute("aria-label", `Take out card ${card.number}`);
+        remove.addEventListener("click", () => takeOut(card.number, item));
+        item.append(meta, element("p", "pick-clue", card.clue), element("p", "pick-question", card.question), answer,
+          remove);
+        return item;
+      }
+
+      function renderCards() {
+        pickList.replaceChildren(...cards.filter((card) => !removed.has(card.number)).map(cardItem));
+        updateCount();
+      }
+
+      function updateCount() {
+        const kept = cards.length - removed.size;
+        pickCount.textContent = `${kept} of ${cards.length} cards kept`;
+        pickRestore.hidden = !removed.size;
+        finalButton.disabled = !kept;
+        skipInput.value = [...removed].sort((a, b) => a - b).join(",");
+        status.textContent = kept
+          ? "Take out any card you don't want with ×, then see the final PDF."
+          : "Every card is taken out. Put them back to print.";
+      }
+
+      function takeOut(number, item) {
+        // Keep the keyboard on the cards: the next card's ×, or the count once none is left.
+        const next = item.nextElementSibling || item.previousElementSibling;
+        removed.add(number);
+        item.remove();
+        updateCount();
+        (next?.querySelector(".pick-remove") || pickCount).focus();
+      }
+
+      pickRestore.addEventListener("click", () => {
+        removed.clear();
+        renderCards();
+        pickCount.focus();
+      });
+
+      async function loadCards(data) {
+        showStage("pick");
+        const version = requestVersion;
+        const activeController = new AbortController();
+        controller = activeController;
+        previewButton.disabled = true;
+        finalButton.disabled = true;
+        loading.hidden = false;
+        status.textContent = "Finding the key facts in your sheet.";
+
+        try {
+          const response = await fetch("/key-facts", {
+            method: "POST",
+            body: data,
+            signal: activeController.signal
+          });
+          const contentType = response.headers.get("content-type") || "";
+          const body = contentType.includes("application/json") ? await response.json() : {};
+
+          if (version !== requestVersion) return;
+          if (!response.ok || !Array.isArray(body.cards)) {
+            throw new Error(response.status === 413
+              ? "The server could not accept this file size. Try a smaller PDF."
+              : typeof body.error === "string" && body.error
+              ? body.error
+              : "We couldn't make your cards. Check your file and page range, then try again.");
+          }
+
+          cards = body.cards;
+          const notes = Array.isArray(body.notes) ? body.notes : [];
+          pickNotes.replaceChildren(...notes.map((note) => element("li", "", note)));
+          pickNotes.hidden = !notes.length;
+          renderCards();
+        } catch (error) {
+          if (version !== requestVersion) return;
+
+          clearCards();
+          finalButton.hidden = true;
+
+          if (error.name !== "AbortError") {
+            status.textContent = error instanceof TypeError
+              ? "We couldn't connect. Check your connection and try again."
+              : error.message;
+          }
+        } finally {
+          if (version === requestVersion) {
+            previewButton.disabled = false;
+            loading.hidden = true;
+            controller = null;
+          }
+        }
+      }
+
+      async function loadPDF(data, mode) {
+        cancelRequest();
+        clearPreview();
+        showStage("pdf");
 
         const version = requestVersion;
         const activeController = new AbortController();
         controller = activeController;
 
-        const data = new FormData(form);
-        const mode = String(data.get("output") || "detective");
-        const modeLabel = { detective: "Detective", superhero: "Superhero" }[mode] || "study";
+        const modeLabel = { detective: "Detective", superhero: "Superhero", facts: "Key Facts" }[mode] || "study";
         let timedOut = false;
 
         previewButton.disabled = true;
         loading.hidden = false;
         frame.setAttribute("aria-busy", "true");
-        status.textContent =
-          `Building your ${modeLabel} cards. Story cards can take a minute or two.`;
-
-        document.body.classList.add("modal-open");
-        dialog.showModal();
+        status.textContent = mode === "detective"
+          ? `Building your ${modeLabel} cards. Story cards can take a minute or two.`
+          : `Building your ${modeLabel} cards.`;
 
         const timeout = setTimeout(() => {
           timedOut = true;
@@ -1564,11 +1821,14 @@
           previewURL = URL.createObjectURL(blob);
           frame.src = previewURL;
           download.href = previewURL;
-          download.download = mode === "study" ? "learn_study_cards.pdf" : `learn_${mode}_game.pdf`;
+          download.download = { study: "learn_study_cards.pdf", facts: "learn_key_facts.pdf" }[mode]
+            || `learn_${mode}_game.pdf`;
           download.hidden = false;
-          status.textContent =
-            "Your cards are ready. Check the questions and answers before printing. " +
-            "If the preview doesn't display in your browser, download the PDF.";
+          status.textContent = mode === "facts"
+            ? "This is the PDF you'll print. Go back to the cards to change it, or download it. " +
+              "If the preview doesn't display in your browser, download the PDF."
+            : "Your cards are ready. Check the questions and answers before printing. " +
+              "If the preview doesn't display in your browser, download the PDF.";
         } catch (error) {
           if (version !== requestVersion) return;
 
@@ -1592,6 +1852,43 @@
             controller = null;
           }
         }
+      }
+
+      finalButton.addEventListener("click", () => {
+        const data = new FormData(form);
+        data.set("output", "facts");
+        loadPDF(data, "facts");
+      });
+
+      editButton.addEventListener("click", () => {
+        cancelRequest();
+        clearPreview();
+        showStage("pick");
+        updateCount();
+        pickCount.focus();
+      });
+
+      previewButton.addEventListener("click", () => {
+        if (!validateForm()) return;
+
+        const data = new FormData(form);
+        const mode = String(data.get("output") || "detective");
+        opener = previewButton;
+        document.body.classList.add("modal-open");
+
+        if (mode === "facts" && cards.length) {
+          // The same upload and pages: the cards and any taken out are as the parent left them.
+          showStage("pick");
+          renderCards();
+          dialog.showModal();
+          return;
+        }
+
+        invalidatePreview();
+        showStage(mode === "facts" ? "pick" : "pdf");
+        dialog.showModal();
+        if (mode === "facts") loadCards(data);
+        else loadPDF(data, mode);
       });
 
       // Small, frame-scheduled pointer response; no motion on touch/reduced-motion.

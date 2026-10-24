@@ -10,6 +10,7 @@ behind a gap; the only added words are the fixed questions and labels.
 import re
 from dataclasses import dataclass, replace
 from hashlib import sha256
+from itertools import pairwise
 
 import pymupdf
 
@@ -32,6 +33,8 @@ _THEMES = {
     "detective": {"title": "DETECTIVE CASE FILE", "colour": (0.13, 0.36, 0.27), "tint": (0.91, 0.95, 0.92)},
     "superhero": {"title": "SUPERHERO POWER-UP GAME", "colour": (0.32, 0.25, 0.62), "tint": (0.93, 0.92, 0.98)},
     "study": {"title": "STUDY CARDS", "colour": (0.09, 0.24, 0.20), "tint": (0.93, 0.95, 0.91)},
+    # Key Facts cards are fill-in-the-blank already, so no second set of fill-in-the-blank cards follows them.
+    "facts": {"title": "KEY FACTS", "colour": (0.10, 0.30, 0.46), "tint": (0.91, 0.94, 0.97), "practice": False},
 }
 _ABSTRACT_TOPIC = re.compile(
     r"\b(?:cycle|process|system|stage|stages|step|steps|change|changes|evaporation|condensation|"
@@ -58,6 +61,9 @@ _QUESTIONS = {
     "term": ("What is it called?", "What is it called?", "Name the term described."),
     "name": ("Which name goes in the gap?", "Which name fits the gap?", "Supply the missing name."),
     "word": ("Which word goes in the gap?", "Which term fits the gap?", "Supply the missing term."),
+    "words": ("Which words go in the gap?", "Which words fit the gap?", "Supply the missing words."),
+    "list": ("Which words go in the gaps?", "Which words fit the gaps?", "Supply the missing words."),
+    "names": ("Which names go in the gaps?", "Which names fit the gaps?", "Supply the missing names."),
     "equation": ("What goes in the gap?", "What goes in the gap?", "Complete it."),
     "chain": ("What goes in the gap?", "What comes in the gap?", "Supply the missing step."),
     "sort": ("Which one is it: {}?", "Which one is it: {}?", "Classify it: {}?"),
@@ -112,8 +118,11 @@ _UNITS = (
     r"hours?|minutes?|delegates|volunteers|members|people|persons|visitors|jobs|companies|states|seats|million|"
     r"billion|bn|lakh|crore|cities|times|mills|acres|hectares|feet|ft"
 )
+# A range is one answer: "aged 6–14 years" hides "6–14", not just "14".
 _QUANTITY = re.compile(
-    rf"(?<![\w.,£$₹-])(?:\d{{1,3}}(?:,\d{{3}})+|\d+(?:\.\d+)?(?=[\s-]?(?:{_UNITS})\b))(?![\d,])", re.I
+    rf"(?<![\w.,£$₹–—-])(?:\d+(?:\.\d+)?\s?[–—-]\s?)?"
+    rf"(?:\d{{1,3}}(?:,\d{{3}})+|\d+(?:\.\d+)?(?=[\s-]?(?:{_UNITS})\b))(?![\d,])",
+    re.I,
 )
 _HEADING_SEPARATOR = re.compile(r"\s+[–—-]\s+|:\s+")
 _PERSON_TITLE = re.compile(
@@ -822,8 +831,206 @@ def _point_cards(item: Item, heading: Heading | None, pieces: list[str], terms: 
     return cards
 
 
-def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
-    """One plain question per card, in the order of the sheet."""
+# ---------------------------------------------------------------- key facts
+
+# Small words a sheet may print in bold for emphasis ("is **not**"): never a term to ask about.
+_EMPHASIS = frozenset("a an the and or but of to in on at by for from with as is are was were be been not no".split())
+# What joins the bold words of one list: "sunlight, water and carbon dioxide".
+_LIST_JOIN = re.compile(r"\s*,\s*(?:(?:and|or|&)\s+)?|\s+(?:and|or|&)\s+")
+# A term printed as the label of its point: "Evaporation: Heat from the Sun …" or "Evaporation – Heat …".
+_LEADING_LABEL = re.compile(r"\s*(?::|\s[–—-])\s+(?=\S)")
+KEY_FACT_CLUE = 220  # a point longer than this shows only the sentence around its gap
+
+
+def _key_fact_cards(item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int) -> list[Card]:
+    """Key Facts: the words a point prints in bold are its answers. A sentence printed all in bold, and each sentence
+    of a bulleted or numbered point, gets the usual card instead; other prose gets none."""
+    text, about = item.text, heading.name if heading else item.context
+    spans = _bold_spans(item)
+    places = _piece_places(text, pieces)
+    groups = _bold_groups(text, _bold_terms(text, spans, places))
+    listed = item.bullet or bool(item.marker)
+    # Each list of bold words belongs to the sentence it is printed in (or, between two sentences, the one before).
+    owners = [
+        max((index for index, (start, _) in enumerate(places) if start <= group[0][0]), default=0) for group in groups
+    ]
+    cards: list[Card] = []
+    for index, (piece, (start, end)) in enumerate(zip(pieces, places, strict=True)):
+        here = [group for group, owner in zip(groups, owners, strict=True) if owner == index]
+        if here:
+            cards.extend(card for group in here if (card := _bold_card(item, about, group, (start, end), standard)))
+        elif listed or _bold_share(text, start, end, spans) >= 0.7:
+            # No riddle ("What is this about?"): its answer is the topic, which every other card's label then
+            # could not show.
+            usual = _point_cards(item, None, [piece], terms, standard)
+            short = _short_finish(piece) if not usual else None
+            if short is not None:
+                usual = [_card("finish", _ask("finish", standard), short[0], short[1], item, source=piece)]
+            cards.extend(replace(card, about=about if _readable(about) else "") for card in usual)
+    return cards
+
+
+# The verbs a short fact is cut after: "India is … → … a democratic republic."
+_LINKING = frozenset("is are was were has have had means include includes".split())
+
+
+def _short_finish(text: str) -> tuple[str, str] | None:
+    """A sentence too short for the usual finish card, cut after its verb, or after its third word."""
+    words = text.split()
+    if not 4 <= len(words) < 6 or _MATH.search(text) or not re.search(r"[.!?][\"'”’)]*$", text):
+        return None
+    if _open_task(text) or _TO_THE_READER.search(text) or text.endswith("?"):
+        return None
+    linking = next((index for index, word in enumerate(words[1:-1], start=1) if word.casefold() in _LINKING), None)
+    shown = linking + 1 if linking is not None else 3
+    return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
+
+
+def _bold_spans(item: Item) -> list[tuple[int, int]]:
+    """Where the item's bold runs are printed in its text."""
+    spans: list[tuple[int, int]] = []
+    cursor = 0
+    for run in item.bold:
+        pattern = re.compile(rf"(?<!\w){re.escape(run)}(?!\w)")
+        found = pattern.search(item.text, cursor) or pattern.search(item.text)
+        if found is not None and not any(start < found.end() and found.start() < end for start, end in spans):
+            spans.append(found.span())
+            cursor = found.end()
+    return sorted(spans)
+
+
+def _piece_places(text: str, pieces: list[str]) -> list[tuple[int, int]]:
+    """Where each piece of a point starts and ends in its text."""
+    places: list[tuple[int, int]] = []
+    cursor = 0
+    for piece in pieces:
+        start = text.find(piece, cursor)
+        start = text.find(piece) if start < 0 else start
+        if start < 0:
+            places.append((cursor, len(text)))
+            continue
+        places.append((start, start + len(piece)))
+        cursor = start + len(piece)
+    return places
+
+
+def _bold_share(text: str, start: int, end: int, spans: list[tuple[int, int]]) -> float:
+    """How much of text[start:end] is printed in bold, counting letters and digits."""
+    letters = [index for index in range(start, end) if text[index].isalnum()]
+    bold = [index for index in letters if any(first <= index < last for first, last in spans)]
+    return len(bold) / len(letters) if letters else 0.0
+
+
+def _bold_terms(text: str, spans: list[tuple[int, int]], places: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """The bold runs that are terms to learn: not a sentence printed all in bold, more than a few words, a label
+    such as "Note:", or small words printed in bold for emphasis."""
+    terms = []
+    for start, end in spans:
+        words = text[start:end].split()
+        if len(words) > FINISH_WORDS or all(word.casefold().strip(".,;:!?") in _EMPHASIS for word in words):
+            continue
+        place = next((place for place in reversed(places) if place[0] <= start), (0, len(text)))
+        if _bold_share(text, *place, spans) >= 0.7:
+            continue  # the whole sentence is in bold: the usual card chooses what to ask
+        if start in {0, place[0]} and _LEADING_LABEL.match(text, end) and GENERIC_HEADING.match(text[start:end]):
+            continue  # "Note:", "Remember:" at the start of a point or of one of its sentences
+        terms.append((start, end))
+    return terms
+
+
+def _bold_groups(text: str, terms: list[tuple[int, int]]) -> list[list[tuple[int, int]]]:
+    """Bold words printed as one list ("sunlight, water and carbon dioxide") are asked together, on one card.
+
+    A list says "and" or "or", or names three or more; "In 1885, A. O. Hume …" is two answers, not a list."""
+    runs: list[list[tuple[int, int]]] = []
+    for span in terms:
+        last = runs[-1] if runs else None
+        if (
+            last is not None
+            and _LIST_JOIN.fullmatch(text[last[-1][1] : span[0]])
+            and text[span[0]].isdigit() == text[last[0][0]].isdigit()
+        ):
+            last.append(span)
+        else:
+            runs.append([span])
+    groups = []
+    for run in runs:
+        joins = [text[before[1] : after[0]] for before, after in pairwise(run)]
+        if len(run) >= 3 or any(re.search(r"\b(?:and|or)\b|&", join) for join in joins):
+            groups.append(run)
+        else:
+            groups.extend([span] for span in run)
+    return groups
+
+
+def _bold_card(
+    item: Item, about: str, group: list[tuple[int, int]], place: tuple[int, int], standard: int
+) -> Card | None:
+    """The card for one bold word or list: the point with the words hidden, or a bold label's meaning to name."""
+    text = item.text
+    first, last = group[0][0], group[-1][1]
+    words = [text[start:end] for start, end in group]
+    label = _LEADING_LABEL.match(text, last) if len(group) == 1 and first == 0 else None
+    if label is not None:
+        # "Evaporation: Heat from the Sun changes …" asks for the term its meaning describes.
+        kind, question, clue = "term", _ask("term", standard), _blank(text[label.end() :], words)
+    else:
+        start, end = place
+        inside = start <= first and last <= end
+        source = text[start:end] if inside and len(text) > KEY_FACT_CLUE else text
+        kind, question, clue = "gap", _bold_question(text, group, place, standard), _blank(source, words)
+        if GAP not in clue:
+            return None
+    if len(clue.replace(GAP, " ").split()) < 2:
+        return None  # nothing left to go on
+    return _card(kind, question, clue, text[first:last], item, about, source=text)
+
+
+def _bold_question(text: str, group: list[tuple[int, int]], place: tuple[int, int], standard: int) -> str:
+    if len(group) > 1:
+        # A list's first word may start its sentence or follow a label ("Main centres: Mumbai, …"); the rest show it.
+        capitals = all(text[start].isupper() for start, _ in group)
+        names = capitals and all(_named(text, *span, place) for span in group[1:])
+        return _ask("names" if names else "list", standard)
+    answer = text[group[0][0] : group[0][1]]
+    if _MATH.search(answer):
+        return _ask("equation", standard)
+    if _FULL_DATE.fullmatch(answer):
+        return _ask("date", standard)
+    if re.fullmatch(r"1[0-9]{3}|20[0-9]{2}", answer):
+        return _ask("year", standard)
+    if re.fullmatch(r"\d{1,2}(?:st|nd|rd|th)\s+century", answer, re.I):
+        return _ask("century", standard)
+    if answer[:1].isdigit():
+        return _ask("number", standard)
+    if _named(text, *group[0], place):
+        return _ask("name", standard)
+    return _ask("words" if len(answer.split()) > 1 else "word", standard)
+
+
+def _named(text: str, start: int, end: int, place: tuple[int, int]) -> bool:
+    """Capitalised words that name someone or something ("Doctrine of Lapse", "Mumbai"), not one word capitalised
+    because it starts its sentence ("Chlorophyll, the green pigment …")."""
+    found = re.findall(r"[^\W\d_][\w'’.-]*", text[start:end])
+    words = [word for word in found if word.casefold() not in _NAME_STOPWORDS]
+    if not words or not all(word[0].isupper() for word in words):
+        return False
+    opens = not text[place[0] : start].strip() or text[:start].rstrip().endswith(":")
+    return not opens or len(words) >= 2
+
+
+def _blank(text: str, words: list[str]) -> str:
+    """Every use of the words in the text hidden behind a gap, whatever its case."""
+    pattern = "|".join(re.escape(word) for word in sorted(set(words), key=len, reverse=True))
+    return re.sub(rf"(?<!\w)(?:{pattern})(?!\w)", GAP, text, flags=re.I)
+
+
+def plan_cards(sheet: Sheet, standard: int = 8, key_facts: bool = False) -> list[Card]:
+    """One plain question per card, in the order of the sheet.
+
+    With ``key_facts`` the cards ask only about what the sheet marks to learn: the words it prints in bold, sentences
+    printed all in bold, bulleted and numbered points, tips, summaries and the questions it gives answers for.
+    Headings, tables, pictures and other prose make no cards."""
     items = list(sheet.items)
     headings = {
         item.text: parse_heading(item.text) for item in items if item.kind == "topic" and names_topic(item.text)
@@ -848,7 +1055,7 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
     cards: list[Card] = []
     consumed: set[int] = set()
     for index, item in enumerate(items):
-        if index in consumed:
+        if index in consumed or (key_facts and item.kind in {"topic", "table"}):
             continue
         if item.kind == "topic" and item.text in headings:
             heading = headings[item.text]
@@ -866,7 +1073,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             question = _ask("question", standard)
             cards.append(_card("question", question, task, solution, item, "Worked example", solution))
         elif item.kind == "point" and not _NO_CARDS.match(item.context):
-            if index + 1 < len(items) and items[index + 1].kind == "point" and items[index + 1].topic == item.topic:
+            following = index + 1 < len(items) and items[index + 1].kind == "point"
+            if not key_facts and following and items[index + 1].topic == item.topic:
                 paired = _paired_process_card(item, items[index + 1]) or _paired_cooling_card(item, items[index + 1])
                 if paired is not None:
                     cards.append(paired)
@@ -890,7 +1098,11 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 for piece in pieces[id(other)][:1]
             ]
             terms = heading is None and (_vocabulary(pieces[id(item)]) or _vocabulary(siblings))
-            cards.extend(_point_cards(item, heading, pieces[id(item)], terms, standard))
+            point_cards = _key_fact_cards if key_facts else _point_cards
+            cards.extend(point_cards(item, heading, pieces[id(item)], terms, standard))
+        elif item.kind == "summary" and key_facts:
+            # "Belfast = Shipbuilding & Titanic" asks for its bold words; "Who is this about?" would ask for the topic.
+            cards.extend(_key_fact_cards(item, headings.get(item.topic), _pieces(item.text), False, standard))
         elif item.kind == "summary":
             name, rest = summary_parts(item.text)
             heading = next((h for h in headings.values() if h.name.casefold() == name.casefold()), None)
@@ -909,6 +1121,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
                 continue  # "What do you think …? Discuss in groups." has no answer to check
             if re.fullmatch(r"\(?[A-Ha-h]\)?", answer) and not item.options:
                 answer = ""  # an option letter answers a question with options only, never a matching row
+            if key_facts and not answer:
+                continue  # Key Facts prints an answer for every card
             if item.options:
                 letters = "ABCDEFGH"[: len(item.options)]
                 options = (f"{letter}. {option}" for letter, option in zip(letters, item.options, strict=True))
@@ -921,7 +1135,8 @@ def plan_cards(sheet: Sheet, standard: int = 8) -> list[Card]:
             cards.extend(_table_cards(item, standard))
         elif item.kind == "tip" and (tip := _tip_card(item, standard)) is not None:
             cards.append(tip)
-    cards.extend(_picture_cards(sheet, headings, standard))
+    if not key_facts:
+        cards.extend(_picture_cards(sheet, headings, standard))
     readable = [card for card in cards if _readable(card.clue) and _readable(card.answer)]
     return _no_answer_labels(readable, headings)
 
@@ -1276,7 +1491,7 @@ def _answer_pages(document, kind: _Type, cards: list[Card], theme: dict, notes: 
         if checks:
             bottom = kind.draw(shape, checks, 8, margin + 32, bottom + 1, False, _ORANGE)
         y = bottom + 7
-    if any(map(_has_blank, cards)):
+    if theme.get("practice", True) and any(map(_has_blank, cards)):
         if y + 38 > _PAGE_HEIGHT - 40:
             new_page(False)
         y = kind.draw(shape, ["FILL-IN-THE-BLANK ANSWERS"], 12, margin + 32, y + 5, True, theme["colour"]) + 8
@@ -1391,13 +1606,13 @@ def render_cards_pdf(
         for position, card in enumerate(group):
             _draw_card(page, shape, kind, card, first + position, _card_box(position), theme)
         shape.commit()
-    _practice_pages(document, kind, cards, theme)
+    if theme.get("practice", True):
+        _practice_pages(document, kind, cards, theme)
     _answer_pages(document, kind, cards, theme, notes)
     if _has_water_cycle_evidence(cards):
         _water_cycle_diagram(document, kind)
-    document.set_metadata(
-        {"title": f"Learn ICSE Standard {standard} {game_mode} game", "author": "Learn Teaching Engine"}
-    )
+    name = "key facts cards" if game_mode == "facts" else f"{game_mode} game"
+    document.set_metadata({"title": f"Learn ICSE Standard {standard} {name}", "author": "Learn Teaching Engine"})
     if kind.embedded:
         document.subset_fonts()
     result = document.tobytes(garbage=4, deflate=True)
@@ -1488,6 +1703,13 @@ def extract_source_visuals(source_pdf: bytes, pages: set[int] | None = None) -> 
     return visuals
 
 
+# Printed with Key Facts cards for pages that mark nothing to learn, so a parent knows why every line is asked.
+UNMARKED_NOTE = (
+    "Nothing on these pages is printed in bold or as a bullet or numbered point, so Key Facts made study cards from "
+    "every line instead."
+)
+
+
 def render_printable_cards_pdf(
     inventory: FactInventory,
     source_pdf: bytes | None = None,
@@ -1497,14 +1719,34 @@ def render_printable_cards_pdf(
     llm=None,
     ai_limit: int | None = None,
     notes: tuple[str, ...] = (),
+    skip: frozenset[int] = frozenset(),
 ) -> bytes:
     """Read the sheet (its PDF layout when given, else the inventory), plan the cards and print them.
 
     With ``llm``, a model chooses the cards for up to ``ai_limit`` groups of lines (``ai_cards.py``); code still
-    builds every card from the sheet's words, and the rest keep their rule-based cards.
+    builds every card from the sheet's words, and the rest keep their rule-based cards. ``skip`` holds the numbers
+    of planned cards the parent took out.
     """
+    cards, found = plan_printable_cards(inventory, source_pdf, game_mode, pages, standard, llm, ai_limit)
+    if skip:
+        cards = [card for number, card in enumerate(cards, start=1) if number not in skip]
+        if not cards:
+            raise ValueError("Every card was taken out. Keep at least one card to print.")
+    return render_cards_pdf(cards, game_mode, standard, (*notes, *found))
+
+
+def plan_printable_cards(
+    inventory: FactInventory,
+    source_pdf: bytes | None = None,
+    game_mode: str = "detective",
+    pages: set[int] | None = None,
+    standard: int = 8,
+    llm=None,
+    ai_limit: int | None = None,
+) -> tuple[list[Card], tuple[str, ...]]:
+    """The cards ``render_printable_cards_pdf`` prints, in order, and the notes for the adult printed with them."""
     if game_mode not in _THEMES:
-        raise ValueError("Choose study cards, Detective or Superhero.")
+        raise ValueError("Choose study cards, Detective, Superhero or Key Facts.")
     if standard not in {7, 8, 9}:
         raise ValueError("Choose ICSE Standard 7, 8, or 9.")
     if source_pdf:
@@ -1512,18 +1754,18 @@ def render_printable_cards_pdf(
     if not inventory.facts and not source_pdf:
         raise ValueError("No source facts were found to turn into cards.")
     sheet = read_sheet(inventory, source_pdf, pages)
-    ai_notes: list[str] = []
+    found: list[str] = []
     if llm is None:
-        cards = plan_cards(sheet, standard)
+        cards = plan_cards(sheet, standard, key_facts=game_mode == "facts")
+        if not cards and game_mode == "facts":
+            cards = plan_cards(sheet, standard)  # a sheet that marks nothing: every line is a fact to learn
+            found = [UNMARKED_NOTE] if cards else []
     else:
         from .ai_cards import write_study_cards
 
         result = write_study_cards(sheet, llm, ai_limit, standard)
         cards = result.cards
-        ai_notes = [
-            f"A model chose the cards for {result.ai_sheets} of {result.sheets} groups of lines.",
-            *result.notes,
-        ]
+        found = [f"A model chose the cards for {result.ai_sheets} of {result.sheets} groups of lines.", *result.notes]
     if not cards:
         raise ValueError(
             "No source facts were found to turn into cards. The selected pages need bullet points, sentences or "
@@ -1535,4 +1777,4 @@ def render_printable_cards_pdf(
         "no card. Check that page by eye."
         for page in lost
     )
-    return render_cards_pdf(cards, game_mode, standard, (*notes, *lost_notes, *ai_notes))
+    return cards, (*lost_notes, *found)

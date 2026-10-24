@@ -72,6 +72,11 @@ Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requi
 The offline engine behind the public site (`learn/teaching_web.py`, deployed on Render with the `Dockerfile` and `requirements-teaching.txt`). It needs no API key, and the methodology spec doesn't govern it.
 - `sheet.py` reads the uploaded PDF's layout; `cards.py` plans and prints the study cards. Follow `docs/ENGINE_GUIDE.md`: engine changes leave the upload page template alone (change it only when the task is about the page itself), add no topic-specific rules, never weaken a test.
 - `detective.py` makes the Detective case file (design in `docs/DETECTIVE_GAME.md`). Rule A: every line of the sheet is on a card. Rule B: card variety and order. `check_case_file` gates printing.
+- Key Facts (`plan_cards(..., key_facts=True)`, the site's "Key Facts" choice, no AI): only what the sheet marks to learn gets a card.
+  - `sheet.py` records the words each line prints in bold (`Item.bold`) and bullets (`Item.bullet`).
+  - Bold words are the answers, and bold words printed as one list share a card. Sentences printed all in bold, bullet points and numbered points get the usual cards. Headings, tables, pictures, unanswered questions and other prose get none.
+  - A sheet that marks nothing gets the usual cards with `UNMARKED_NOTE`.
+  - `/key-facts` lists the planned cards as JSON. `/preview` and `/generate` take `skip`, the card numbers the parent took out. The server plans the cards again and leaves those out, so the PDF never prints text sent by the browser.
 - `ai_cards.py` lets a model choose a case file's cards. The model only picks lines and words to hide; code builds every card from the sheet's own words and falls back to the rule-based cards on any failure.
   - It runs only with `--ai` on the command line, for at most `LEARN_CARDS_AI_SHEETS` sheets (default 1). The website doesn't call it yet.
   - `LEARN_PROVIDER=june` sends calls to June's Anthropic-format API. The key comes from the environment's network secret for `api.blockchain.info`, or from `JUNE_API_KEY`.

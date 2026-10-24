@@ -19,6 +19,7 @@ All three files are in `learn/teaching_engine/`. Line numbers are approximate an
 | `_hide_name()` (~line 208) | Hides the answer's name, so a riddle doesn't give it away |
 | `_finish()`, `_key_cloze()`, `_recall_question()` (~lines 341–376) | Other card shapes |
 | `_table_cards()` (~line 586) | Cards made from tables |
+| `_key_fact_cards()`, `_bold_terms()`, `_bold_groups()` (~lines 840–1020) | Key Facts: bold words as answers, lists of bold words on one card, the usual card for bold sentences and bullet points |
 | `_practice_prompt()`, `_practice_reinforcement()` (~lines 1031–1102) | The fill-in-the-blank pages |
 | `render_cards_pdf()` (~line 1298) | Page order and printing |
 | `render_printable_cards_pdf()` (~line 1377) | What the site calls: reads the sheet, plans the cards, prints them |
@@ -29,7 +30,8 @@ All three files are in `learn/teaching_engine/`. Line numbers are approximate an
 | :--- | :--- |
 | `read_sheet()` (~line 773) | Turns the PDF layout into items in reading order |
 | `_classify()` (~line 581) | Decides whether each item is a title, topic, point, question, answer, tip or table |
-| `_is_furniture()`, `_without_running_lines()` | Drop headers, footers and page numbers |
+| `_is_furniture()`, `_without_running_lines()` | Drop headers, footers and page numbers: a short line at the same height near the top or foot of two or more pages. A heading each page repeats among its text ("Facts to Remember") stays |
+| `_bold_runs()`, `_bold_in()` | The words each line prints in bold, kept on its item as `Item.bold` for Key Facts |
 
 ### `facts.py`: the basics
 
