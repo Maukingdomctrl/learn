@@ -13,3 +13,10 @@ node_modules/
 .env
 .aistudio/
 public/assets/aistudio/
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+.env
+.aistudio/
+public/assets/aistudio/
