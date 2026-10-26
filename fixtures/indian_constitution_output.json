@@ -1,0 +1,1679 @@
+{
+  "status": "ok",
+  "questions": [
+    {
+      "question_id": "q_01",
+      "question": "Arrange the key milestones in the making of the Indian Constitution in chronological order from 9 December 1946 to 26 January 1950, stating what happened on each date.",
+      "answer": "In chronological order: (1) 9 December 1946 — the Constituent Assembly held its first meeting; (2) 15 August 1947 — India became independent; (3) 26 November 1949 — the Constitution of India was adopted; and (4) 26 January 1950 — the Constitution came into effect, when India became a republic.",
+      "question_type": "sequence",
+      "difficulty": "medium",
+      "learning_point": "Arrange the chronological milestones in the making of the Indian Constitution from 9 December 1946 to 26 January 1950",
+      "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. The Assembly first met on 9 December 1946. The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 9 December 1946: First meeting of the Constituent Assembly • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_syn_sequence",
+        "char_span": [
+          106,
+          634
+        ],
+        "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. The Assembly first met on 9 December 1946. The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 9 December 1946: First meeting of the Constituent Assembly • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_02",
+      "question": "Why did India need a Constitution after becoming independent on 15 August 1947?",
+      "answer": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "question_type": "why_how",
+      "difficulty": "medium",
+      "learning_point": "Explain why India needed a Constitution after becoming independent on 15 August 1947",
+      "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          106,
+          479
+        ],
+        "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_03",
+      "question": "What is the difference between the significance of 26 November 1949 and 26 January 1950 in the making of the Indian Constitution?",
+      "answer": "The Constitution of India was adopted on 26 November 1949, whereas it came into effect on 26 January 1950, when India became a republic and 26 January is celebrated every year as Republic Day.",
+      "question_type": "comparison",
+      "difficulty": "medium",
+      "learning_point": "Distinguish between the adoption of the Constitution on 26 November 1949 and its commencement on 26 January 1950",
+      "source_evidence": "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_syn_adoption_commencement",
+        "char_span": [
+          1098,
+          1422
+        ],
+        "supporting_text": "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 3,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.75
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Moderate thematic overlap with q_01 (similarity=0.44)."
+      ]
+    },
+    {
+      "question_id": "q_04",
+      "question": "What roles did Dr. Rajendra Prasad and Dr. B. R. Ambedkar play in the Constituent Assembly during the making of the Indian Constitution?",
+      "answer": "Dr. Rajendra Prasad was elected as the permanent President of the Constituent Assembly, while Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.",
+      "question_type": "recall",
+      "difficulty": "easy",
+      "learning_point": "Identify the roles of Dr. Rajendra Prasad and Dr. B. R. Ambedkar in the Constituent Assembly",
+      "source_evidence": "Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. • Dr. B. R. Ambedkar: Chairman of the Drafting Committee What was Dr. B. R. Ambedkar’s role in making the Constitution?",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_syn_roles",
+        "char_span": [
+          720,
+          986
+        ],
+        "supporting_text": "Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. • Dr. B. R. Ambedkar: Chairman of the Drafting Committee What was Dr. B. R. Ambedkar’s role in making the Constitution?"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 3,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.72
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_05",
+      "question": "What important questions did the Constituent Assembly debate while preparing the Constitution, and how did these discussions help independent India?",
+      "answer": "The Constituent Assembly debated important questions including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+      "question_type": "application",
+      "difficulty": "medium",
+      "learning_point": "Explain what important questions the Constituent Assembly debated and how those discussions shaped the Constitution",
+      "source_evidence": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_3",
+        "char_span": [
+          720,
+          1008
+        ],
+        "supporting_text": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_06",
+      "question": "What system of government did the Indian Constitution establish, and what four ideals are expressed in its Preamble?",
+      "answer": "The Constitution established a democratic system of government, and its Preamble expresses the four ideals of justice, liberty, equality, and fraternity.",
+      "question_type": "reasoning",
+      "difficulty": "medium",
+      "learning_point": "Identify the system of government established by the Constitution and the four ideals expressed in its Preamble",
+      "source_evidence": "The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_4",
+        "char_span": [
+          1317,
+          1461
+        ],
+        "supporting_text": "The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_07",
+      "question": "What are the main functions that a Constitution performs in governing a country and protecting its citizens?",
+      "answer": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "question_type": "understanding",
+      "difficulty": "easy",
+      "learning_point": "Describe the main functions that a Constitution performs for a country and its citizens",
+      "source_evidence": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          0,
+          161
+        ],
+        "supporting_text": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 4,
+        "distinctness": 4,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.74
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    }
+  ],
+  "student_worksheet": {
+    "title": "1. Why did India need a Constitution?",
+    "class_level": 8,
+    "subject": "History & Civics",
+    "total_questions": 7,
+    "questions": [
+      {
+        "number": 1,
+        "question_id": "q_01",
+        "question_type": "sequence",
+        "difficulty": "medium",
+        "question": "Arrange the key milestones in the making of the Indian Constitution in chronological order from 9 December 1946 to 26 January 1950, stating what happened on each date.",
+        "answer": "In chronological order: (1) 9 December 1946 — the Constituent Assembly held its first meeting; (2) 15 August 1947 — India became independent; (3) 26 November 1949 — the Constitution of India was adopted; and (4) 26 January 1950 — the Constitution came into effect, when India became a republic.",
+        "source_page": 1
+      },
+      {
+        "number": 2,
+        "question_id": "q_02",
+        "question_type": "why_how",
+        "difficulty": "medium",
+        "question": "Why did India need a Constitution after becoming independent on 15 August 1947?",
+        "answer": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+        "source_page": 1
+      },
+      {
+        "number": 3,
+        "question_id": "q_03",
+        "question_type": "comparison",
+        "difficulty": "medium",
+        "question": "What is the difference between the significance of 26 November 1949 and 26 January 1950 in the making of the Indian Constitution?",
+        "answer": "The Constitution of India was adopted on 26 November 1949, whereas it came into effect on 26 January 1950, when India became a republic and 26 January is celebrated every year as Republic Day.",
+        "source_page": 1
+      },
+      {
+        "number": 4,
+        "question_id": "q_04",
+        "question_type": "recall",
+        "difficulty": "easy",
+        "question": "What roles did Dr. Rajendra Prasad and Dr. B. R. Ambedkar play in the Constituent Assembly during the making of the Indian Constitution?",
+        "answer": "Dr. Rajendra Prasad was elected as the permanent President of the Constituent Assembly, while Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.",
+        "source_page": 1
+      },
+      {
+        "number": 5,
+        "question_id": "q_05",
+        "question_type": "application",
+        "difficulty": "medium",
+        "question": "What important questions did the Constituent Assembly debate while preparing the Constitution, and how did these discussions help independent India?",
+        "answer": "The Constituent Assembly debated important questions including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+        "source_page": 1
+      },
+      {
+        "number": 6,
+        "question_id": "q_06",
+        "question_type": "reasoning",
+        "difficulty": "medium",
+        "question": "What system of government did the Indian Constitution establish, and what four ideals are expressed in its Preamble?",
+        "answer": "The Constitution established a democratic system of government, and its Preamble expresses the four ideals of justice, liberty, equality, and fraternity.",
+        "source_page": 1
+      },
+      {
+        "number": 7,
+        "question_id": "q_07",
+        "question_type": "understanding",
+        "difficulty": "easy",
+        "question": "What are the main functions that a Constitution performs in governing a country and protecting its citizens?",
+        "answer": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+        "source_page": 1
+      }
+    ]
+  },
+  "extraction_summary": {
+    "source_type": "pdf",
+    "source_path": "public/assets/aistudio/indian_constitution_history_lesson_0b1adbb9.pdf",
+    "extraction_status": "ok",
+    "ocr_required": false,
+    "ocr_recommendation": "Digital text layer extracted cleanly; OCR is not required.",
+    "page_count": 1,
+    "pages": [
+      {
+        "page_number": 1,
+        "text": "The Making of the Indian Constitution\nHistory & Civics | Standard 8\n1. Why did India need a Constitution?\nWhen India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large\nand diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes\nhow a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide\nthe nation.\n2. The Constituent Assembly\nThe Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be\ngoverned and what rights its citizens should enjoy. The Assembly first met on 9 December 1946. Dr. Rajendra Prasad was\nelected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.\nThe Assembly debated important questions, including equality, freedom, minority rights, and the structure of government.\nThese discussions helped shape a Constitution suited to an independent India.\n3. Adoption of the Constitution\nThe Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when\nIndia became a republic. Republic Day is celebrated on 26 January each year to commemorate this event.\nThe Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty,\nequality, and fraternity.\nKey facts to remember\n• 9 December 1946: First meeting of the Constituent Assembly\n• Dr. B. R. Ambedkar: Chairman of the Drafting Committee\n• 26 November 1949: Constitution adopted\n• 26 January 1950: Constitution came into effect; India became a republic\nCheck your understanding\n1. Why did independent India need a Constitution?\n2. What was Dr. B. R. Ambedkar’s role in making the Constitution?\n3. What is the difference between 26 November 1949 and 26 January 1950?",
+        "headings": [
+          "1. Why did India need a Constitution?",
+          "2. The Constituent Assembly",
+          "3. Adoption of the Constitution",
+          "Key facts to remember",
+          "Check your understanding"
+        ],
+        "paragraphs": [
+          "The Making of the Indian Constitution History & Civics | Standard 8",
+          "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+          "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946. Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+          "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. Republic Day is celebrated on 26 January each year to commemorate this event. The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity.",
+          "• 9 December 1946: First meeting of the Constituent Assembly",
+          "• Dr. B. R. Ambedkar: Chairman of the Drafting Committee",
+          "• 26 November 1949: Constitution adopted",
+          "• 26 January 1950: Constitution came into effect; India became a republic",
+          "1. Why did independent India need a Constitution?",
+          "2. What was Dr. B. R. Ambedkar’s role in making the Constitution?",
+          "3. What is the difference between 26 November 1949 and 26 January 1950?"
+        ],
+        "lists": [
+          "• 9 December 1946: First meeting of the Constituent Assembly",
+          "• Dr. B. R. Ambedkar: Chairman of the Drafting Committee",
+          "• 26 November 1949: Constitution adopted",
+          "• 26 January 1950: Constitution came into effect; India became a republic",
+          "1. Why did independent India need a Constitution?",
+          "2. What was Dr. B. R. Ambedkar’s role in making the Constitution?",
+          "3. What is the difference between 26 November 1949 and 26 January 1950?"
+        ],
+        "tables": [],
+        "figures": [],
+        "notation_items": [],
+        "image_count": 0,
+        "character_count": 1633,
+        "ocr_suspected": false
+      }
+    ],
+    "tables": [],
+    "figures": [],
+    "notation_items": [],
+    "warnings": [],
+    "extractor_backend": "native_pdf_stream_parser"
+  },
+  "analysis_summary": {
+    "topics": [
+      "1. Why did India need a Constitution?",
+      "2. The Constituent Assembly",
+      "3. Adoption of the Constitution",
+      "Key facts to remember",
+      "Check your understanding"
+    ],
+    "total_learning_points": 22,
+    "learning_points": [
+      {
+        "id": "lp_syn_21",
+        "category": "sequence",
+        "suggested_type": "sequence",
+        "difficulty": "medium",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "Chronological Milestones of the Indian Constitution (1946–1950)",
+        "summary": "Arrange the chronological milestones in the making of the Indian Constitution from 9 December 1946 to 26 January 1950",
+        "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. The Assembly first met on 9 December 1946. The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 9 December 1946: First meeting of the Constituent Assembly • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_syn_sequence",
+          "char_span": [
+            106,
+            634
+          ],
+          "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. The Assembly first met on 9 December 1946. The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 9 December 1946: First meeting of the Constituent Assembly • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?"
+        },
+        "importance_score": 9.4,
+        "formulas": [],
+        "custom_question": "Arrange the key milestones in the making of the Indian Constitution in chronological order from 9 December 1946 to 26 January 1950, stating what happened on each date.",
+        "senior_question": "Construct a chronological sequence of the constitutional milestones between 9 December 1946 and 26 January 1950, stating the event associated with each date.",
+        "custom_answer": "In chronological order: (1) 9 December 1946 — the Constituent Assembly held its first meeting; (2) 15 August 1947 — India became independent; (3) 26 November 1949 — the Constitution of India was adopted; and (4) 26 January 1950 — the Constitution came into effect, when India became a republic."
+      },
+      {
+        "id": "lp_3",
+        "category": "cause_effect",
+        "suggested_type": "why_how",
+        "difficulty": "medium",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "Need for a Constitution After Independence on 15 August 1947",
+        "summary": "Explain why India needed a Constitution after becoming independent on 15 August 1947",
+        "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_2",
+          "char_span": [
+            106,
+            479
+          ],
+          "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+        },
+        "importance_score": 9.35,
+        "formulas": [],
+        "numerical_case": null,
+        "custom_question": "Why did India need a Constitution after becoming independent on 15 August 1947?",
+        "senior_question": "Explain why newly independent India required a fundamental set of rules after 15 August 1947 to govern its diverse population.",
+        "custom_answer": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+      },
+      {
+        "id": "lp_syn_22",
+        "category": "comparison",
+        "suggested_type": "comparison",
+        "difficulty": "medium",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "Adoption (26 November 1949) and Commencement (26 January 1950) of the Constitution",
+        "summary": "Distinguish between the adoption of the Constitution on 26 November 1949 and its commencement on 26 January 1950",
+        "source_evidence": "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_syn_adoption_commencement",
+          "char_span": [
+            1098,
+            1422
+          ],
+          "supporting_text": "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?"
+        },
+        "importance_score": 9.3,
+        "formulas": [],
+        "custom_question": "What is the difference between the significance of 26 November 1949 and 26 January 1950 in the making of the Indian Constitution?",
+        "senior_question": "Distinguish between the constitutional events of 26 November 1949 (adoption) and 26 January 1950 (commencement) in the making of the Constitution of India.",
+        "custom_answer": "The Constitution of India was adopted on 26 November 1949, whereas it came into effect on 26 January 1950, when India became a republic and 26 January is celebrated every year as Republic Day."
+      },
+      {
+        "id": "lp_syn_23",
+        "category": "definition",
+        "suggested_type": "recall",
+        "difficulty": "easy",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "Roles of Dr. Rajendra Prasad and Dr. B. R. Ambedkar in the Constituent Assembly",
+        "summary": "Identify the roles of Dr. Rajendra Prasad and Dr. B. R. Ambedkar in the Constituent Assembly",
+        "source_evidence": "Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. • Dr. B. R. Ambedkar: Chairman of the Drafting Committee What was Dr. B. R. Ambedkar’s role in making the Constitution?",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_syn_roles",
+          "char_span": [
+            720,
+            986
+          ],
+          "supporting_text": "Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. • Dr. B. R. Ambedkar: Chairman of the Drafting Committee What was Dr. B. R. Ambedkar’s role in making the Constitution?"
+        },
+        "importance_score": 9.25,
+        "formulas": [],
+        "custom_question": "What roles did Dr. Rajendra Prasad and Dr. B. R. Ambedkar play in the Constituent Assembly during the making of the Indian Constitution?",
+        "senior_question": "Compare the leadership roles of Dr. Rajendra Prasad and Dr. B. R. Ambedkar in the Constituent Assembly and state the function of the Drafting Committee.",
+        "custom_answer": "Dr. Rajendra Prasad was elected as the permanent President of the Constituent Assembly, while Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution."
+      },
+      {
+        "id": "lp_10",
+        "category": "concept_fact",
+        "suggested_type": "application",
+        "difficulty": "medium",
+        "topic": "2. The Constituent Assembly",
+        "key_term": "Key Questions Debated by the Constituent Assembly",
+        "summary": "Explain what important questions the Constituent Assembly debated and how those discussions shaped the Constitution",
+        "source_evidence": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            720,
+            1008
+          ],
+          "supporting_text": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India."
+        },
+        "importance_score": 9.2,
+        "formulas": [],
+        "numerical_case": null,
+        "custom_question": "What important questions did the Constituent Assembly debate while preparing the Constitution, and how did these discussions help independent India?",
+        "senior_question": "Examine the key constitutional questions debated by the Constituent Assembly and explain how these deliberations shaped a Constitution suited to an independent India.",
+        "custom_answer": "The Constituent Assembly debated important questions including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India."
+      },
+      {
+        "id": "lp_16",
+        "category": "reasoning_synthesis",
+        "suggested_type": "reasoning",
+        "difficulty": "medium",
+        "topic": "3. Adoption of the Constitution",
+        "key_term": "The Preamble and Ideals of the Indian Constitution",
+        "summary": "Identify the system of government established by the Constitution and the four ideals expressed in its Preamble",
+        "source_evidence": "The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_4",
+          "char_span": [
+            1317,
+            1461
+          ],
+          "supporting_text": "The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity."
+        },
+        "importance_score": 9.18,
+        "formulas": [],
+        "numerical_case": null,
+        "custom_question": "What system of government did the Indian Constitution establish, and what four ideals are expressed in its Preamble?",
+        "senior_question": "State the system of government established by the Indian Constitution and identify the four foundational ideals expressed in its Preamble.",
+        "custom_answer": "The Constitution established a democratic system of government, and its Preamble expresses the four ideals of justice, liberty, equality, and fraternity."
+      },
+      {
+        "id": "lp_4",
+        "category": "definition",
+        "suggested_type": "understanding",
+        "difficulty": "easy",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "Core Functions of a Constitution",
+        "summary": "Describe the main functions that a Constitution performs for a country and its citizens",
+        "source_evidence": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_2",
+          "char_span": [
+            0,
+            161
+          ],
+          "supporting_text": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+        },
+        "importance_score": 9.05,
+        "formulas": [],
+        "numerical_case": null,
+        "custom_question": "What are the main functions that a Constitution performs in governing a country and protecting its citizens?",
+        "senior_question": "Explain the foundational functions of a Constitution regarding governance, government powers, citizen rights, and guiding principles.",
+        "custom_answer": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+      },
+      {
+        "id": "lp_5",
+        "category": "definition",
+        "suggested_type": "recall",
+        "difficulty": "easy",
+        "topic": "2. The Constituent Assembly",
+        "key_term": "Formation and First Meeting of the Constituent Assembly",
+        "summary": "State why the Constituent Assembly was formed, what its members discussed, and when it first met",
+        "source_evidence": "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            508,
+            719
+          ],
+          "supporting_text": "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946."
+        },
+        "importance_score": 8.95,
+        "formulas": [],
+        "numerical_case": null,
+        "custom_question": "Why was the Constituent Assembly formed, what did its members discuss, and when did it first meet?",
+        "senior_question": "State the purpose for which the Constituent Assembly was formed, the matters its members discussed, and the date of its first meeting.",
+        "custom_answer": "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946."
+      },
+      {
+        "id": "lp_2",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "needed fundamental rules",
+        "summary": "Explain the concept of needed fundamental rules",
+        "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_2",
+          "char_span": [
+            106,
+            205
+          ],
+          "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country."
+        },
+        "importance_score": 7.75,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_6",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "2. The Constituent Assembly",
+        "key_term": "members discussed country",
+        "summary": "Explain the concept of members discussed country",
+        "source_evidence": "Its members discussed how the country should be governed and what rights its citizens should enjoy.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            0,
+            99
+          ],
+          "supporting_text": "Its members discussed how the country should be governed and what rights its citizens should enjoy."
+        },
+        "importance_score": 7.75,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_9",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "2. The Constituent Assembly",
+        "key_term": "Drafting Committee",
+        "summary": "Explain the concept of Drafting Committee",
+        "source_evidence": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            777,
+            866
+          ],
+          "supporting_text": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution."
+        },
+        "importance_score": 7.69,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_14",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "3. Adoption of the Constitution",
+        "key_term": "Republic Day",
+        "summary": "Explain the concept of Republic Day",
+        "source_evidence": "Republic Day is celebrated on 26 January each year to commemorate this event.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_4",
+          "char_span": [
+            1239,
+            1316
+          ],
+          "supporting_text": "Republic Day is celebrated on 26 January each year to commemorate this event."
+        },
+        "importance_score": 7.63,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_20",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "Key facts to remember",
+        "key_term": "January 1950 Constitution",
+        "summary": "Explain the concept of January 1950 Constitution",
+        "source_evidence": "• 26 January 1950: Constitution came into effect; India became a republic",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_8",
+          "char_span": [
+            1643,
+            1716
+          ],
+          "supporting_text": "• 26 January 1950: Constitution came into effect; India became a republic"
+        },
+        "importance_score": 7.61,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_12",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "3. Adoption of the Constitution",
+        "key_term": "Constituent Assembly",
+        "summary": "Explain the concept of Constituent Assembly",
+        "source_evidence": "The Constituent Assembly adopted the Constitution on 26 November 1949.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_4",
+          "char_span": [
+            1098,
+            1168
+          ],
+          "supporting_text": "The Constituent Assembly adopted the Constitution on 26 November 1949."
+        },
+        "importance_score": 7.59,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_1",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "1. Why did India need a Constitution?",
+        "key_term": "Indian Constitution",
+        "summary": "Explain the concept of Indian Constitution",
+        "source_evidence": "The Making of the Indian Constitution History & Civics | Standard 8",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_1",
+          "char_span": [
+            0,
+            67
+          ],
+          "supporting_text": "The Making of the Indian Constitution History & Civics | Standard 8"
+        },
+        "importance_score": 7.57,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_15",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "3. Adoption of the Constitution",
+        "key_term": "Constitution",
+        "summary": "Explain the concept of Constitution",
+        "source_evidence": "The Constitution established a democratic system of government.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_4",
+          "char_span": [
+            1317,
+            1380
+          ],
+          "supporting_text": "The Constitution established a democratic system of government."
+        },
+        "importance_score": 7.55,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_17",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "Key facts to remember",
+        "key_term": "Constituent Assembly",
+        "summary": "Explain the concept of Constituent Assembly",
+        "source_evidence": "• 9 December 1946: First meeting of the Constituent Assembly",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_5",
+          "char_span": [
+            1484,
+            1544
+          ],
+          "supporting_text": "• 9 December 1946: First meeting of the Constituent Assembly"
+        },
+        "importance_score": 7.53,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_8",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "2. The Constituent Assembly",
+        "key_term": "Rajendra Prasad",
+        "summary": "Explain the concept of Rajendra Prasad",
+        "source_evidence": "Dr. Rajendra Prasad was elected its permanent President.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            720,
+            776
+          ],
+          "supporting_text": "Dr. Rajendra Prasad was elected its permanent President."
+        },
+        "importance_score": 7.51,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_18",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "Key facts to remember",
+        "key_term": "Drafting Committee",
+        "summary": "Explain the concept of Drafting Committee",
+        "source_evidence": "• Dr. B. R. Ambedkar: Chairman of the Drafting Committee",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_6",
+          "char_span": [
+            1545,
+            1601
+          ],
+          "supporting_text": "• Dr. B. R. Ambedkar: Chairman of the Drafting Committee"
+        },
+        "importance_score": 7.51,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_19",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "Key facts to remember",
+        "key_term": "November 1949 Constitution",
+        "summary": "Explain the concept of November 1949 Constitution",
+        "source_evidence": "• 26 November 1949: Constitution adopted",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_7",
+          "char_span": [
+            1602,
+            1642
+          ],
+          "supporting_text": "• 26 November 1949: Constitution adopted"
+        },
+        "importance_score": 7.42,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_11",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "2. The Constituent Assembly",
+        "key_term": "discussions shape Constitution",
+        "summary": "Explain the concept of discussions shape Constitution",
+        "source_evidence": "These discussions helped shape a Constitution suited to an independent India.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            988,
+            1065
+          ],
+          "supporting_text": "These discussions helped shape a Constitution suited to an independent India."
+        },
+        "importance_score": 5.83,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_13",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "3. Adoption of the Constitution",
+        "key_term": "India republic",
+        "summary": "Explain the concept of India republic",
+        "source_evidence": "It came into effect on 26 January 1950, when India became a republic.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_4",
+          "char_span": [
+            0,
+            69
+          ],
+          "supporting_text": "It came into effect on 26 January 1950, when India became a republic."
+        },
+        "importance_score": 5.78,
+        "formulas": [],
+        "numerical_case": null
+      }
+    ],
+    "chunk_count": 1
+  },
+  "evaluation": {
+    "total_questions": 7,
+    "valid_source_evidence_pct": 100.0,
+    "answer_correctness_pct": 100.0,
+    "learning_point_coverage_pct": 100.0,
+    "question_type_counts": {
+      "sequence": 1,
+      "why_how": 1,
+      "comparison": 1,
+      "recall": 1,
+      "application": 1,
+      "reasoning": 1,
+      "understanding": 1
+    },
+    "distinct_question_types": 7,
+    "duplicate_rate_pct": 0.0,
+    "grade_appropriateness_pct": 100.0,
+    "average_rubric_score": 4.89,
+    "human_evaluation": {
+      "evaluated_count": 0,
+      "human_acceptance_rate_pct": null,
+      "avg_human_edit_distance": null
+    }
+  },
+  "rubric_documentation": {
+    "scale_range": {
+      "min": 1,
+      "max": 5
+    },
+    "criteria": {
+      "curriculum_relevance": {
+        "title": "Curriculum Relevance",
+        "question": "Does it test an important, syllabus-central learning point?",
+        "scale": {
+          "1": "Tests non-curriculum noise (e.g., publication/reprint dates, ISBNs, page headers) or lacks a learning point.",
+          "2": "Focuses on a trivial peripheral detail rather than a core concept of the passage.",
+          "3": "Tests a valid secondary fact or definition from the passage.",
+          "4": "Tests a primary concept, cause-effect relationship, or scientific/mathematical principle.",
+          "5": "Directly targets a high-priority learning point central to the ICSE chapter with clear pedagogical purpose."
+        }
+      },
+      "source_fidelity": {
+        "title": "Source Fidelity",
+        "question": "Is the answer directly supported by the supplied material?",
+        "scale": {
+          "1": "Unsupported by source, fabricates evidence, invents a page number, or claims to read an unextracted visual diagram/map.",
+          "2": "Weak token overlap with the supplied source text or relies on unapproved external assumptions.",
+          "3": "Partially supported by the source passage, with minor paraphrasing drift.",
+          "4": "Strongly grounded in the supplied text with verifiable evidence overlap and valid page reference.",
+          "5": "Verbatim or near-verbatim source evidence verified on the exact source page with zero unsupported claims."
+        }
+      },
+      "clarity": {
+        "title": "Clarity & Specificity",
+        "question": "Is the wording specific, unambiguous, and well-structured?",
+        "scale": {
+          "1": "Fragmented, ungrammatical, or ambiguous wording that students cannot interpret.",
+          "2": "Vague prompt (e.g., 'Write about this') lacking a clear task verb or scope.",
+          "3": "Understandable question with acceptable wording but minor phrasing stiffness.",
+          "4": "Clear, specific question with an explicit cognitive verb and unambiguous scope.",
+          "5": "Exemplary, examination-ready ICSE question phrasing with precise terminology and clear task expectations."
+        }
+      },
+      "educational_value": {
+        "title": "Educational Value",
+        "question": "Does it test meaningful learning rather than mechanical sentence copying?",
+        "scale": {
+          "1": "Mechanical fill-in-the-blank or trivial copying of a sentence with zero cognitive demand.",
+          "2": "Surface-level recall of an isolated word when the passage supports deeper understanding.",
+          "3": "Tests basic factual recall or definition comprehension appropriately.",
+          "4": "Requires conceptual explanation, cause-effect reasoning, sequence ordering, or comparison.",
+          "5": "Engages higher-order application, multi-point synthesis, table interpretation, or quantitative problem solving."
+        }
+      },
+      "distinctness": {
+        "title": "Distinctness",
+        "question": "Does it add value beyond other questions in the set?",
+        "scale": {
+          "1": "Exact or near-exact duplicate of another question or tests the exact same fact in slightly different words.",
+          "2": "High lexical/conceptual overlap (>= 55% similarity) with an already selected question.",
+          "3": "Touches a related aspect of the same section with moderate overlap.",
+          "4": "Tests a distinct concept or applies a different cognitive skill/question type.",
+          "5": "Completely distinct learning point and question category, maximizing topic coverage."
+        }
+      },
+      "answer_quality": {
+        "title": "Answer Quality & Notation Accuracy",
+        "question": "Is the answer accurate, complete, notation-faithful, and deterministically verified?",
+        "scale": {
+          "1": "Empty, factually incorrect, fails deterministic math/chemical balance verification, or corrupts scientific notation.",
+          "2": "Incomplete answer missing key explanation steps or required SI units.",
+          "3": "Correct core answer but brief or lacking full context.",
+          "4": "Accurate, complete answer preserving source terminology and notation.",
+          "5": "Comprehensive, curriculum-grade model answer with verified calculations/balanced equations and exact scientific notation."
+        }
+      },
+      "grade_suitability": {
+        "title": "ICSE Grade Suitability",
+        "question": "Is it appropriate for the specified ICSE class (Classes 8–10 vs Classes 11–12)?",
+        "scale": {
+          "1": "Severely mismatched for the target ICSE class (e.g., advanced calculus jargon for Class 8 or trivial one-word recall for Class 12).",
+          "2": "Vocabulary or expected reasoning depth noticeably above or below the target class band.",
+          "3": "Acceptable for the class level with minor phrasing adjustments needed.",
+          "4": "Well-matched to the cognitive and vocabulary expectations of the specified ICSE class.",
+          "5": "Calibrated specifically to ICSE Class 8–10 (accessible, foundational reasoning) or Class 11–12 (rigorous, analytical/multi-step depth)."
+        }
+      }
+    },
+    "default_thresholds": {
+      "min_criterion_score": 3,
+      "min_source_fidelity": 4,
+      "min_grade_suitability": 3,
+      "min_average_score": 3.6,
+      "max_similarity_threshold": 0.55,
+      "require_math_verification": true,
+      "require_chemical_balance_check": true,
+      "auto_revise_recoverable": true,
+      "weights": {
+        "curriculum_relevance": 1.15,
+        "source_fidelity": 1.35,
+        "clarity": 1.0,
+        "educational_value": 1.1,
+        "distinctness": 1.0,
+        "answer_quality": 1.25,
+        "grade_suitability": 1.15
+      }
+    },
+    "active_thresholds": {
+      "min_criterion_score": 3,
+      "min_source_fidelity": 4,
+      "min_grade_suitability": 3,
+      "min_average_score": 3.6,
+      "max_similarity_threshold": 0.55,
+      "require_math_verification": true,
+      "require_chemical_balance_check": true,
+      "auto_revise_recoverable": true,
+      "weights": {
+        "curriculum_relevance": 1.15,
+        "source_fidelity": 1.35,
+        "clarity": 1.0,
+        "educational_value": 1.1,
+        "distinctness": 1.0,
+        "answer_quality": 1.25,
+        "grade_suitability": 1.15
+      }
+    },
+    "validation_statuses": {
+      "accepted": "Meets all individual criterion minimums and the weighted average score threshold.",
+      "revised": "Automatically revised during the review pass to resolve a recoverable issue and now meets thresholds.",
+      "needs_review": "Borderline score or unverified external/complex claim flagged for educator inspection.",
+      "rejected": "Fails source fidelity, deterministic math/chemistry verification, duplicate check, or minimum rubric thresholds."
+    }
+  },
+  "metadata": {
+    "class_level": 8,
+    "subject": "History & Civics",
+    "requested_question_count": 7,
+    "returned_question_count": 7,
+    "planned_question_types": [
+      "sequence",
+      "comparison",
+      "why_how",
+      "understanding",
+      "application",
+      "recall",
+      "reasoning"
+    ],
+    "provider": "deterministic",
+    "model": "icse-pedagogical-synthesizer-v2",
+    "warnings": []
+  },
+  "all_evaluated_candidates": [
+    {
+      "question_id": "q_01",
+      "question": "Arrange the key milestones in the making of the Indian Constitution in chronological order from 9 December 1946 to 26 January 1950, stating what happened on each date.",
+      "answer": "In chronological order: (1) 9 December 1946 — the Constituent Assembly held its first meeting; (2) 15 August 1947 — India became independent; (3) 26 November 1949 — the Constitution of India was adopted; and (4) 26 January 1950 — the Constitution came into effect, when India became a republic.",
+      "question_type": "sequence",
+      "difficulty": "medium",
+      "learning_point": "Arrange the chronological milestones in the making of the Indian Constitution from 9 December 1946 to 26 January 1950",
+      "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. The Assembly first met on 9 December 1946. The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 9 December 1946: First meeting of the Constituent Assembly • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_syn_sequence",
+        "char_span": [
+          106,
+          634
+        ],
+        "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. The Assembly first met on 9 December 1946. The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 9 December 1946: First meeting of the Constituent Assembly • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_02",
+      "question": "Why did India need a Constitution after becoming independent on 15 August 1947?",
+      "answer": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "question_type": "why_how",
+      "difficulty": "medium",
+      "learning_point": "Explain why India needed a Constitution after becoming independent on 15 August 1947",
+      "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          106,
+          479
+        ],
+        "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country. India was a large and diverse nation, with people belonging to different religions, languages, and communities. A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_03",
+      "question": "What is the difference between the significance of 26 November 1949 and 26 January 1950 in the making of the Indian Constitution?",
+      "answer": "The Constitution of India was adopted on 26 November 1949, whereas it came into effect on 26 January 1950, when India became a republic and 26 January is celebrated every year as Republic Day.",
+      "question_type": "comparison",
+      "difficulty": "medium",
+      "learning_point": "Distinguish between the adoption of the Constitution on 26 November 1949 and its commencement on 26 January 1950",
+      "source_evidence": "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_syn_adoption_commencement",
+        "char_span": [
+          1098,
+          1422
+        ],
+        "supporting_text": "The Constituent Assembly adopted the Constitution on 26 November 1949. It came into effect on 26 January 1950, when India became a republic. • 26 November 1949: Constitution adopted • 26 January 1950: Constitution came into effect; India became a republic What is the difference between 26 November 1949 and 26 January 1950?"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 3,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.75
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Moderate thematic overlap with q_01 (similarity=0.44)."
+      ]
+    },
+    {
+      "question_id": "q_04",
+      "question": "What roles did Dr. Rajendra Prasad and Dr. B. R. Ambedkar play in the Constituent Assembly during the making of the Indian Constitution?",
+      "answer": "Dr. Rajendra Prasad was elected as the permanent President of the Constituent Assembly, while Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.",
+      "question_type": "recall",
+      "difficulty": "easy",
+      "learning_point": "Identify the roles of Dr. Rajendra Prasad and Dr. B. R. Ambedkar in the Constituent Assembly",
+      "source_evidence": "Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. • Dr. B. R. Ambedkar: Chairman of the Drafting Committee What was Dr. B. R. Ambedkar’s role in making the Constitution?",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_syn_roles",
+        "char_span": [
+          720,
+          986
+        ],
+        "supporting_text": "Dr. Rajendra Prasad was elected its permanent President. Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. • Dr. B. R. Ambedkar: Chairman of the Drafting Committee What was Dr. B. R. Ambedkar’s role in making the Constitution?"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 3,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.72
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_05",
+      "question": "What important questions did the Constituent Assembly debate while preparing the Constitution, and how did these discussions help independent India?",
+      "answer": "The Constituent Assembly debated important questions including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+      "question_type": "application",
+      "difficulty": "medium",
+      "learning_point": "Explain what important questions the Constituent Assembly debated and how those discussions shaped the Constitution",
+      "source_evidence": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_3",
+        "char_span": [
+          720,
+          1008
+        ],
+        "supporting_text": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution. The Assembly debated important questions, including equality, freedom, minority rights, and the structure of government. These discussions helped shape a Constitution suited to an independent India."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_06",
+      "question": "What system of government did the Indian Constitution establish, and what four ideals are expressed in its Preamble?",
+      "answer": "The Constitution established a democratic system of government, and its Preamble expresses the four ideals of justice, liberty, equality, and fraternity.",
+      "question_type": "reasoning",
+      "difficulty": "medium",
+      "learning_point": "Identify the system of government established by the Constitution and the four ideals expressed in its Preamble",
+      "source_evidence": "The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_4",
+        "char_span": [
+          1317,
+          1461
+        ],
+        "supporting_text": "The Constitution established a democratic system of government. Its Preamble expresses the ideals of justice, liberty, equality, and fraternity."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_07",
+      "question": "What are the main functions that a Constitution performs in governing a country and protecting its citizens?",
+      "answer": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "question_type": "understanding",
+      "difficulty": "easy",
+      "learning_point": "Describe the main functions that a Constitution performs for a country and its citizens",
+      "source_evidence": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          0,
+          161
+        ],
+        "supporting_text": "A Constitution establishes how a country is governed, defines the powers of government, protects citizens’ rights, and sets out principles that guide the nation."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 4,
+        "distinctness": 4,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.74
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_08",
+      "question": "Why was the Constituent Assembly formed, what did its members discuss, and when did it first meet?",
+      "answer": "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946.",
+      "question_type": "recall",
+      "difficulty": "easy",
+      "learning_point": "State why the Constituent Assembly was formed, what its members discussed, and when it first met",
+      "source_evidence": "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_3",
+        "char_span": [
+          508,
+          719
+        ],
+        "supporting_text": "The Constituent Assembly was formed to prepare India’s Constitution. Its members discussed how the country should be governed and what rights its citizens should enjoy. The Assembly first met on 9 December 1946."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 3,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.72
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_09",
+      "question": "Explain needed fundamental rules and its main features.",
+      "answer": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country.",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Explain the concept of needed fundamental rules",
+      "source_evidence": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          106,
+          205
+        ],
+        "supporting_text": "When India became independent on 15 August 1947, it needed fundamental rules to govern the country."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 4,
+        "distinctness": 4,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.74
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_10",
+      "question": "Explain members discussed country and its main features.",
+      "answer": "Its members discussed how the country should be governed and what rights its citizens should enjoy.",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Explain the concept of members discussed country",
+      "source_evidence": "Its members discussed how the country should be governed and what rights its citizens should enjoy.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_3",
+        "char_span": [
+          0,
+          99
+        ],
+        "supporting_text": "Its members discussed how the country should be governed and what rights its citizens should enjoy."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 4,
+        "distinctness": 4,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.74
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_11",
+      "question": "Explain Drafting Committee and its main features.",
+      "answer": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Explain the concept of Drafting Committee",
+      "source_evidence": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_3",
+        "char_span": [
+          777,
+          866
+        ],
+        "supporting_text": "Dr. B. R. Ambedkar chaired the Drafting Committee, which prepared the draft Constitution."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 4,
+        "distinctness": 3,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.61
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Moderate thematic overlap with q_04 (similarity=0.42)."
+      ]
+    },
+    {
+      "question_id": "q_12",
+      "question": "Explain Republic Day and its main features.",
+      "answer": "Republic Day is celebrated on 26 January each year to commemorate this event.",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Explain the concept of Republic Day",
+      "source_evidence": "Republic Day is celebrated on 26 January each year to commemorate this event.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_4",
+        "char_span": [
+          1239,
+          1316
+        ],
+        "supporting_text": "Republic Day is celebrated on 26 January each year to commemorate this event."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 4,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 4.86
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    }
+  ]
+}
