@@ -72,9 +72,15 @@ Keep the ruff `rev` in `.pre-commit-config.yaml` equal to the ruff pin in `requi
 The offline engine behind the public site (`learn/teaching_web.py`, deployed on Render with the `Dockerfile` and `requirements-teaching.txt`). It needs no API key, and the methodology spec doesn't govern it.
 - `sheet.py` reads the uploaded PDF's layout; `cards.py` plans and prints the study cards. Follow `docs/ENGINE_GUIDE.md`: engine changes leave the upload page template alone (change it only when the task is about the page itself), add no topic-specific rules, never weaken a test.
 - `detective.py` makes the Detective case file (design in `docs/DETECTIVE_GAME.md`). Rule A: every line of the sheet is on a card. Rule B: card variety and order. `check_case_file` gates printing.
-- Key Facts (`plan_cards(..., key_facts=True)`, the site's "Key Facts" choice, no AI): only what the sheet marks to learn gets a card.
+- Key Facts (`plan_cards(..., key_facts=True)`, the site's first and default choice, no AI): only what the sheet marks to learn gets a card. An upload that names no card type gets Key Facts, so no AI credits are spent unless Detective is picked.
   - `sheet.py` records the words each line prints in bold (`Item.bold`) and bullets (`Item.bullet`).
-  - Bold words are the answers, and bold words printed as one list share a card. Sentences printed all in bold, bullet points and numbered points get the usual cards. Headings, tables, pictures, unanswered questions and other prose get none.
+  - Bold words are the answers, and bold words printed as one list share a card. A bold label asks "When…?" for a date, "Who…?" for a person, else "What is it called?".
+  - Sentences printed all in bold, bullet points and numbered points (`_fact_cards`):
+    - The usual date, number or term gap comes first.
+    - Else the word the sentence ends on is hidden (`_end_gap`), or a two-word term the sheet repeats ("carbon dioxide").
+    - Else, when it ends on a general word, a verb or an adverb, the subject is shown and the rest asked for (`_subject_split`).
+    - Never half a sentence cut anywhere else.
+  - Headings, tables, pictures, unanswered questions and other prose get none.
   - A sheet that marks nothing gets the usual cards with `UNMARKED_NOTE`.
   - `/key-facts` lists the planned cards as JSON. `/preview` and `/generate` take `skip`, the card numbers the parent took out. The server plans the cards again and leaves those out, so the PDF never prints text sent by the browser.
 - `ai_cards.py` lets a model choose a case file's cards. The model only picks lines and words to hide; code builds every card from the sheet's own words and falls back to the rule-based cards on any failure.

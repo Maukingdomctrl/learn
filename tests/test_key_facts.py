@@ -163,7 +163,7 @@ def test_sentences_printed_all_in_bold_get_the_usual_card_and_unmarked_prose_get
 
     assert asked == {
         f"The Indian National Congress was founded in {GAP}.": "1885",
-        "India is …": "… a democratic republic.",  # too short for the usual finish card: cut after its verb
+        f"India is a democratic {GAP}.": "republic",  # the word the fact ends on, not half the sentence
         f"The Right to Education covers children aged {GAP} years.": "6–14",
     }
     usual = {card.clue for card in plan_cards(_sheet(pdf))}
@@ -180,7 +180,8 @@ def test_a_bold_word_said_for_emphasis_or_a_bold_label_such_as_note_is_not_asked
     )
     cards = _key_facts(pdf)
     assert not any(card.answer in {"not", "Note"} for card in cards)
-    assert any(card.clue.startswith("Coal is not") for card in cards)  # the bullet still gets its usual card
+    # The bullet still gets a card: it ends on a verb, so its subject is shown and the rest asked for.
+    assert any(card.clue == "Coal …" and card.answer == "… is not renewable, but sunlight is." for card in cards)
 
 
 def test_a_heading_each_page_repeats_among_its_text_stays_but_a_running_header_goes():
@@ -242,3 +243,116 @@ def test_a_sheet_that_marks_nothing_gets_cards_for_every_line_with_a_note_saying
     marked = _sheet_pdf([*lines, [("• The ", False), ("Yamuna", True), (" joins the Ganga at Prayagraj.", False)]])
     cards, notes = plan_printable_cards(extract_facts(extract(marked).units), marked, "facts")
     assert [card.answer for card in cards] == ["Yamuna"] and UNMARKED_NOTE not in notes
+
+
+def _dates_sheet() -> bytes:
+    return _sheet_pdf(
+        [
+            "The Constituent Assembly",
+            [("The Assembly first met on ", False), ("9 December 1946", True), (".", False)],
+            "Adoption of the Constitution",
+            [
+                ("The Constituent Assembly adopted the Constitution on ", False),
+                ("26 November 1949", True),
+                (".", False),
+            ],
+            [("It came into effect on ", False), ("26 January 1950", True), (", when India became a republic.", False)],
+            "Key Dates",
+            [("• ", False), ("9 December 1946", True), (" – First meeting of the Constituent Assembly", False)],
+            [("• ", False), ("Dr. B. R. Ambedkar", True), (" – Chairman of the Drafting Committee", False)],
+            [("• ", False), ("26 January", True), (" – Republic Day", False)],
+            [("• ", False), ("Evaporation:", True), (" Heat from the Sun changes water into water vapour.", False)],
+            "Republic Day",
+            [("The Constitution was written by the Assembly. It came into effect on ", False)]
+            + [("26 January 1950", True), (".", False)],
+        ]
+    )
+
+
+def test_a_bold_date_label_asks_when_and_a_bold_name_asks_who():
+    cards = _key_facts(_dates_sheet())
+    labels = {card.answer: (card.question, card.clue) for card in cards if card.kind == "term"}
+
+    assert labels == {
+        "9 December 1946": ("When did it happen?", "First meeting of the Constituent Assembly"),
+        "Dr. B. R. Ambedkar": ("Who is this?", "Chairman of the Drafting Committee"),
+        "26 January": ("When is it?", "Republic Day"),  # a day that comes round every year
+        "Evaporation": ("What is it called?", "Heat from the Sun changes water into water vapour."),
+    }
+
+
+def test_a_gap_shows_its_own_sentence_when_the_point_has_other_bold_answers():
+    clues = [card.clue for card in _key_facts(_dates_sheet()) if card.kind == "gap"]
+
+    # Each date's card shows only its sentence, so neither prints the other's answer.
+    assert f"The Constituent Assembly adopted the Constitution on {GAP}." in clues
+    assert f"It came into effect on {GAP}, when India became a republic." in clues
+    # With one bold answer, the whole point is shown: its first sentence says what "It" is.
+    assert f"The Constitution was written by the Assembly. It came into effect on {GAP}." in clues
+
+
+def test_a_bold_fact_hides_the_word_it_ends_on_or_asks_for_what_follows_its_subject():
+    facts = [
+        "Filtration can separate an insoluble solid from a liquid.",
+        "Evaporation can leave a dissolved solid behind.",
+        "Distillation involves evaporation followed by condensation.",
+        "A chemical symbol represents an element.",
+        "Subscripts in a formula show the number of atoms of the preceding element.",
+        "A physical change does not create a new substance.",
+        "A chemical change forms new substance(s).",
+        "Unknown chemicals must not be tasted.",
+        "Municipal bodies manage civic services in urban areas.",
+        "Values below 7 are acidic; values above 7 are basic.",
+        "Fundamental Rights are guaranteed by the Constitution of India.",
+    ]
+    cards = _key_facts(_sheet_pdf(["Separating mixtures", *[[("• ", False), (fact, True)] for fact in facts]]))
+    asked = {card.clue: card.answer for card in cards}
+
+    assert asked == {
+        f"Filtration can separate an insoluble solid from {GAP}.": "a liquid",  # "a" or "an" go in the gap
+        f"Evaporation can leave a dissolved {GAP} behind.": "solid",  # "behind" stays after the gap
+        f"Distillation involves evaporation followed by {GAP}.": "condensation",
+        f"A chemical symbol represents {GAP}.": "an element",
+        f"Subscripts in a formula show the number of atoms of the preceding {GAP}.": "element",
+        # Ending on a general word ("substance") or a verb: the subject is shown and the rest asked for.
+        "A physical change …": "… does not create a new substance.",
+        "A chemical change …": "… forms new substance(s).",
+        "Unknown chemicals …": "… must not be tasted.",
+        # Ending on a general phrase ("in urban areas"): the word before it is hidden.
+        f"Municipal bodies manage civic {GAP} in urban areas.": "services",
+        # Two halves joined by ";" are two facts, each without the other's answer.
+        f"Values below 7 are {GAP}": "acidic",
+        f"values above 7 are {GAP}.": "basic",
+        f"Fundamental Rights are guaranteed by the {GAP}.": "Constitution of India",  # a name, hidden whole
+    }
+    questions = {card.answer: card.question for card in cards}
+    assert questions["a liquid"] == "Which term fits the gap?" and questions["solid"] == "Which term fits the gap?"
+    assert questions["Constitution of India"] == "Which name fits the gap?"
+    assert questions["… does not create a new substance."] == "Finish the sentence."
+
+
+def test_a_two_word_term_the_sheet_repeats_is_hidden_whole():
+    pdf = _sheet_pdf(
+        [
+            "Plants and the air",
+            [("Plants take in carbon dioxide and India is a democratic republic in this test.", False)],
+            "Facts to Remember",
+            [("• ", False), ("Plants act as a net sink for carbon dioxide.", True)],
+            [("• ", False), ("India is a democratic republic.", True)],
+            [("• ", False), ("Indicators help identify acidic or basic solutions.", True)],
+            [("• ", False), ("Some solutions are basic solutions.", True)],
+        ]
+    )
+    asked = {card.clue: card.answer for card in _key_facts(pdf)}
+
+    assert asked[f"Plants act as a net sink for {GAP}."] == "carbon dioxide"  # printed together twice on the sheet
+    assert asked[f"India is a democratic {GAP}."] == "republic"  # the whole term would leave "India is" alone
+    assert asked[f"Indicators help identify acidic or basic {GAP}."] == "solutions"  # "basic" pairs with "acidic"
+
+
+def test_a_task_or_a_line_to_the_reader_is_not_a_fact_to_hide_a_word_in():
+    tasks = ["Discuss in groups how plants grow.", "Check your answers with a partner.", "Why do leaves fall?"]
+    pdf = _sheet_pdf(["Activities", *[[("• ", False), (task, False)] for task in tasks]])
+    cards = plan_printable_cards(extract_facts(extract(pdf).units), pdf, "facts")[0]
+
+    assert not any(card.kind == "gap" and card.clue.startswith(("Discuss", "Check", "Why")) for card in cards)

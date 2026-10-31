@@ -8,6 +8,7 @@ behind a gap; the only added words are the fixed questions and labels.
 """
 
 import re
+from collections import Counter
 from dataclasses import dataclass, replace
 from hashlib import sha256
 from itertools import pairwise
@@ -69,6 +70,8 @@ _QUESTIONS = {
     "sort": ("Which one is it: {}?", "Which one is it: {}?", "Classify it: {}?"),
     "which": ("Which {} is it?", "Which {} is it?", "Identify the {}."),
     "year_of": ("Which year is it?", "Which year goes with it?", "Give its year."),
+    "when": ("When was it?", "When did it happen?", "State when it happened."),
+    "when_day": ("When is it?", "When is it?", "Give its date."),
     "order": ("Put them in order.", "Put them in time order.", "Arrange them chronologically."),
 }
 
@@ -842,7 +845,14 @@ _LEADING_LABEL = re.compile(r"\s*(?::|\s[–—-])\s+(?=\S)")
 KEY_FACT_CLUE = 220  # a point longer than this shows only the sentence around its gap
 
 
-def _key_fact_cards(item: Item, heading: Heading | None, pieces: list[str], terms: bool, standard: int) -> list[Card]:
+def _key_fact_cards(
+    item: Item,
+    heading: Heading | None,
+    pieces: list[str],
+    terms: bool,
+    standard: int,
+    compounds: frozenset[str] = frozenset(),
+) -> list[Card]:
     """Key Facts: the words a point prints in bold are its answers. A sentence printed all in bold, and each sentence
     of a bulleted or numbered point, gets the usual card instead; other prose gets none."""
     text, about = item.text, heading.name if heading else item.context
@@ -858,32 +868,224 @@ def _key_fact_cards(item: Item, heading: Heading | None, pieces: list[str], term
     for index, (piece, (start, end)) in enumerate(zip(pieces, places, strict=True)):
         here = [group for group, owner in zip(groups, owners, strict=True) if owner == index]
         if here:
-            cards.extend(card for group in here if (card := _bold_card(item, about, group, (start, end), standard)))
+            # The whole point gives a gap more to go on, unless it would print the answers of its other sentences.
+            alone = len(here) == len(groups)
+            for group in here:
+                card = _bold_card(item, about, group, (start, end), alone, standard)
+                cards.extend([card] if card is not None else [])
         elif listed or _bold_share(text, start, end, spans) >= 0.7:
             # No riddle ("What is this about?"): its answer is the topic, which every other card's label then
             # could not show.
-            usual = _point_cards(item, None, [piece], terms, standard)
-            short = _short_finish(piece) if not usual else None
-            if short is not None:
-                usual = [_card("finish", _ask("finish", standard), short[0], short[1], item, source=piece)]
-            cards.extend(replace(card, about=about if _readable(about) else "") for card in usual)
+            for clause in _halves(piece):
+                usual = _fact_cards(item, clause, terms, standard, compounds)
+                cards.extend(replace(card, about=about if _readable(about) else "") for card in usual)
     return cards
 
 
-# The verbs a short fact is cut after: "India is … → … a democratic republic."
-_LINKING = frozenset("is are was were has have had means include includes".split())
+def _halves(piece: str) -> list[str]:
+    """A sentence in two halves joined by ";" is two facts: "Values below 7 are acidic; values above 7 are basic."."""
+    halves = [half.strip() for half in re.split(r";\s+", piece)]
+    return halves if len(halves) > 1 and all(len(half.split()) >= 4 for half in halves) else [piece]
 
 
-def _short_finish(text: str) -> tuple[str, str] | None:
-    """A sentence too short for the usual finish card, cut after its verb, or after its third word."""
+def _fact_cards(item: Item, text: str, terms: bool, standard: int, compounds: frozenset[str]) -> list[Card]:
+    """The card for a sentence printed all in bold, or a bulleted or numbered point.
+
+    The usual card comes first: a date, year or number, a term the sentence defines, an equation or a chain.
+    Otherwise the gap is the word the sentence ends on ("… separate an insoluble solid from ______."), or, when it
+    ends on a general word, a verb or an adverb, everything after its subject ("A physical change …" → "… does not
+    create a new substance."). Half a sentence cut anywhere else is a long, vague answer to check."""
+    usual = _point_cards(item, None, [text], terms, standard)
+    if any(card.kind != "finish" for card in usual):
+        return usual
+    if _open_task(text) or _TO_THE_READER.search(text) or text.rstrip().endswith("?"):
+        return usual  # "Discuss in groups how plants grow." is a task, not a fact
+
+    if (ending := _end_gap(text, compounds)) is not None:
+        clue, answer = ending
+        return [_card("gap", _end_question(answer, standard), clue, answer, item, source=text)]
+    if (split := _subject_split(text)) is not None:
+        return [_card("finish", _ask("finish", standard), split[0], split[1], item, source=text)]
+    return usual
+
+
+# Words a sentence may end on after its last noun; they stay after the gap: "… leave a dissolved solid behind."
+_PARTICLES = frozenset(
+    "behind away out off up down back together apart again too also only alone here there worldwide nationwide "
+    "everywhere abroad overseas today".split()
+)
+# Words too general to be what a sentence teaches: "… in urban areas", "… the law-making process".
+_VAGUE = frozenset(
+    "area areas region regions place places way ways part parts kind kinds type types form forms process processes "
+    "thing things time times year years day days needs functions features factors effects methods steps level "
+    "levels amount amounts side sides substance substances".split()
+)
+_PREPOSITIONS = frozenset(
+    "in on at to from by for with into onto over under across through during within without between among around "
+    "about against along before after beyond near of as than per".split()
+)
+_PRONOUNS = frozenset("it them this that these those him her us they he she we you its their another".split())
+# Words before a verb: "… too small to see", "… must not be tasted". A sentence ending on a verb has no end gap.
+_VERB_BEFORE = frozenset(
+    "to can cannot could may might must will would shall should be been being not do does did".split()
+)
+_SUBJECTS = frozenset("i we you they he she it".split())
+# Common verbs in their plain form: after "to" they are not a gap ("too small to see"), and after a plural subject
+# they start its verb ("Panchayati Raj institutions | serve …").
+_COMMON_VERBS = frozenset(
+    "be have do make go see get take give come know think look use find tell ask work feel try leave call keep let "
+    "begin seem help show hear play run move live believe bring happen write provide sit stand lose pay meet include "
+    "continue set learn change lead understand watch follow stop create speak read allow add spend grow open walk "
+    "win offer remember consider appear buy wait serve die send expect build stay fall cut reach remain suggest "
+    "raise pass sell require decide carry produce release absorb protect support reduce increase cause form need "
+    "contain involve depend affect control prevent separate dissolve melt boil freeze flow consist represent describe "
+    "spread differ vary occur exist rise mean explain state act mark connect join divide combine react heat cool "
+    "elect govern rule manage guarantee permit hold cover supply store transport travel enter evaporate condense "
+    "measure determine".split()
+)
+
+
+def _verb_s(word: str) -> bool:
+    """ "forms", "consists", "reaches", "varies": a common verb after a singular subject."""
+    stems = (word[:-1], word[:-2] if word.endswith("es") else "", word[:-3] + "y" if word.endswith("ies") else "")
+    return word.endswith("s") and any(stem in _COMMON_VERBS for stem in stems)
+
+
+# Nouns that end like an adverb ("individually"), which a sentence may end on after its last noun.
+_NOT_ADVERBS = frozenset("family assembly supply monopoly anomaly reply rally ally belly jelly bully".split())
+
+
+def _end_gap(text: str, compounds: frozenset[str] = frozenset()) -> tuple[str, str] | None:
+    """A sentence with the word it ends on hidden: "Filtration can separate an insoluble solid from ______." and
+    "a liquid".
+
+    Words printed after that word stay ("Evaporation can leave a dissolved ______ behind."), a name is hidden whole
+    ("guaranteed by the ______" → "Constitution of India"), as is a two-word term the sheet prints more than once
+    ("a net sink for ______" → "carbon dioxide"), and "a" or "an" go into the gap so they give nothing away.
+
+    A sentence that ends on a general phrase ("… civic services in urban areas") hides the word before it. One that
+    ends on a general word with no such phrase, or on a verb ("… must not be tasted"), has no end gap."""
+    end = re.search(r"[.!?][\"'”’)]*$", text)
+    body = text[: end.start()] if end else text
+    if _MATH.search(body):
+        return None
+    words = body.split()
+    stop = len(words)
+    if words and words[-1].endswith(")"):
+        # "… used to make glucose (sugar)": the bracket stays after the gap
+        opening = next((index for index in range(len(words) - 1, -1, -1) if words[index].startswith("(")), None)
+        stop = opening if opening else stop
+    while stop and (words[stop - 1].casefold() in _PARTICLES or _adverb(words[stop - 1])):
+        stop -= 1
+    moved = False
+    while stop and words[stop - 1].casefold().strip(",;:") in _VAGUE:
+        phrase = range(stop - 2, max(stop - 5, 0), -1)
+        cut = next((index for index in phrase if words[index].casefold() in _PREPOSITIONS), None)
+        if cut is None:
+            return None
+        stop, moved = cut, True
+    if stop < 3:
+        return None
+    last = words[stop - 1]
+    core = last.rstrip(",;:")
+    lowered = core.casefold()
+    if not re.fullmatch(r"[^\W\d_][\w'’-]*", core) or lowered in _PRONOUNS | _EMPHASIS:
+        return None
+    before = words[stop - 2].casefold()
+    if (lowered.endswith("ed") and not lowered.endswith("eed")) or (before in _VERB_BEFORE and before != "to"):
+        return None
+    if before == "to" and lowered in _COMMON_VERBS:
+        return None  # "… too small to see", but "Melting is solid to ______." hides "liquid"
+    pair = f"{before} {lowered}" in compounds
+    if moved and _verb_s(lowered) and not pair:
+        return None  # "Monsoon rainfall differs across regions": "differs" is the verb
+    if words[stop - 2].casefold() in _SUBJECTS:
+        return None  # "… than they put back": a verb after its subject
+    start = stop - 1
+    if core[0].isupper():
+        leading = " ".join([*words[: stop - 1], core])
+        name = next((match for match in _NAME.finditer(leading) if match.end() == len(leading)), None)
+        if name is not None and len(name.group().split()) <= stop - 2:
+            start = stop - len(name.group().split())  # "Bay of Bengal", hidden whole
+    elif pair and words[stop - 3].casefold() not in {"and", "or"}:
+        # "carbon dioxide", printed together elsewhere on the sheet; not "acidic or basic solutions", where the
+        # first word pairs with the word before "or".
+        start = stop - 2
+    if start and words[start - 1].casefold() in {"a", "an"}:
+        start -= 1
+    if pair and start < stop - 1 and start + len(words) - stop < 3:
+        start = stop - 1  # "India is a democratic ______.": the whole term would leave too little to go on
+    answer = " ".join([*words[start : stop - 1], core])
+    shown = [*words[:start], *words[stop:]]
+    if len(shown) < 3 or any(_plain_words(word) == _plain_words(core) for word in shown):
+        return None  # too little left to go on, or the hidden word is printed again
+    return " ".join([*words[:start], GAP + last[len(core) :], *words[stop:]]) + (
+        text[end.start() :] if end else ""
+    ), answer
+
+
+def _compounds(sheet: Sheet) -> frozenset[str]:
+    """Two-word terms a sheet prints more than once, such as "carbon dioxide" or "climate change": a gap at the end
+    of a sentence hides them whole."""
+    small = _DETERMINERS | _PREPOSITIONS | _AUXILIARIES | _PRONOUNS | _EMPHASIS  # never the first word of a term
+    counts: Counter[str] = Counter()
+    for item in sheet.items:
+        words = re.findall(r"[^\W\d_][\w'’-]*|[^\w\s]", item.text.casefold())
+        counts.update(
+            f"{first} {second}"
+            for first, second in pairwise(words)
+            if first[0].isalpha() and second[0].isalpha() and first not in small
+        )
+    return frozenset(pair for pair, count in counts.items() if count >= 2)
+
+
+def _adverb(word: str) -> bool:
+    """ "individually", "chemically": an adverb a sentence ends on, kept after the gap."""
+    lowered = word.casefold().strip(",;:")
+    return lowered.endswith("ly") and len(lowered) > 5 and word[:1].islower() and lowered not in _NOT_ADVERBS
+
+
+def _end_question(answer: str, standard: int) -> str:
+    if re.search(r"\d", answer):
+        return _ask("equation", standard)  # "glucose + ______" → "O2"
+    words = [word for word in answer.split() if word.casefold() not in {"a", "an"}]
+    if all(word[0].isupper() for word in words if word.casefold() not in _NAME_STOPWORDS):
+        return _ask("name", standard)
+    return _ask("word" if len(words) == 1 else "words", standard)
+
+
+# Verbs a subject is followed by: "A physical change | does not create …", "Unknown chemicals | must not be tasted".
+_AUXILIARIES = frozenset(
+    "is are was were be been has have had can could may might must will would shall should".split()
+)
+_DETERMINERS = frozenset("a an the its their his her this that these those each every some many all both".split())
+
+
+def _subject_split(text: str) -> tuple[str, str] | None:
+    """A sentence cut after its subject: "A physical change …" → "… does not create a new substance."
+
+    The subject ends at its first auxiliary verb ("does", "must", "is"), or else at a common verb: "A chemical change |
+    forms new substance(s)", "Panchayati Raj institutions | serve …". With none of these, there is no split."""
     words = text.split()
-    if not 4 <= len(words) < 6 or _MATH.search(text) or not re.search(r"[.!?][\"'”’)]*$", text):
+    if len(words) < 4 or _MATH.search(text) or _open_task(text) or _TO_THE_READER.search(text) or "?" in text:
         return None
-    if _open_task(text) or _TO_THE_READER.search(text) or text.endswith("?"):
+    lowered = [word.casefold().strip(",;:") for word in words]
+    auxiliaries = range(1, min(9, len(words) - 1))
+    cut = next((index for index in auxiliaries if lowered[index] in _AUXILIARIES | {"does", "do", "did"}), None)
+    first = range(1, min(6, len(words) - 1))
+    if cut is None:  # "A chemical change | forms …"
+        verbs = (index for index in first if _verb_s(lowered[index]) and not _plural(lowered[index - 1]))
+        cut = next((index for index in verbs if not words[index - 1].endswith(",")), None)
+    if cut is None:  # "Panchayati Raj institutions | serve …"
+        cut = next((index for index in first if lowered[index] in _COMMON_VERBS and _plural(lowered[index - 1])), None)
+    if cut is None:
         return None
-    linking = next((index for index, word in enumerate(words[1:-1], start=1) if word.casefold() in _LINKING), None)
-    shown = linking + 1 if linking is not None else 3
-    return " ".join(words[:shown]) + " …", "… " + " ".join(words[shown:])
+    return " ".join(words[:cut]) + " …", "… " + " ".join(words[cut:])
+
+
+def _plural(word: str) -> bool:
+    """ "particles", not "photosynthesis", "gas" or "class"."""
+    return word.endswith("s") and not word.endswith(("ss", "us", "is"))
 
 
 def _bold_spans(item: Item) -> list[tuple[int, int]]:
@@ -964,26 +1166,51 @@ def _bold_groups(text: str, terms: list[tuple[int, int]]) -> list[list[tuple[int
 
 
 def _bold_card(
-    item: Item, about: str, group: list[tuple[int, int]], place: tuple[int, int], standard: int
+    item: Item, about: str, group: list[tuple[int, int]], place: tuple[int, int], alone: bool, standard: int
 ) -> Card | None:
-    """The card for one bold word or list: the point with the words hidden, or a bold label's meaning to name."""
+    """The card for one bold word or list: the point with the words hidden, or a bold label's meaning to name.
+
+    The clue is the sentence the words are printed in, or the whole point when it is short and its other sentences
+    print no bold words of their own (their cards' answers)."""
     text = item.text
     first, last = group[0][0], group[-1][1]
     words = [text[start:end] for start, end in group]
     label = _LEADING_LABEL.match(text, last) if len(group) == 1 and first == 0 else None
     if label is not None:
         # "Evaporation: Heat from the Sun changes …" asks for the term its meaning describes.
-        kind, question, clue = "term", _ask("term", standard), _blank(text[label.end() :], words)
+        meaning = text[label.end() :]
+        kind, question, clue = "term", _label_question(words[0], meaning, standard), _blank(meaning, words)
     else:
         start, end = place
         inside = start <= first and last <= end
-        source = text[start:end] if inside and len(text) > KEY_FACT_CLUE else text
+        source = text if (alone and len(text) <= KEY_FACT_CLUE) or not inside else text[start:end]
         kind, question, clue = "gap", _bold_question(text, group, place, standard), _blank(source, words)
         if GAP not in clue:
             return None
     if len(clue.replace(GAP, " ").split()) < 2:
         return None  # nothing left to go on
     return _card(kind, question, clue, text[first:last], item, about, source=text)
+
+
+# A date with its year, or a year: "9 December 1946", "December 9, 1946", "June 1757", "1857", "1920–22", "326 BCE".
+_DAY_TEXT = rf"\d{{1,2}}(?:st|nd|rd|th)?\s+(?:{_MONTHS})|(?:{_MONTHS})\s+\d{{1,2}}(?:st|nd|rd|th)?"
+_WHEN = re.compile(
+    rf"(?:(?:{_DAY_TEXT}),?\s+|(?:{_MONTHS})\s+)?"
+    r"(?:c\.\s*)?(?:1[0-9]{3}|20[0-9]{2}|\d{1,4}\s*(?:BCE|BC|CE|AD))(?:\s*[–—-]\s*\d{2,4})?",
+    re.I,
+)
+_DAY_OF_YEAR = re.compile(_DAY_TEXT, re.I)  # "26 January", which comes round every year
+_INITIALS = re.compile(r"\b(?:[A-Z]\.\s?){1,3}[A-Z][a-z]")  # "B. R. Ambedkar", "A. O. Hume"
+
+
+def _label_question(term: str, meaning: str, standard: int) -> str:
+    """What a bold label asks of its meaning: "When …?" for a date, "Who …?" for a person, else its name."""
+    if _WHEN.fullmatch(term):
+        return _ask("when", standard)
+    if _DAY_OF_YEAR.fullmatch(term):
+        return _ask("when_day", standard)
+    person = _PERSON_TITLE.match(term) or _INITIALS.search(term) or _PERSON_WORDS.search(meaning)
+    return _ask("who" if person and not _NOT_PERSON.search(term) else "term", standard)
 
 
 def _bold_question(text: str, group: list[tuple[int, int]], place: tuple[int, int], standard: int) -> str:
@@ -1051,6 +1278,7 @@ def plan_cards(sheet: Sheet, standard: int = 8, key_facts: bool = False) -> list
         return "" if any(position < other < at for other in later) else text
 
     answer_groups = {group for group, _ in keyed}
+    compounds = _compounds(sheet) if key_facts else frozenset()
     pieces = {id(item): _pieces(item.text) for item in items if item.kind == "point"}
     cards: list[Card] = []
     consumed: set[int] = set()
@@ -1098,11 +1326,14 @@ def plan_cards(sheet: Sheet, standard: int = 8, key_facts: bool = False) -> list
                 for piece in pieces[id(other)][:1]
             ]
             terms = heading is None and (_vocabulary(pieces[id(item)]) or _vocabulary(siblings))
-            point_cards = _key_fact_cards if key_facts else _point_cards
-            cards.extend(point_cards(item, heading, pieces[id(item)], terms, standard))
+            if key_facts:
+                cards.extend(_key_fact_cards(item, heading, pieces[id(item)], terms, standard, compounds))
+            else:
+                cards.extend(_point_cards(item, heading, pieces[id(item)], terms, standard))
         elif item.kind == "summary" and key_facts:
             # "Belfast = Shipbuilding & Titanic" asks for its bold words; "Who is this about?" would ask for the topic.
-            cards.extend(_key_fact_cards(item, headings.get(item.topic), _pieces(item.text), False, standard))
+            heading = headings.get(item.topic)
+            cards.extend(_key_fact_cards(item, heading, _pieces(item.text), False, standard, compounds))
         elif item.kind == "summary":
             name, rest = summary_parts(item.text)
             heading = next((h for h in headings.values() if h.name.casefold() == name.casefold()), None)
