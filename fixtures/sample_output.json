@@ -1,0 +1,2059 @@
+{
+  "status": "ok",
+  "questions": [
+    {
+      "question_id": "q_01",
+      "question": "Using Ohm's Law (V = I × R) from the text, calculate the potential difference V across a conductor of resistance R = 12 Ω when a current I = 2 A flows through it.",
+      "answer": "By Ohm's Law (V = I × R), the potential difference V = 2 A × 12 Ω = 24 V.",
+      "question_type": "problem_solving",
+      "difficulty": "medium",
+      "learning_point": "Solve numerical problem using V = I × R",
+      "source_evidence": "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          899,
+          1099
+        ],
+        "supporting_text": "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Deterministic formula check passed (I * R = 24).",
+        "Verified inline arithmetic '2  * 12 = 24'."
+      ]
+    },
+    {
+      "question_id": "q_02",
+      "question": "How do Dilute H₂SO₄(aq) and Acetic Acid CH₃COOH(aq) differ in terms of Degree of Dissociation and Electrical Conductivity?",
+      "answer": "For Dilute H₂SO₄(aq), the Degree of Dissociation is Complete (nearly 100%) and Electrical Conductivity is High conductivity. In contrast, for Acetic Acid CH₃COOH(aq), the Degree of Dissociation is Partial (< 5%) and Electrical Conductivity is Low conductivity.",
+      "question_type": "interpretation",
+      "difficulty": "medium",
+      "learning_point": "Interpret comparative data in Table 1.1: Comparison of Strong and Weak Electrolytes (Electrolyte, Degree of Dissociation, Major Conducting Particles, Electrical Conductivity)",
+      "source_evidence": "Table 1.1: Comparison of Strong and Weak Electrolytes: Dilute H₂SO₄(aq) (Degree of Dissociation: Complete (nearly 100%), Major Conducting Particles: Free mobile ions (H+ and SO₄²⁻), Electrical Conductivity: High conductivity); Acetic Acid CH₃COOH(aq) (Degree of Dissociation: Partial (< 5%), Major Conducting Particles: Mostly unionized molecules and few ions, Electrical Conductivity: Low conductivity)",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_tbl_tbl_p1_1",
+        "char_span": [
+          517,
+          920
+        ],
+        "supporting_text": "Table 1.1: Comparison of Strong and Weak Electrolytes: Dilute H₂SO₄(aq) (Degree of Dissociation: Complete (nearly 100%), Major Conducting Particles: Free mobile ions (H+ and SO₄²⁻), Electrical Conductivity: High conductivity); Acetic Acid CH₃COOH(aq) (Degree of Dissociation: Partial (< 5%), Major Conducting Particles: Mostly unionized molecules and few ions, Electrical Conductivity: Low conductivity)"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_03",
+      "question": "Electrolysis And Electrical Energy: ______: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻.",
+      "answer": "Coordinate Ion Check",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Define and explain Coordinate Ion Check",
+      "source_evidence": "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_4",
+        "char_span": [
+          1385,
+          1444
+        ],
+        "supporting_text": "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_04",
+      "question": "______ relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.",
+      "answer": "Whereas the Early Nationalists",
+      "question_type": "comparison",
+      "difficulty": "medium",
+      "learning_point": "Compare and contrast Assertive Nationalists",
+      "source_evidence": "Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.",
+      "source_page": 2,
+      "source_reference": {
+        "page_number": 2,
+        "paragraph_id": "p2_para_1",
+        "char_span": [
+          698,
+          880
+        ],
+        "supporting_text": "Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 3,
+        "average_score": 4.71
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Question phrasing is somewhat dense for ICSE Class 10."
+      ]
+    },
+    {
+      "question_id": "q_05",
+      "question": "Differential Calculus And Cellular Respiration: Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (______) to meet metabolic demand.",
+      "answer": "HbO2",
+      "question_type": "why_how",
+      "difficulty": "medium",
+      "learning_point": "Explain the cause, mechanism, or consequence of actively respiring tissues",
+      "source_evidence": "Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand.",
+      "source_page": 3,
+      "source_reference": {
+        "page_number": 3,
+        "paragraph_id": "p3_para_1",
+        "char_span": [
+          646,
+          802
+        ],
+        "supporting_text": "Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_06",
+      "question": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, ______ was proclaimed Emperor.",
+      "answer": "Bahadur Shah Zafar",
+      "question_type": "sequence",
+      "difficulty": "medium",
+      "learning_point": "Order the sequential stages/events of Mangal Pandey",
+      "source_evidence": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor.",
+      "source_page": 2,
+      "source_reference": {
+        "page_number": 2,
+        "paragraph_id": "p2_para_1",
+        "char_span": [
+          476,
+          697
+        ],
+        "supporting_text": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    }
+  ],
+  "student_worksheet": {
+    "title": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+    "class_level": 10,
+    "subject": "Chemistry & Physics",
+    "total_questions": 6,
+    "questions": [
+      {
+        "number": 1,
+        "question_id": "q_01",
+        "question_type": "problem_solving",
+        "difficulty": "medium",
+        "question": "Using Ohm's Law (V = I × R) from the text, calculate the potential difference V across a conductor of resistance R = 12 Ω when a current I = 2 A flows through it.",
+        "answer": "By Ohm's Law (V = I × R), the potential difference V = 2 A × 12 Ω = 24 V.",
+        "source_page": 1
+      },
+      {
+        "number": 2,
+        "question_id": "q_02",
+        "question_type": "interpretation",
+        "difficulty": "medium",
+        "question": "How do Dilute H₂SO₄(aq) and Acetic Acid CH₃COOH(aq) differ in terms of Degree of Dissociation and Electrical Conductivity?",
+        "answer": "For Dilute H₂SO₄(aq), the Degree of Dissociation is Complete (nearly 100%) and Electrical Conductivity is High conductivity. In contrast, for Acetic Acid CH₃COOH(aq), the Degree of Dissociation is Partial (< 5%) and Electrical Conductivity is Low conductivity.",
+        "source_page": 1
+      },
+      {
+        "number": 3,
+        "question_id": "q_03",
+        "question_type": "understanding",
+        "difficulty": "medium",
+        "question": "Electrolysis And Electrical Energy: ______: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻.",
+        "answer": "Coordinate Ion Check",
+        "source_page": 1
+      },
+      {
+        "number": 4,
+        "question_id": "q_04",
+        "question_type": "comparison",
+        "difficulty": "medium",
+        "question": "______ relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.",
+        "answer": "Whereas the Early Nationalists",
+        "source_page": 2
+      },
+      {
+        "number": 5,
+        "question_id": "q_05",
+        "question_type": "why_how",
+        "difficulty": "medium",
+        "question": "Differential Calculus And Cellular Respiration: Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (______) to meet metabolic demand.",
+        "answer": "HbO2",
+        "source_page": 3
+      },
+      {
+        "number": 6,
+        "question_id": "q_06",
+        "question_type": "sequence",
+        "difficulty": "medium",
+        "question": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, ______ was proclaimed Emperor.",
+        "answer": "Bahadur Shah Zafar",
+        "source_page": 2
+      }
+    ]
+  },
+  "extraction_summary": {
+    "source_type": "pdf",
+    "source_path": "fixtures/icse_sample_science_history.pdf",
+    "extraction_status": "ok",
+    "ocr_required": false,
+    "ocr_recommendation": "Digital text layer extracted cleanly; OCR is not required.",
+    "page_count": 3,
+    "pages": [
+      {
+        "page_number": 1,
+        "text": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY\nElectrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current.\nDuring the electrolysis of acidified water using platinum electrodes, water decomposes according to the balanced chemical equation 2H₂O(l) → 2H₂(g) + O₂(g).\nIn aqueous copper(II) sulphate solution, CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq), where positively charged Cu²⁺ cations migrate to the cathode and gain electrons.\nTable 1.1: Comparison of Strong and Weak Electrolytes\n| Electrolyte | Degree of Dissociation | Major Conducting Particles | Electrical Conductivity |\n| --- | --- | --- | --- |\n| Dilute H₂SO₄(aq) | Complete (nearly 100%) | Free mobile ions (H+ and SO₄²⁻) | High conductivity |\n| Acetic Acid CH₃COOH(aq) | Partial (< 5%) | Mostly unionized molecules and few ions | Low conductivity |\nOhm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R.\nJoule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I²Rt.\nFig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)\nCoordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻",
+        "headings": [
+          "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY"
+        ],
+        "paragraphs": [
+          "Electrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current. During the electrolysis of acidified water using platinum electrodes, water decomposes according to the balanced chemical equation 2H₂O(l) → 2H₂(g) + O₂(g). In aqueous copper(II) sulphate solution, CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq), where positively charged Cu²⁺ cations migrate to the cathode and gain electrons. Table 1.1: Comparison of Strong and Weak Electrolytes",
+          "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R. Joule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I²Rt.",
+          "Fig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)",
+          "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻"
+        ],
+        "lists": [],
+        "tables": [
+          {
+            "table_id": "tbl_p1_1",
+            "page_number": 1,
+            "caption": "Table 1.1: Comparison of Strong and Weak Electrolytes",
+            "headers": [
+              "Electrolyte",
+              "Degree of Dissociation",
+              "Major Conducting Particles",
+              "Electrical Conductivity"
+            ],
+            "rows": [
+              [
+                "Dilute H₂SO₄(aq)",
+                "Complete (nearly 100%)",
+                "Free mobile ions (H+ and SO₄²⁻)",
+                "High conductivity"
+              ],
+              [
+                "Acetic Acid CH₃COOH(aq)",
+                "Partial (< 5%)",
+                "Mostly unionized molecules and few ions",
+                "Low conductivity"
+              ]
+            ],
+            "markdown": "| Electrolyte | Degree of Dissociation | Major Conducting Particles | Electrical Conductivity |\n| --- | --- | --- | --- |\n| Dilute H₂SO₄(aq) | Complete (nearly 100%) | Free mobile ions (H+ and SO₄²⁻) | High conductivity |\n| Acetic Acid CH₃COOH(aq) | Partial (< 5%) | Mostly unionized molecules and few ions | Low conductivity |"
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "fig_p1_1.1",
+            "page_number": 1,
+            "caption": "Fig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)",
+            "has_embedded_image": true,
+            "is_visual_only": false,
+            "extracted_labels": [
+              "Anode",
+              "Cathode",
+              "Graduated collecting limbs"
+            ]
+          }
+        ],
+        "notation_items": [
+          {
+            "raw": "2H₂O(l) → 2H₂(g) + O₂(g)",
+            "normalized": "2H₂O(l) → 2H₂(g) + O₂(g)",
+            "kind": "chemical_equation",
+            "page_number": 1
+          },
+          {
+            "raw": "CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq)",
+            "normalized": "CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq)",
+            "kind": "chemical_equation",
+            "page_number": 1
+          },
+          {
+            "raw": "V = I × R",
+            "normalized": "V = I × R",
+            "kind": "math_equation",
+            "page_number": 1
+          },
+          {
+            "raw": "H = I²Rt",
+            "normalized": "H = I²Rt",
+            "kind": "math_equation",
+            "page_number": 1
+          },
+          {
+            "raw": "2H₂O(l)",
+            "normalized": "2H₂O(l)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "2H₂(g)",
+            "normalized": "2H₂(g)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "O₂(g)",
+            "normalized": "O₂(g)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "CuSO₄(aq)",
+            "normalized": "CuSO₄(aq)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "Cu²⁺(aq)",
+            "normalized": "Cu²⁺(aq)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "SO₄²⁻(aq)",
+            "normalized": "SO₄²⁻(aq)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "Cu²⁺",
+            "normalized": "Cu²⁺",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "H₂SO₄(aq)",
+            "normalized": "H₂SO₄(aq)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "SO₄²⁻",
+            "normalized": "SO₄²⁻",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "CH₃COOH(aq)",
+            "normalized": "CH₃COOH(aq)",
+            "kind": "chemical_formula",
+            "page_number": 1
+          },
+          {
+            "raw": "CuSO₄",
+            "normalized": "CuSO₄",
+            "kind": "chemical_formula",
+            "page_number": 1
+          }
+        ],
+        "image_count": 1,
+        "character_count": 1213,
+        "ocr_suspected": false
+      },
+      {
+        "page_number": 2,
+        "text": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON\nThe Doctrine of Lapse was an annexation policy applied by Lord Dalhousie, which stated that if an Indian ruler of a dependent state died without a natural male heir, the kingdom would lapse to the British East India Company.\nThe immediate cause of the Revolt of 1857 was the introduction of the Enfield rifle, whose cartridges were greased with beef and pork fat that soldiers had to bite off before loading.\nFirst, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor.\nWhereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.\nTable 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch\n| Monsoon Branch | Primary Windward Barrier | Relative Moisture Content | Major Rainfall Region |\n| --- | --- | --- | --- |\n| Arabian Sea Branch | Western Ghats | Very high moisture | Western Coastal Plains and Mumbai |\n| Bay of Bengal Branch | Garo-Khasi-Jaintia Hills | Moderate-high channeled moisture | Mawsynram, Cherrapunji, and Ganga Plains |\nMap 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent\nFirst Published in 2022, Reprinted in 2025 by Curriculum Press Pvt Ltd. ISBN: 978-81-99999-01-2. Copyright (c) 2025 All rights reserved.",
+        "headings": [
+          "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON"
+        ],
+        "paragraphs": [
+          "The Doctrine of Lapse was an annexation policy applied by Lord Dalhousie, which stated that if an Indian ruler of a dependent state died without a natural male heir, the kingdom would lapse to the British East India Company. The immediate cause of the Revolt of 1857 was the introduction of the Enfield rifle, whose cartridges were greased with beef and pork fat that soldiers had to bite off before loading. First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor. Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education. Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+          "Map 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent First Published in 2022, Reprinted in 2025 by Curriculum Press Pvt Ltd. ISBN: 978-81-99999-01-2. Copyright (c) 2025 All rights reserved."
+        ],
+        "lists": [],
+        "tables": [
+          {
+            "table_id": "tbl_p2_1",
+            "page_number": 2,
+            "caption": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+            "headers": [
+              "Monsoon Branch",
+              "Primary Windward Barrier",
+              "Relative Moisture Content",
+              "Major Rainfall Region"
+            ],
+            "rows": [
+              [
+                "Arabian Sea Branch",
+                "Western Ghats",
+                "Very high moisture",
+                "Western Coastal Plains and Mumbai"
+              ],
+              [
+                "Bay of Bengal Branch",
+                "Garo-Khasi-Jaintia Hills",
+                "Moderate-high channeled moisture",
+                "Mawsynram, Cherrapunji, and Ganga Plains"
+              ]
+            ],
+            "markdown": "| Monsoon Branch | Primary Windward Barrier | Relative Moisture Content | Major Rainfall Region |\n| --- | --- | --- | --- |\n| Arabian Sea Branch | Western Ghats | Very high moisture | Western Coastal Plains and Mumbai |\n| Bay of Bengal Branch | Garo-Khasi-Jaintia Hills | Moderate-high channeled moisture | Mawsynram, Cherrapunji, and Ganga Plains |"
+          }
+        ],
+        "figures": [
+          {
+            "figure_id": "fig_p2_2.1",
+            "page_number": 2,
+            "caption": "Map 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent",
+            "has_embedded_image": true,
+            "is_visual_only": true,
+            "extracted_labels": []
+          }
+        ],
+        "notation_items": [],
+        "image_count": 1,
+        "character_count": 1275,
+        "ocr_suspected": false
+      },
+      {
+        "page_number": 3,
+        "text": "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION\nThe Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nxⁿ⁻¹.\nAerobic cellular respiration is the catabolic process by which glucose is completely oxidized in the presence of oxygen according to C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP.\nThe Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right.\nConsequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand.",
+        "headings": [
+          "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION"
+        ],
+        "paragraphs": [
+          "The Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nxⁿ⁻¹. Aerobic cellular respiration is the catabolic process by which glucose is completely oxidized in the presence of oxygen according to C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP. The Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right. Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand."
+        ],
+        "lists": [],
+        "tables": [],
+        "figures": [],
+        "notation_items": [
+          {
+            "raw": "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP",
+            "normalized": "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP",
+            "kind": "chemical_equation",
+            "page_number": 3
+          },
+          {
+            "raw": "d/dx(x^n) = nxⁿ⁻¹",
+            "normalized": "d/dx(x^n) = nxⁿ⁻¹",
+            "kind": "math_equation",
+            "page_number": 3
+          },
+          {
+            "raw": "C₆H₁₂O₆",
+            "normalized": "C₆H₁₂O₆",
+            "kind": "chemical_formula",
+            "page_number": 3
+          },
+          {
+            "raw": "6O₂",
+            "normalized": "6O₂",
+            "kind": "chemical_formula",
+            "page_number": 3
+          },
+          {
+            "raw": "6CO₂",
+            "normalized": "6CO₂",
+            "kind": "chemical_formula",
+            "page_number": 3
+          },
+          {
+            "raw": "6H₂O",
+            "normalized": "6H₂O",
+            "kind": "chemical_formula",
+            "page_number": 3
+          },
+          {
+            "raw": "CO₂",
+            "normalized": "CO₂",
+            "kind": "chemical_formula",
+            "page_number": 3
+          },
+          {
+            "raw": "O₂",
+            "normalized": "O₂",
+            "kind": "chemical_formula",
+            "page_number": 3
+          },
+          {
+            "raw": "38ATP",
+            "normalized": "38ATP",
+            "kind": "unit_quantity",
+            "page_number": 3
+          }
+        ],
+        "image_count": 0,
+        "character_count": 679,
+        "ocr_suspected": false
+      }
+    ],
+    "tables": [
+      {
+        "table_id": "tbl_p1_1",
+        "page_number": 1,
+        "caption": "Table 1.1: Comparison of Strong and Weak Electrolytes",
+        "headers": [
+          "Electrolyte",
+          "Degree of Dissociation",
+          "Major Conducting Particles",
+          "Electrical Conductivity"
+        ],
+        "rows": [
+          [
+            "Dilute H₂SO₄(aq)",
+            "Complete (nearly 100%)",
+            "Free mobile ions (H+ and SO₄²⁻)",
+            "High conductivity"
+          ],
+          [
+            "Acetic Acid CH₃COOH(aq)",
+            "Partial (< 5%)",
+            "Mostly unionized molecules and few ions",
+            "Low conductivity"
+          ]
+        ],
+        "markdown": "| Electrolyte | Degree of Dissociation | Major Conducting Particles | Electrical Conductivity |\n| --- | --- | --- | --- |\n| Dilute H₂SO₄(aq) | Complete (nearly 100%) | Free mobile ions (H+ and SO₄²⁻) | High conductivity |\n| Acetic Acid CH₃COOH(aq) | Partial (< 5%) | Mostly unionized molecules and few ions | Low conductivity |"
+      },
+      {
+        "table_id": "tbl_p2_1",
+        "page_number": 2,
+        "caption": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+        "headers": [
+          "Monsoon Branch",
+          "Primary Windward Barrier",
+          "Relative Moisture Content",
+          "Major Rainfall Region"
+        ],
+        "rows": [
+          [
+            "Arabian Sea Branch",
+            "Western Ghats",
+            "Very high moisture",
+            "Western Coastal Plains and Mumbai"
+          ],
+          [
+            "Bay of Bengal Branch",
+            "Garo-Khasi-Jaintia Hills",
+            "Moderate-high channeled moisture",
+            "Mawsynram, Cherrapunji, and Ganga Plains"
+          ]
+        ],
+        "markdown": "| Monsoon Branch | Primary Windward Barrier | Relative Moisture Content | Major Rainfall Region |\n| --- | --- | --- | --- |\n| Arabian Sea Branch | Western Ghats | Very high moisture | Western Coastal Plains and Mumbai |\n| Bay of Bengal Branch | Garo-Khasi-Jaintia Hills | Moderate-high channeled moisture | Mawsynram, Cherrapunji, and Ganga Plains |"
+      }
+    ],
+    "figures": [
+      {
+        "figure_id": "fig_p1_1.1",
+        "page_number": 1,
+        "caption": "Fig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)",
+        "has_embedded_image": true,
+        "is_visual_only": false,
+        "extracted_labels": [
+          "Anode",
+          "Cathode",
+          "Graduated collecting limbs"
+        ]
+      },
+      {
+        "figure_id": "fig_p2_2.1",
+        "page_number": 2,
+        "caption": "Map 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent",
+        "has_embedded_image": true,
+        "is_visual_only": true,
+        "extracted_labels": []
+      }
+    ],
+    "notation_items": [
+      {
+        "raw": "2H₂O(l) → 2H₂(g) + O₂(g)",
+        "normalized": "2H₂O(l) → 2H₂(g) + O₂(g)",
+        "kind": "chemical_equation",
+        "page_number": 1
+      },
+      {
+        "raw": "CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq)",
+        "normalized": "CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq)",
+        "kind": "chemical_equation",
+        "page_number": 1
+      },
+      {
+        "raw": "V = I × R",
+        "normalized": "V = I × R",
+        "kind": "math_equation",
+        "page_number": 1
+      },
+      {
+        "raw": "H = I²Rt",
+        "normalized": "H = I²Rt",
+        "kind": "math_equation",
+        "page_number": 1
+      },
+      {
+        "raw": "2H₂O(l)",
+        "normalized": "2H₂O(l)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "2H₂(g)",
+        "normalized": "2H₂(g)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "O₂(g)",
+        "normalized": "O₂(g)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "CuSO₄(aq)",
+        "normalized": "CuSO₄(aq)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "Cu²⁺(aq)",
+        "normalized": "Cu²⁺(aq)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "SO₄²⁻(aq)",
+        "normalized": "SO₄²⁻(aq)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "Cu²⁺",
+        "normalized": "Cu²⁺",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "H₂SO₄(aq)",
+        "normalized": "H₂SO₄(aq)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "SO₄²⁻",
+        "normalized": "SO₄²⁻",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "CH₃COOH(aq)",
+        "normalized": "CH₃COOH(aq)",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "CuSO₄",
+        "normalized": "CuSO₄",
+        "kind": "chemical_formula",
+        "page_number": 1
+      },
+      {
+        "raw": "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP",
+        "normalized": "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP",
+        "kind": "chemical_equation",
+        "page_number": 3
+      },
+      {
+        "raw": "d/dx(x^n) = nxⁿ⁻¹",
+        "normalized": "d/dx(x^n) = nxⁿ⁻¹",
+        "kind": "math_equation",
+        "page_number": 3
+      },
+      {
+        "raw": "C₆H₁₂O₆",
+        "normalized": "C₆H₁₂O₆",
+        "kind": "chemical_formula",
+        "page_number": 3
+      },
+      {
+        "raw": "6O₂",
+        "normalized": "6O₂",
+        "kind": "chemical_formula",
+        "page_number": 3
+      },
+      {
+        "raw": "6CO₂",
+        "normalized": "6CO₂",
+        "kind": "chemical_formula",
+        "page_number": 3
+      },
+      {
+        "raw": "6H₂O",
+        "normalized": "6H₂O",
+        "kind": "chemical_formula",
+        "page_number": 3
+      },
+      {
+        "raw": "CO₂",
+        "normalized": "CO₂",
+        "kind": "chemical_formula",
+        "page_number": 3
+      },
+      {
+        "raw": "O₂",
+        "normalized": "O₂",
+        "kind": "chemical_formula",
+        "page_number": 3
+      },
+      {
+        "raw": "38ATP",
+        "normalized": "38ATP",
+        "kind": "unit_quantity",
+        "page_number": 3
+      }
+    ],
+    "warnings": [
+      "Page 2: Figure 'Map 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent' is visual/diagrammatic; only its caption/labels are available without vision/OCR."
+    ],
+    "extractor_backend": "native_pdf_stream_parser"
+  },
+  "analysis_summary": {
+    "topics": [
+      "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+      "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+      "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION"
+    ],
+    "total_learning_points": 19,
+    "learning_points": [
+      {
+        "id": "lp_6",
+        "category": "numerical_problem",
+        "suggested_type": "problem_solving",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Ohm's Law",
+        "summary": "Solve numerical problem using V = I × R",
+        "source_evidence": "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_2",
+          "char_span": [
+            899,
+            1099
+          ],
+          "supporting_text": "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R."
+        },
+        "importance_score": 9.5,
+        "formulas": [
+          "V = I × R"
+        ],
+        "numerical_case": {
+          "formula_label": "V = I × R",
+          "question": "Using Ohm's Law (V = I × R) from the text, calculate the potential difference V across a conductor of resistance R = 12 Ω when a current I = 2 A flows through it.",
+          "senior_question": "Applying Ohm's Law (V = I × R) as stated in the passage, determine the potential difference V across a resistor of R = 12 Ω carrying a steady current of I = 2 A, and state its SI unit.",
+          "answer": "By Ohm's Law (V = I × R), the potential difference V = 2 A × 12 Ω = 24 V.",
+          "calculation_metadata": {
+            "formula": "I * R",
+            "variables": {
+              "I": 2.0,
+              "R": 12.0
+            },
+            "expected_value": 24.0,
+            "unit": "V"
+          }
+        }
+      },
+      {
+        "id": "lp_7",
+        "category": "numerical_problem",
+        "suggested_type": "problem_solving",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Joule's Law of Heating",
+        "summary": "Solve numerical problem using H = I²Rt",
+        "source_evidence": "Joule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I²Rt.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_2",
+          "char_span": [
+            1100,
+            1256
+          ],
+          "supporting_text": "Joule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I²Rt."
+        },
+        "importance_score": 9.5,
+        "formulas": [
+          "H = I²Rt"
+        ],
+        "numerical_case": {
+          "formula_label": "H = I²Rt",
+          "question": "Using Joule's Law of Heating (H = I²Rt) taught in the source, calculate the heat energy H produced when a current I = 3 A flows through a resistance R = 4 Ω for t = 10 s.",
+          "senior_question": "Applying Joule's Law of Heating (H = I²Rt) from the text, compute the thermal energy H dissipated in a resistor of R = 4 Ω carrying I = 3 A for t = 10 s.",
+          "answer": "By Joule's Law H = I²Rt, H = 3² × 4 × 10 = 360 J.",
+          "calculation_metadata": {
+            "formula": "(I ** 2) * R * t",
+            "variables": {
+              "I": 3.0,
+              "R": 4.0,
+              "t": 10.0
+            },
+            "expected_value": 360.0,
+            "unit": "J"
+          }
+        }
+      },
+      {
+        "id": "lp_16",
+        "category": "numerical_problem",
+        "suggested_type": "problem_solving",
+        "difficulty": "medium",
+        "topic": "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION",
+        "key_term": "Fundamental Power Rule of Differentiation",
+        "summary": "Solve numerical problem using d/dx(xⁿ) = nxⁿ⁻¹",
+        "source_evidence": "The Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nxⁿ⁻¹.",
+        "source_page": 3,
+        "source_reference": {
+          "page_number": 3,
+          "paragraph_id": "p3_para_1",
+          "char_span": [
+            58,
+            218
+          ],
+          "supporting_text": "The Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nxⁿ⁻¹."
+        },
+        "importance_score": 9.5,
+        "formulas": [
+          "f(x) = x^n",
+          "n) = nxⁿ⁻¹"
+        ],
+        "numerical_case": {
+          "formula_label": "d/dx(xⁿ) = nxⁿ⁻¹",
+          "question": "Using the differentiation power rule d/dx(xⁿ) = nxⁿ⁻¹ taught in the passage, find the derivative of f(x) = x³ and evaluate it at x = 2.",
+          "senior_question": "Applying the calculus power rule d/dx(xⁿ) = nxⁿ⁻¹ from the source, differentiate f(x) = x³ with respect to x and compute the exact instantaneous rate of change f'(2).",
+          "answer": "Using d/dx(xⁿ) = nxⁿ⁻¹, f'(x) = 3x². Evaluating at x = 2 gives f'(2) = 3 × (2)² = 12.",
+          "calculation_metadata": {
+            "formula": "n * (x ** (n - 1))",
+            "variables": {
+              "n": 3,
+              "x": 2
+            },
+            "expected_value": 12.0,
+            "unit": ""
+          }
+        }
+      },
+      {
+        "id": "lp_tbl_tbl_p1_1",
+        "category": "table_data",
+        "suggested_type": "interpretation",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Table 1.1: Comparison of Strong and Weak Electrolytes",
+        "summary": "Interpret comparative data in Table 1.1: Comparison of Strong and Weak Electrolytes (Electrolyte, Degree of Dissociation, Major Conducting Particles, Electrical Conductivity)",
+        "source_evidence": "Table 1.1: Comparison of Strong and Weak Electrolytes: Dilute H₂SO₄(aq) (Degree of Dissociation: Complete (nearly 100%), Major Conducting Particles: Free mobile ions (H+ and SO₄²⁻), Electrical Conductivity: High conductivity); Acetic Acid CH₃COOH(aq) (Degree of Dissociation: Partial (< 5%), Major Conducting Particles: Mostly unionized molecules and few ions, Electrical Conductivity: Low conductivity)",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_tbl_tbl_p1_1",
+          "char_span": [
+            517,
+            920
+          ],
+          "supporting_text": "Table 1.1: Comparison of Strong and Weak Electrolytes: Dilute H₂SO₄(aq) (Degree of Dissociation: Complete (nearly 100%), Major Conducting Particles: Free mobile ions (H+ and SO₄²⁻), Electrical Conductivity: High conductivity); Acetic Acid CH₃COOH(aq) (Degree of Dissociation: Partial (< 5%), Major Conducting Particles: Mostly unionized molecules and few ions, Electrical Conductivity: Low conductivity)"
+        },
+        "importance_score": 9.2,
+        "formulas": [],
+        "table_data": {
+          "table_id": "tbl_p1_1",
+          "page_number": 1,
+          "caption": "Table 1.1: Comparison of Strong and Weak Electrolytes",
+          "headers": [
+            "Electrolyte",
+            "Degree of Dissociation",
+            "Major Conducting Particles",
+            "Electrical Conductivity"
+          ],
+          "rows": [
+            [
+              "Dilute H₂SO₄(aq)",
+              "Complete (nearly 100%)",
+              "Free mobile ions (H+ and SO₄²⁻)",
+              "High conductivity"
+            ],
+            [
+              "Acetic Acid CH₃COOH(aq)",
+              "Partial (< 5%)",
+              "Mostly unionized molecules and few ions",
+              "Low conductivity"
+            ]
+          ],
+          "markdown": "| Electrolyte | Degree of Dissociation | Major Conducting Particles | Electrical Conductivity |\n| --- | --- | --- | --- |\n| Dilute H₂SO₄(aq) | Complete (nearly 100%) | Free mobile ions (H+ and SO₄²⁻) | High conductivity |\n| Acetic Acid CH₃COOH(aq) | Partial (< 5%) | Mostly unionized molecules and few ions | Low conductivity |"
+        }
+      },
+      {
+        "id": "lp_tbl_tbl_p2_1",
+        "category": "table_data",
+        "suggested_type": "interpretation",
+        "topic": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+        "key_term": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+        "summary": "Interpret comparative data in Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch (Monsoon Branch, Primary Windward Barrier, Relative Moisture Content, Major Rainfall Region)",
+        "source_evidence": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch: Arabian Sea Branch (Primary Windward Barrier: Western Ghats, Relative Moisture Content: Very high moisture, Major Rainfall Region: Western Coastal Plains and Mumbai); Bay of Bengal Branch (Primary Windward Barrier: Garo-Khasi-Jaintia Hills, Relative Moisture Content: Moderate-high channeled moisture, Major Rainfall Region: Mawsynram, Cherrapunji, and Ganga Plains)",
+        "source_page": 2,
+        "source_reference": {
+          "page_number": 2,
+          "paragraph_id": "p2_tbl_tbl_p2_1",
+          "char_span": [
+            881,
+            1317
+          ],
+          "supporting_text": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch: Arabian Sea Branch (Primary Windward Barrier: Western Ghats, Relative Moisture Content: Very high moisture, Major Rainfall Region: Western Coastal Plains and Mumbai); Bay of Bengal Branch (Primary Windward Barrier: Garo-Khasi-Jaintia Hills, Relative Moisture Content: Moderate-high channeled moisture, Major Rainfall Region: Mawsynram, Cherrapunji, and Ganga Plains)"
+        },
+        "importance_score": 9.2,
+        "formulas": [],
+        "table_data": {
+          "table_id": "tbl_p2_1",
+          "page_number": 2,
+          "caption": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+          "headers": [
+            "Monsoon Branch",
+            "Primary Windward Barrier",
+            "Relative Moisture Content",
+            "Major Rainfall Region"
+          ],
+          "rows": [
+            [
+              "Arabian Sea Branch",
+              "Western Ghats",
+              "Very high moisture",
+              "Western Coastal Plains and Mumbai"
+            ],
+            [
+              "Bay of Bengal Branch",
+              "Garo-Khasi-Jaintia Hills",
+              "Moderate-high channeled moisture",
+              "Mawsynram, Cherrapunji, and Ganga Plains"
+            ]
+          ],
+          "markdown": "| Monsoon Branch | Primary Windward Barrier | Relative Moisture Content | Major Rainfall Region |\n| --- | --- | --- | --- |\n| Arabian Sea Branch | Western Ghats | Very high moisture | Western Coastal Plains and Mumbai |\n| Bay of Bengal Branch | Garo-Khasi-Jaintia Hills | Moderate-high channeled moisture | Mawsynram, Cherrapunji, and Ganga Plains |"
+        }
+      },
+      {
+        "id": "lp_3",
+        "category": "formula_equation",
+        "suggested_type": "problem_solving",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "summary": "Understand and apply formula/equation 2H₂O(l) → 2H₂(g) + O₂(g)",
+        "source_evidence": "During the electrolysis of acidified water using platinum electrodes, water decomposes according to the balanced chemical equation 2H₂O(l) → 2H₂(g) + O₂(g).",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_1",
+          "char_span": [
+            204,
+            360
+          ],
+          "supporting_text": "During the electrolysis of acidified water using platinum electrodes, water decomposes according to the balanced chemical equation 2H₂O(l) → 2H₂(g) + O₂(g)."
+        },
+        "importance_score": 9.0,
+        "formulas": [
+          "2H₂O(l) → 2H₂(g) + O₂(g)"
+        ],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_4",
+        "category": "formula_equation",
+        "suggested_type": "problem_solving",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "aqueous copper(II sulphate",
+        "summary": "Understand and apply formula/equation CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq)",
+        "source_evidence": "In aqueous copper(II) sulphate solution, CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq), where positively charged Cu²⁺ cations migrate to the cathode and gain electrons.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_1",
+          "char_span": [
+            361,
+            516
+          ],
+          "supporting_text": "In aqueous copper(II) sulphate solution, CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq), where positively charged Cu²⁺ cations migrate to the cathode and gain electrons."
+        },
+        "importance_score": 9.0,
+        "formulas": [
+          "CuSO₄(aq) ⇌ Cu²⁺(aq) + SO₄²⁻(aq)"
+        ],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_17",
+        "category": "formula_equation",
+        "suggested_type": "problem_solving",
+        "difficulty": "medium",
+        "topic": "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION",
+        "key_term": "Aerobic cellular respiration",
+        "summary": "Understand and apply formula/equation C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP",
+        "source_evidence": "Aerobic cellular respiration is the catabolic process by which glucose is completely oxidized in the presence of oxygen according to C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP.",
+        "source_page": 3,
+        "source_reference": {
+          "page_number": 3,
+          "paragraph_id": "p3_para_1",
+          "char_span": [
+            219,
+            388
+          ],
+          "supporting_text": "Aerobic cellular respiration is the catabolic process by which glucose is completely oxidized in the presence of oxygen according to C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP."
+        },
+        "importance_score": 9.0,
+        "formulas": [
+          "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 38ATP"
+        ],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_9",
+        "category": "definition",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Coordinate Ion Check",
+        "summary": "Define and explain Coordinate Ion Check",
+        "source_evidence": "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_4",
+          "char_span": [
+            1385,
+            1444
+          ],
+          "supporting_text": "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻"
+        },
+        "importance_score": 8.85,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_2",
+        "category": "definition",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Electrolysis",
+        "summary": "Define and explain Electrolysis",
+        "source_evidence": "Electrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current.",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_1",
+          "char_span": [
+            46,
+            203
+          ],
+          "supporting_text": "Electrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current."
+        },
+        "importance_score": 8.8,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_18",
+        "category": "definition",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION",
+        "key_term": "Bohr Effect",
+        "summary": "Define and explain Bohr Effect",
+        "source_evidence": "The Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right.",
+        "source_page": 3,
+        "source_reference": {
+          "page_number": 3,
+          "paragraph_id": "p3_para_1",
+          "char_span": [
+            389,
+            645
+          ],
+          "supporting_text": "The Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right."
+        },
+        "importance_score": 8.8,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_14",
+        "category": "comparison",
+        "suggested_type": "comparison",
+        "difficulty": "medium",
+        "topic": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+        "key_term": "Assertive Nationalists",
+        "summary": "Compare and contrast Assertive Nationalists",
+        "source_evidence": "Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.",
+        "source_page": 2,
+        "source_reference": {
+          "page_number": 2,
+          "paragraph_id": "p2_para_1",
+          "char_span": [
+            698,
+            880
+          ],
+          "supporting_text": "Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education."
+        },
+        "importance_score": 8.6,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_19",
+        "category": "cause_effect",
+        "suggested_type": "why_how",
+        "difficulty": "medium",
+        "topic": "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION",
+        "key_term": "actively respiring tissues",
+        "summary": "Explain the cause, mechanism, or consequence of actively respiring tissues",
+        "source_evidence": "Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand.",
+        "source_page": 3,
+        "source_reference": {
+          "page_number": 3,
+          "paragraph_id": "p3_para_1",
+          "char_span": [
+            646,
+            802
+          ],
+          "supporting_text": "Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand."
+        },
+        "importance_score": 8.5,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_13",
+        "category": "sequence",
+        "suggested_type": "sequence",
+        "difficulty": "medium",
+        "topic": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+        "key_term": "Mangal Pandey",
+        "summary": "Order the sequential stages/events of Mangal Pandey",
+        "source_evidence": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor.",
+        "source_page": 2,
+        "source_reference": {
+          "page_number": 2,
+          "paragraph_id": "p2_para_1",
+          "char_span": [
+            476,
+            697
+          ],
+          "supporting_text": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor."
+        },
+        "importance_score": 8.4,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_11",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+        "key_term": "Doctrine",
+        "summary": "Explain the concept of Doctrine",
+        "source_evidence": "The Doctrine of Lapse was an annexation policy applied by Lord Dalhousie, which stated that if an Indian ruler of a dependent state died without a natural male heir, the kingdom would lapse to the British East India Company.",
+        "source_page": 2,
+        "source_reference": {
+          "page_number": 2,
+          "paragraph_id": "p2_para_1",
+          "char_span": [
+            67,
+            291
+          ],
+          "supporting_text": "The Doctrine of Lapse was an annexation policy applied by Lord Dalhousie, which stated that if an Indian ruler of a dependent state died without a natural male heir, the kingdom would lapse to the British East India Company."
+        },
+        "importance_score": 8.2,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_12",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+        "key_term": "immediate cause of the Revolt of 1857",
+        "summary": "Explain the concept of immediate cause of the Revolt of 1857",
+        "source_evidence": "The immediate cause of the Revolt of 1857 was the introduction of the Enfield rifle, whose cartridges were greased with beef and pork fat that soldiers had to bite off before loading.",
+        "source_page": 2,
+        "source_reference": {
+          "page_number": 2,
+          "paragraph_id": "p2_para_1",
+          "char_span": [
+            292,
+            475
+          ],
+          "supporting_text": "The immediate cause of the Revolt of 1857 was the introduction of the Enfield rifle, whose cartridges were greased with beef and pork fat that soldiers had to bite off before loading."
+        },
+        "importance_score": 8.2,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_8",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Hoffman Voltameter",
+        "summary": "Explain the concept of Hoffman Voltameter",
+        "source_evidence": "Fig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_3",
+          "char_span": [
+            1257,
+            1384
+          ],
+          "supporting_text": "Fig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)"
+        },
+        "importance_score": 7.91,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_15",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON",
+        "key_term": "Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+        "summary": "Explain the concept of Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+        "source_evidence": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch",
+        "source_page": 2,
+        "source_reference": {
+          "page_number": 2,
+          "paragraph_id": "p2_para_1",
+          "char_span": [
+            881,
+            949
+          ],
+          "supporting_text": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch"
+        },
+        "importance_score": 7.58,
+        "formulas": [],
+        "numerical_case": null
+      },
+      {
+        "id": "lp_5",
+        "category": "concept_fact",
+        "suggested_type": "understanding",
+        "difficulty": "medium",
+        "topic": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY",
+        "key_term": "Comparison of Strong and Weak Electrolytes",
+        "summary": "Explain the concept of Comparison of Strong and Weak Electrolytes",
+        "source_evidence": "Table 1.1: Comparison of Strong and Weak Electrolytes",
+        "source_page": 1,
+        "source_reference": {
+          "page_number": 1,
+          "paragraph_id": "p1_para_1",
+          "char_span": [
+            517,
+            570
+          ],
+          "supporting_text": "Table 1.1: Comparison of Strong and Weak Electrolytes"
+        },
+        "importance_score": 7.49,
+        "formulas": [],
+        "numerical_case": null
+      }
+    ],
+    "chunk_count": 3
+  },
+  "evaluation": {
+    "total_questions": 6,
+    "valid_source_evidence_pct": 100.0,
+    "answer_correctness_pct": 100.0,
+    "learning_point_coverage_pct": 33.3,
+    "question_type_counts": {
+      "problem_solving": 1,
+      "interpretation": 1,
+      "understanding": 1,
+      "comparison": 1,
+      "why_how": 1,
+      "sequence": 1
+    },
+    "distinct_question_types": 6,
+    "duplicate_rate_pct": 0.0,
+    "grade_appropriateness_pct": 83.3,
+    "average_rubric_score": 4.95,
+    "human_evaluation": {
+      "evaluated_count": 0,
+      "human_acceptance_rate_pct": null,
+      "avg_human_edit_distance": null
+    }
+  },
+  "rubric_documentation": {
+    "scale_range": {
+      "min": 1,
+      "max": 5
+    },
+    "criteria": {
+      "curriculum_relevance": {
+        "title": "Curriculum Relevance",
+        "question": "Does it test an important, syllabus-central learning point?",
+        "scale": {
+          "1": "Tests non-curriculum noise (e.g., publication/reprint dates, ISBNs, page headers) or lacks a learning point.",
+          "2": "Focuses on a trivial peripheral detail rather than a core concept of the passage.",
+          "3": "Tests a valid secondary fact or definition from the passage.",
+          "4": "Tests a primary concept, cause-effect relationship, or scientific/mathematical principle.",
+          "5": "Directly targets a high-priority learning point central to the ICSE chapter with clear pedagogical purpose."
+        }
+      },
+      "source_fidelity": {
+        "title": "Source Fidelity",
+        "question": "Is the answer directly supported by the supplied material?",
+        "scale": {
+          "1": "Unsupported by source, fabricates evidence, invents a page number, or claims to read an unextracted visual diagram/map.",
+          "2": "Weak token overlap with the supplied source text or relies on unapproved external assumptions.",
+          "3": "Partially supported by the source passage, with minor paraphrasing drift.",
+          "4": "Strongly grounded in the supplied text with verifiable evidence overlap and valid page reference.",
+          "5": "Verbatim or near-verbatim source evidence verified on the exact source page with zero unsupported claims."
+        }
+      },
+      "clarity": {
+        "title": "Clarity & Specificity",
+        "question": "Is the wording specific, unambiguous, and well-structured?",
+        "scale": {
+          "1": "Fragmented, ungrammatical, or ambiguous wording that students cannot interpret.",
+          "2": "Vague prompt (e.g., 'Write about this') lacking a clear task verb or scope.",
+          "3": "Understandable question with acceptable wording but minor phrasing stiffness.",
+          "4": "Clear, specific question with an explicit cognitive verb and unambiguous scope.",
+          "5": "Exemplary, examination-ready ICSE question phrasing with precise terminology and clear task expectations."
+        }
+      },
+      "educational_value": {
+        "title": "Educational Value",
+        "question": "Does it test meaningful learning rather than mechanical sentence copying?",
+        "scale": {
+          "1": "Mechanical fill-in-the-blank or trivial copying of a sentence with zero cognitive demand.",
+          "2": "Surface-level recall of an isolated word when the passage supports deeper understanding.",
+          "3": "Tests basic factual recall or definition comprehension appropriately.",
+          "4": "Requires conceptual explanation, cause-effect reasoning, sequence ordering, or comparison.",
+          "5": "Engages higher-order application, multi-point synthesis, table interpretation, or quantitative problem solving."
+        }
+      },
+      "distinctness": {
+        "title": "Distinctness",
+        "question": "Does it add value beyond other questions in the set?",
+        "scale": {
+          "1": "Exact or near-exact duplicate of another question or tests the exact same fact in slightly different words.",
+          "2": "High lexical/conceptual overlap (>= 55% similarity) with an already selected question.",
+          "3": "Touches a related aspect of the same section with moderate overlap.",
+          "4": "Tests a distinct concept or applies a different cognitive skill/question type.",
+          "5": "Completely distinct learning point and question category, maximizing topic coverage."
+        }
+      },
+      "answer_quality": {
+        "title": "Answer Quality & Notation Accuracy",
+        "question": "Is the answer accurate, complete, notation-faithful, and deterministically verified?",
+        "scale": {
+          "1": "Empty, factually incorrect, fails deterministic math/chemical balance verification, or corrupts scientific notation.",
+          "2": "Incomplete answer missing key explanation steps or required SI units.",
+          "3": "Correct core answer but brief or lacking full context.",
+          "4": "Accurate, complete answer preserving source terminology and notation.",
+          "5": "Comprehensive, curriculum-grade model answer with verified calculations/balanced equations and exact scientific notation."
+        }
+      },
+      "grade_suitability": {
+        "title": "ICSE Grade Suitability",
+        "question": "Is it appropriate for the specified ICSE class (Classes 8–10 vs Classes 11–12)?",
+        "scale": {
+          "1": "Severely mismatched for the target ICSE class (e.g., advanced calculus jargon for Class 8 or trivial one-word recall for Class 12).",
+          "2": "Vocabulary or expected reasoning depth noticeably above or below the target class band.",
+          "3": "Acceptable for the class level with minor phrasing adjustments needed.",
+          "4": "Well-matched to the cognitive and vocabulary expectations of the specified ICSE class.",
+          "5": "Calibrated specifically to ICSE Class 8–10 (accessible, foundational reasoning) or Class 11–12 (rigorous, analytical/multi-step depth)."
+        }
+      }
+    },
+    "default_thresholds": {
+      "min_criterion_score": 3,
+      "min_source_fidelity": 4,
+      "min_grade_suitability": 3,
+      "min_average_score": 3.6,
+      "max_similarity_threshold": 0.55,
+      "require_math_verification": true,
+      "require_chemical_balance_check": true,
+      "auto_revise_recoverable": true,
+      "weights": {
+        "curriculum_relevance": 1.15,
+        "source_fidelity": 1.35,
+        "clarity": 1.0,
+        "educational_value": 1.1,
+        "distinctness": 1.0,
+        "answer_quality": 1.25,
+        "grade_suitability": 1.15
+      }
+    },
+    "active_thresholds": {
+      "min_criterion_score": 3,
+      "min_source_fidelity": 4,
+      "min_grade_suitability": 3,
+      "min_average_score": 3.6,
+      "max_similarity_threshold": 0.55,
+      "require_math_verification": true,
+      "require_chemical_balance_check": true,
+      "auto_revise_recoverable": true,
+      "weights": {
+        "curriculum_relevance": 1.15,
+        "source_fidelity": 1.35,
+        "clarity": 1.0,
+        "educational_value": 1.1,
+        "distinctness": 1.0,
+        "answer_quality": 1.25,
+        "grade_suitability": 1.15
+      }
+    },
+    "validation_statuses": {
+      "accepted": "Meets all individual criterion minimums and the weighted average score threshold.",
+      "revised": "Automatically revised during the review pass to resolve a recoverable issue and now meets thresholds.",
+      "needs_review": "Borderline score or unverified external/complex claim flagged for educator inspection.",
+      "rejected": "Fails source fidelity, deterministic math/chemistry verification, duplicate check, or minimum rubric thresholds."
+    }
+  },
+  "metadata": {
+    "class_level": 10,
+    "subject": "Chemistry & Physics",
+    "requested_question_count": 6,
+    "returned_question_count": 6,
+    "planned_question_types": [
+      "interpretation",
+      "problem_solving",
+      "sequence",
+      "comparison",
+      "why_how",
+      "understanding"
+    ],
+    "provider": "deterministic",
+    "model": "icse-pedagogical-synthesizer-v2",
+    "warnings": [
+      "Page 2: Figure 'Map 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent' is visual/diagrammatic; only its caption/labels are available without vision/OCR."
+    ]
+  },
+  "all_evaluated_candidates": [
+    {
+      "question_id": "q_01",
+      "question": "Using Ohm's Law (V = I × R) from the text, calculate the potential difference V across a conductor of resistance R = 12 Ω when a current I = 2 A flows through it.",
+      "answer": "By Ohm's Law (V = I × R), the potential difference V = 2 A × 12 Ω = 24 V.",
+      "question_type": "problem_solving",
+      "difficulty": "medium",
+      "learning_point": "Solve numerical problem using V = I × R",
+      "source_evidence": "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          899,
+          1099
+        ],
+        "supporting_text": "Ohm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I × R."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Deterministic formula check passed (I * R = 24).",
+        "Verified inline arithmetic '2  * 12 = 24'."
+      ]
+    },
+    {
+      "question_id": "q_02",
+      "question": "How do Dilute H₂SO₄(aq) and Acetic Acid CH₃COOH(aq) differ in terms of Degree of Dissociation and Electrical Conductivity?",
+      "answer": "For Dilute H₂SO₄(aq), the Degree of Dissociation is Complete (nearly 100%) and Electrical Conductivity is High conductivity. In contrast, for Acetic Acid CH₃COOH(aq), the Degree of Dissociation is Partial (< 5%) and Electrical Conductivity is Low conductivity.",
+      "question_type": "interpretation",
+      "difficulty": "medium",
+      "learning_point": "Interpret comparative data in Table 1.1: Comparison of Strong and Weak Electrolytes (Electrolyte, Degree of Dissociation, Major Conducting Particles, Electrical Conductivity)",
+      "source_evidence": "Table 1.1: Comparison of Strong and Weak Electrolytes: Dilute H₂SO₄(aq) (Degree of Dissociation: Complete (nearly 100%), Major Conducting Particles: Free mobile ions (H+ and SO₄²⁻), Electrical Conductivity: High conductivity); Acetic Acid CH₃COOH(aq) (Degree of Dissociation: Partial (< 5%), Major Conducting Particles: Mostly unionized molecules and few ions, Electrical Conductivity: Low conductivity)",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_tbl_tbl_p1_1",
+        "char_span": [
+          517,
+          920
+        ],
+        "supporting_text": "Table 1.1: Comparison of Strong and Weak Electrolytes: Dilute H₂SO₄(aq) (Degree of Dissociation: Complete (nearly 100%), Major Conducting Particles: Free mobile ions (H+ and SO₄²⁻), Electrical Conductivity: High conductivity); Acetic Acid CH₃COOH(aq) (Degree of Dissociation: Partial (< 5%), Major Conducting Particles: Mostly unionized molecules and few ions, Electrical Conductivity: Low conductivity)"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_03",
+      "question": "Electrolysis And Electrical Energy: ______: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻.",
+      "answer": "Coordinate Ion Check",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Define and explain Coordinate Ion Check",
+      "source_evidence": "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_4",
+        "char_span": [
+          1385,
+          1444
+        ],
+        "supporting_text": "Coordinate Ion Check: CuSO₄ dissociates into Cu²⁺ and SO₄²⁻"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_04",
+      "question": "______ relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.",
+      "answer": "Whereas the Early Nationalists",
+      "question_type": "comparison",
+      "difficulty": "medium",
+      "learning_point": "Compare and contrast Assertive Nationalists",
+      "source_evidence": "Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.",
+      "source_page": 2,
+      "source_reference": {
+        "page_number": 2,
+        "paragraph_id": "p2_para_1",
+        "char_span": [
+          698,
+          880
+        ],
+        "supporting_text": "Whereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 3,
+        "average_score": 4.71
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Question phrasing is somewhat dense for ICSE Class 10."
+      ]
+    },
+    {
+      "question_id": "q_05",
+      "question": "Differential Calculus And Cellular Respiration: Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (______) to meet metabolic demand.",
+      "answer": "HbO2",
+      "question_type": "why_how",
+      "difficulty": "medium",
+      "learning_point": "Explain the cause, mechanism, or consequence of actively respiring tissues",
+      "source_evidence": "Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand.",
+      "source_page": 3,
+      "source_reference": {
+        "page_number": 3,
+        "paragraph_id": "p3_para_1",
+        "char_span": [
+          646,
+          802
+        ],
+        "supporting_text": "Consequently, actively respiring tissues with elevated CO₂ and lower pH trigger enhanced unloading of O₂ from oxyhemoglobin (HbO2) to meet metabolic demand."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_06",
+      "question": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, ______ was proclaimed Emperor.",
+      "answer": "Bahadur Shah Zafar",
+      "question_type": "sequence",
+      "difficulty": "medium",
+      "learning_point": "Order the sequential stages/events of Mangal Pandey",
+      "source_evidence": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor.",
+      "source_page": 2,
+      "source_reference": {
+        "page_number": 2,
+        "paragraph_id": "p2_para_1",
+        "char_span": [
+          476,
+          697
+        ],
+        "supporting_text": "First, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_07",
+      "question": "Using Joule's Law of Heating (H = I²Rt) taught in the source, calculate the heat energy H produced when a current I = 3 A flows through a resistance R = 4 Ω for t = 10 s.",
+      "answer": "By Joule's Law H = I²Rt, H = 3² × 4 × 10 = 360 J.",
+      "question_type": "problem_solving",
+      "difficulty": "medium",
+      "learning_point": "Solve numerical problem using H = I²Rt",
+      "source_evidence": "Joule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I²Rt.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_2",
+        "char_span": [
+          1100,
+          1256
+        ],
+        "supporting_text": "Joule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I²Rt."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 4,
+        "answer_quality": 1,
+        "grade_suitability": 5,
+        "average_score": 4.25
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": false,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "rejected",
+      "review_status": "rejected",
+      "review_notes": [
+        "Deterministic formula check passed ((I ** 2) * R * t = 360).",
+        "Arithmetic mismatch in answer: '4 * 10' equals 40, but answer claims 360."
+      ]
+    },
+    {
+      "question_id": "q_08",
+      "question": "How do Arabian Sea Branch and Bay of Bengal Branch differ in terms of Primary Windward Barrier and Major Rainfall Region?",
+      "answer": "For Arabian Sea Branch, the Primary Windward Barrier is Western Ghats and Major Rainfall Region is Western Coastal Plains and Mumbai. In contrast, for Bay of Bengal Branch, the Primary Windward Barrier is Garo-Khasi-Jaintia Hills and Major Rainfall Region is Mawsynram, Cherrapunji, and Ganga Plains.",
+      "question_type": "interpretation",
+      "difficulty": "medium",
+      "learning_point": "Interpret comparative data in Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch (Monsoon Branch, Primary Windward Barrier, Relative Moisture Content, Major Rainfall Region)",
+      "source_evidence": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch: Arabian Sea Branch (Primary Windward Barrier: Western Ghats, Relative Moisture Content: Very high moisture, Major Rainfall Region: Western Coastal Plains and Mumbai); Bay of Bengal Branch (Primary Windward Barrier: Garo-Khasi-Jaintia Hills, Relative Moisture Content: Moderate-high channeled moisture, Major Rainfall Region: Mawsynram, Cherrapunji, and Ganga Plains)",
+      "source_page": 2,
+      "source_reference": {
+        "page_number": 2,
+        "paragraph_id": "p2_tbl_tbl_p2_1",
+        "char_span": [
+          881,
+          1317
+        ],
+        "supporting_text": "Table 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch: Arabian Sea Branch (Primary Windward Barrier: Western Ghats, Relative Moisture Content: Very high moisture, Major Rainfall Region: Western Coastal Plains and Mumbai); Bay of Bengal Branch (Primary Windward Barrier: Garo-Khasi-Jaintia Hills, Relative Moisture Content: Moderate-high channeled moisture, Major Rainfall Region: Mawsynram, Cherrapunji, and Ganga Plains)"
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_09",
+      "question": "______ is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current.",
+      "answer": "Electrolysis",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Define and explain Electrolysis",
+      "source_evidence": "Electrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current.",
+      "source_page": 1,
+      "source_reference": {
+        "page_number": 1,
+        "paragraph_id": "p1_para_1",
+        "char_span": [
+          46,
+          203
+        ],
+        "supporting_text": "Electrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    },
+    {
+      "question_id": "q_10",
+      "question": "Using the differentiation power rule d/dx(xⁿ) = nxⁿ⁻¹ taught in the passage, find the derivative of f(x) = x³ and evaluate it at x = 2.",
+      "answer": "Using d/dx(xⁿ) = nxⁿ⁻¹, f'(x) = 3x². Evaluating at x = 2 gives f'(2) = 3 × (2)² = 12.",
+      "question_type": "problem_solving",
+      "difficulty": "medium",
+      "learning_point": "Solve numerical problem using d/dx(xⁿ) = nxⁿ⁻¹",
+      "source_evidence": "The Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nxⁿ⁻¹.",
+      "source_page": 3,
+      "source_reference": {
+        "page_number": 3,
+        "paragraph_id": "p3_para_1",
+        "char_span": [
+          58,
+          218
+        ],
+        "supporting_text": "The Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nxⁿ⁻¹."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 4,
+        "source_fidelity": 1,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 1,
+        "grade_suitability": 5,
+        "average_score": 3.56
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": false,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": [
+          "Proper noun/term 'Evaluating' in answer does not appear in the source PDF."
+        ]
+      },
+      "validation_status": "rejected",
+      "review_status": "rejected",
+      "review_notes": [
+        "Proper noun/term 'Evaluating' in answer does not appear in the source PDF.",
+        "Deterministic formula check passed (n * (x ** (n - 1)) = 12)."
+      ]
+    },
+    {
+      "question_id": "q_11",
+      "question": "Differential Calculus And Cellular Respiration: The ______ refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right.",
+      "answer": "Bohr Effect",
+      "question_type": "understanding",
+      "difficulty": "medium",
+      "learning_point": "Define and explain Bohr Effect",
+      "source_evidence": "The Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right.",
+      "source_page": 3,
+      "source_reference": {
+        "page_number": 3,
+        "paragraph_id": "p3_para_1",
+        "char_span": [
+          389,
+          645
+        ],
+        "supporting_text": "The Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right."
+      },
+      "quality_scores": {
+        "curriculum_relevance": 5,
+        "source_fidelity": 5,
+        "clarity": 5,
+        "educational_value": 5,
+        "distinctness": 5,
+        "answer_quality": 5,
+        "grade_suitability": 5,
+        "average_score": 5.0
+      },
+      "validation_results": {
+        "source_grounding_pass": true,
+        "answer_support_pass": true,
+        "answer_alignment_pass": true,
+        "clarity_pass": true,
+        "specificity_pass": true,
+        "non_duplication_pass": true,
+        "completeness_pass": true,
+        "ungrounded_claims": []
+      },
+      "validation_status": "accepted",
+      "review_status": "accepted",
+      "review_notes": [
+        "Passed all 7 rubric criteria, strict PDF grounding, and question-answer alignment checks."
+      ]
+    }
+  ]
+}

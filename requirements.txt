@@ -1,0 +1,9 @@
+# Core Runtime Dependencies
+# Note: `question_quality_engine.py` and `provider_adapters.py` run out-of-the-box
+# on Python 3.10+ standard library (using built-in `zlib` FlateDecode stream parsing,
+# coordinate-aware `BT...ET` notation reconstruction, and `urllib.request` REST adapters).
+#
+# Optional / Recommended packages when deploying in environments with wheel compilation:
+pypdf>=4.2.0
+pdfplumber>=0.11.0
+google-genai>=1.0.0
