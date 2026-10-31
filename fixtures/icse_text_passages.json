@@ -1,0 +1,26 @@
+{
+  "description": "Representative ICSE Classes 8-12 curriculum passages for evaluation and testing.",
+  "passages": [
+    {
+      "id": "icse_10_chemistry_electrolysis",
+      "class_level": 10,
+      "subject": "Chemistry",
+      "title": "Electrolysis and Ohm's Law (Class 10)",
+      "text": "CHAPTER 1: ELECTROLYSIS AND ELECTRICAL ENERGY\n\nElectrolysis is defined as the chemical decomposition of an ionic compound (electrolyte) in fused or aqueous state by the passage of direct electric current.\nDuring the electrolysis of acidified water using platinum electrodes, water decomposes according to the balanced chemical equation 2H2O(l) -> 2H2(g) + O2(g).\nIn aqueous copper(II) sulphate solution, CuSO4(aq) <=> Cu^{2+}(aq) + SO4^{2-}(aq), where positively charged Cu^{2+} cations migrate to the cathode and gain electrons.\n\nTable 1.1: Comparison of Strong and Weak Electrolytes\n| Electrolyte | Degree of Dissociation | Major Conducting Particles | Electrical Conductivity |\n| --- | --- | --- | --- |\n| Dilute H2SO4(aq) | Complete (nearly 100%) | Free mobile ions (H+ and SO4^{2-}) | High conductivity |\n| Acetic Acid CH3COOH(aq) | Partial (< 5%) | Mostly unionized molecules and few ions | Low conductivity |\n\nOhm's Law states that the potential difference V across the ends of a metallic conductor is directly proportional to the current I flowing through it, provided temperature remains constant: V = I * R.\nJoule's Law of Heating states that the heat energy H produced in a resistor of resistance R carrying current I for time t is given by the equation H = I^2Rt.\nFig. 1.1: Hoffman Voltameter apparatus for electrolysis of acidified water (Labels: Anode, Cathode, Graduated collecting limbs)"
+    },
+    {
+      "id": "icse_10_history_geography",
+      "class_level": 10,
+      "subject": "History & Civics",
+      "title": "First War of Independence 1857 & Indian Monsoon (Class 10)",
+      "text": "CHAPTER 2: THE FIRST WAR OF INDEPENDENCE (1857) AND INDIAN MONSOON\n\nThe Doctrine of Lapse was an annexation policy applied by Lord Dalhousie, which stated that if an Indian ruler of a dependent state died without a natural male heir, the kingdom would lapse to the British East India Company.\nThe immediate cause of the Revolt of 1857 was the introduction of the Enfield rifle, whose cartridges were greased with beef and pork fat that soldiers had to bite off before loading.\nFirst, on 29 March 1857 at Barrackpore, Mangal Pandey defied British officers; second, on 10 May 1857, sepoys at Meerut broke into open revolt and marched to Delhi; subsequently, Bahadur Shah Zafar was proclaimed Emperor.\nWhereas the Early Nationalists relied on constitutional petitions, prayers, and memoranda, in contrast the Assertive Nationalists advocated Swadeshi, Boycott, and National Education.\n\nTable 2.1: Comparison of Arabian Sea Branch and Bay of Bengal Branch\n| Monsoon Branch | Primary Windward Barrier | Relative Moisture Content | Major Rainfall Region |\n| --- | --- | --- | --- |\n| Arabian Sea Branch | Western Ghats | Very high moisture | Western Coastal Plains and Mumbai |\n| Bay of Bengal Branch | Garo-Khasi-Jaintia Hills | Moderate-high channeled moisture | Mawsynram, Cherrapunji, and Ganga Plains |\n\nMap 2.1: Isohyetal Distribution of Annual Rainfall Across the Indian Subcontinent\nFirst Published in 2022, Reprinted in 2025 by Curriculum Press Pvt Ltd. ISBN: 978-81-99999-01-2. Copyright (c) 2025 All rights reserved."
+    },
+    {
+      "id": "icse_12_math_biology",
+      "class_level": 12,
+      "subject": "Mathematics",
+      "title": "Differential Calculus & Cellular Respiration (Class 12)",
+      "text": "CHAPTER 3: DIFFERENTIAL CALCULUS AND CELLULAR RESPIRATION\n\nThe Fundamental Power Rule of Differentiation states that for any real exponent n, the derivative of f(x) = x^n with respect to x is given by d/dx(x^n) = nx^{n-1}.\nAerobic cellular respiration is the catabolic process by which glucose is completely oxidized in the presence of oxygen according to C6H12O6 + 6O2 -> 6CO2 + 6H2O + 38ATP.\nThe Bohr Effect refers to the physiological phenomenon whereby an increase in carbon dioxide partial pressure (pCO2) and hydrogen ion concentration (lower pH) decreases the oxygen affinity of hemoglobin, shifting the oxygen dissociation curve to the right.\nConsequently, actively respiring tissues with elevated CO2 and lower pH trigger enhanced unloading of O2 from oxyhemoglobin (HbO2) to meet metabolic demand."
+    }
+  ]
+}
