@@ -1,0 +1,76 @@
+{
+  "sheet": "qa-sheet.pdf",
+  "pages": 1,
+  "items": [
+    {
+      "id": "I1",
+      "page": 1,
+      "kind": "title",
+      "text": "Model Question and Answer Revision Sheet",
+      "topic": "",
+      "context": "",
+      "section": "",
+      "bold": []
+    },
+    {
+      "id": "I2",
+      "page": 1,
+      "kind": "point",
+      "text": "Q1. Who is called the Father of the Indian Renaissance? Answer: Raja Ram Mohan Roy is called the Father of the Indian Renaissance.",
+      "topic": "",
+      "context": "",
+      "section": "qa",
+      "bold": ["Raja Ram Mohan Roy", "Father of the Indian Renaissance"]
+    },
+    {
+      "id": "I3",
+      "page": 1,
+      "kind": "point",
+      "text": "Q2. Which organisation did Jyotirao Phule found in 1873? Answer: Jyotirao Phule founded the Satyashodhak Samaj in 1873.",
+      "topic": "",
+      "context": "",
+      "section": "qa",
+      "bold": ["Jyotirao Phule", "Satyashodhak Samaj", "1873"]
+    },
+    {
+      "id": "I4",
+      "page": 1,
+      "kind": "point",
+      "text": "Q3. What is transpiration in plants? Answer: Transpiration is the loss of water vapour from plant leaves.",
+      "topic": "",
+      "context": "",
+      "section": "qa",
+      "bold": ["Transpiration"]
+    },
+    {
+      "id": "I5",
+      "page": 1,
+      "kind": "point",
+      "text": "Q4. Where was the first cotton textile mill set up in 1854? Answer: The first cotton textile mill was set up at Mumbai in 1854.",
+      "topic": "",
+      "context": "",
+      "section": "qa",
+      "bold": ["Mumbai", "1854"]
+    },
+    {
+      "id": "I6",
+      "page": 1,
+      "kind": "point",
+      "text": "Q5. Which river is Cuttack situated on? Answer: Cuttack is situated on the River Mahanadi.",
+      "topic": "",
+      "context": "",
+      "section": "qa",
+      "bold": ["Cuttack", "River Mahanadi"]
+    },
+    {
+      "id": "I7",
+      "page": 1,
+      "kind": "point",
+      "text": "Q6. What is the minimum age for a member of the Lok Sabha? Answer: A member must be at least 25 years old.",
+      "topic": "Lok Sabha",
+      "context": "",
+      "section": "qa",
+      "bold": ["25 years"]
+    }
+  ]
+}
