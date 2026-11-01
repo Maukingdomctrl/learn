@@ -1,0 +1,387 @@
+{
+ "sheet": "uk-cities-comparative-table.pdf",
+ "verified_by": "draft by Claude from the sheet text; to be spot-checked by a person",
+ "note": "answer = the key words a card should test; each is printed on the sheet word-for-word. core = must be covered; secondary = nice to have.",
+ "facts": [
+  {
+   "id": "F1",
+   "source_item": "I4",
+   "page": 1,
+   "subject": "London",
+   "relation": "capital of",
+   "answer": "United Kingdom & England",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F2",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "London",
+   "relation": "river",
+   "answer": "River Thames",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F3",
+   "source_item": "I8",
+   "page": 1,
+   "subject": "London",
+   "relation": "financial centre of",
+   "answer": "Europe",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F4",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "Birmingham",
+   "relation": "region",
+   "answer": "West Midlands",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F5",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "Birmingham",
+   "relation": "river",
+   "answer": "River Rea",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F6",
+   "source_item": "I12",
+   "page": 1,
+   "subject": "Birmingham",
+   "relation": "largest British city outside",
+   "answer": "London",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F7",
+   "source_item": "I13",
+   "page": 1,
+   "subject": "Birmingham",
+   "relation": "grew to international prominence in",
+   "answer": "18th century",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F8",
+   "source_item": "I14",
+   "page": 1,
+   "subject": "Birmingham",
+   "relation": "at the heart of",
+   "answer": "Industrial Revolution",
+   "category": "event",
+   "importance": "core"
+  },
+  {
+   "id": "F9",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Birmingham",
+   "relation": "invention",
+   "answer": "steam engine",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F10",
+   "source_item": "I16",
+   "page": 1,
+   "subject": "Birmingham Hippodrome",
+   "relation": "is the UK's",
+   "answer": "busiest theatre",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F11",
+   "source_item": "I16",
+   "page": 1,
+   "subject": "Birmingham Hippodrome",
+   "relation": "visitors each year",
+   "answer": "over 520,000",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F12",
+   "source_item": "I17",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "capital of",
+   "answer": "Northern Ireland",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F13",
+   "source_item": "I19",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "river",
+   "answer": "River Lagan",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F14",
+   "source_item": "I19",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "population (2011 census)",
+   "answer": "286,000",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F15",
+   "source_item": "I20",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "historic industries",
+   "answer": "Irish linen",
+   "category": "term",
+   "importance": "secondary"
+  },
+  {
+   "id": "F16",
+   "source_item": "I21",
+   "page": 1,
+   "subject": "Harland and Wolff",
+   "relation": "built",
+   "answer": "RMS Titanic",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F17",
+   "source_item": "I21",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "shipyard",
+   "answer": "Harland and Wolff",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F18",
+   "source_item": "I23",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "industry since the mid-1930s",
+   "answer": "aerospace and missiles",
+   "category": "term",
+   "importance": "secondary"
+  },
+  {
+   "id": "F19",
+   "source_item": "I25",
+   "page": 1,
+   "subject": "Belfast",
+   "relation": "interactive museum",
+   "answer": "Titanic Belfast",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F20",
+   "source_item": "I27",
+   "page": 1,
+   "subject": "Edinburgh",
+   "relation": "capital city of",
+   "answer": "Scotland",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F21",
+   "source_item": "I27",
+   "page": 1,
+   "subject": "Edinburgh",
+   "relation": "rank in UK by population",
+   "answer": "seventh most populous",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F22",
+   "source_item": "I28",
+   "page": 1,
+   "subject": "Edinburgh",
+   "relation": "home to",
+   "answer": "Scottish Parliament",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F23",
+   "source_item": "I29",
+   "page": 1,
+   "subject": "Edinburgh",
+   "relation": "financial centre rank in UK",
+   "answer": "Second largest",
+   "category": "number",
+   "importance": "core"
+  },
+  {
+   "id": "F24",
+   "source_item": "I30",
+   "page": 1,
+   "subject": "Bank of Scotland",
+   "relation": "founded in",
+   "answer": "1695",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F25",
+   "source_item": "I30",
+   "page": 1,
+   "subject": "Edinburgh",
+   "relation": "centre of banking for",
+   "answer": "over 300 years",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F26",
+   "source_item": "I31",
+   "page": 1,
+   "subject": "Royal Bank of Scotland",
+   "relation": "global headquarters",
+   "answer": "Edinburgh",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F27",
+   "source_item": "I32",
+   "page": 1,
+   "subject": "Edinburgh tourism",
+   "relation": "supports",
+   "answer": "30,000 jobs",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F28",
+   "source_item": "I32",
+   "page": 1,
+   "subject": "Edinburgh tourism",
+   "relation": "worth",
+   "answer": "£1.6 billion",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F29",
+   "source_item": "I33",
+   "page": 1,
+   "subject": "Edinburgh",
+   "relation": "architecture includes",
+   "answer": "Old Town",
+   "category": "place",
+   "importance": "secondary"
+  },
+  {
+   "id": "F30",
+   "source_item": "I35",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "capital of",
+   "answer": "Wales",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F31",
+   "source_item": "I35",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "rank in UK",
+   "answer": "eleventh-largest",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F32",
+   "source_item": "I37",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "seat of",
+   "answer": "National Assembly for Wales",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F33",
+   "source_item": "I37",
+   "page": 1,
+   "subject": "National Assembly for Wales",
+   "relation": "Welsh name",
+   "answer": "Senedd",
+   "category": "title",
+   "importance": "secondary"
+  },
+  {
+   "id": "F34",
+   "source_item": "I38",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "small town until",
+   "answer": "early 19th century",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F35",
+   "source_item": "I39",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "became the world's most important",
+   "answer": "coal port",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F36",
+   "source_item": "I40",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "made a city in",
+   "answer": "1905",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F37",
+   "source_item": "I40",
+   "page": 1,
+   "subject": "Cardiff",
+   "relation": "proclaimed capital of Wales in",
+   "answer": "1955",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F38",
+   "source_item": "I43",
+   "page": 2,
+   "subject": "Cardiff",
+   "relation": "home to",
+   "answer": "Wales Millennium Centre",
+   "category": "organisation",
+   "importance": "core"
+  }
+ ]
+}
