@@ -1,0 +1,187 @@
+{
+ "sheet": "full-physics-forces.pdf",
+ "verified_by": "draft by Claude from the sheet text; to be spot-checked by a person",
+ "note": "answer = the key words a card should test; each is printed on the sheet word-for-word. core = must be covered; secondary = nice to have.",
+ "facts": [
+  {
+   "id": "F1",
+   "source_item": "I3",
+   "page": 1,
+   "subject": "Resultant force",
+   "relation": "determines",
+   "answer": "acceleration",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F2",
+   "source_item": "I3",
+   "page": 1,
+   "subject": "Newton's second law",
+   "relation": "formula",
+   "answer": "F = ma",
+   "category": "formula",
+   "importance": "core"
+  },
+  {
+   "id": "F3",
+   "source_item": "I3",
+   "page": 1,
+   "subject": "Resultant force zero",
+   "relation": "then velocity remains",
+   "answer": "constant",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F4",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "Trial B",
+   "relation": "acceleration",
+   "answer": "2.0",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F5",
+   "source_item": "I7",
+   "page": 1,
+   "subject": "Trial D",
+   "relation": "acceleration",
+   "answer": "0.67 m/s²",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F6",
+   "source_item": "I7",
+   "page": 1,
+   "subject": "fixed mass",
+   "relation": "doubling resultant force doubles",
+   "answer": "acceleration",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F7",
+   "source_item": "I7",
+   "page": 1,
+   "subject": "fixed force",
+   "relation": "increasing mass reduces",
+   "answer": "acceleration",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F8",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Book resting on table",
+   "relation": "forces",
+   "answer": "Weight downward; normal contact force upward",
+   "category": "term",
+   "importance": "secondary"
+  },
+  {
+   "id": "F9",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Falling object with air resistance",
+   "relation": "upward force",
+   "answer": "drag",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F10",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Car braking",
+   "relation": "speed decreases if resultant",
+   "answer": "opposes velocity",
+   "category": "term",
+   "importance": "secondary"
+  },
+  {
+   "id": "F11",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Satellite in orbit",
+   "relation": "force directed toward central body",
+   "answer": "Gravity",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F12",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "newton",
+   "relation": "definition",
+   "answer": "1 N = 1 kg·m/s²",
+   "category": "formula",
+   "importance": "core"
+  },
+  {
+   "id": "F13",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "Speed",
+   "relation": "unit",
+   "answer": "m/s",
+   "category": "unit",
+   "importance": "core"
+  },
+  {
+   "id": "F14",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "Acceleration",
+   "relation": "unit",
+   "answer": "m/s²",
+   "category": "unit",
+   "importance": "core"
+  },
+  {
+   "id": "F15",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "500 g",
+   "relation": "equals",
+   "answer": "0.500 kg",
+   "category": "number",
+   "importance": "secondary"
+  },
+  {
+   "id": "F16",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "before using F = ma",
+   "relation": "convert grams to",
+   "answer": "kilograms",
+   "category": "unit",
+   "importance": "core"
+  },
+  {
+   "id": "F17",
+   "source_item": "I12",
+   "page": 1,
+   "subject": "Evaluation",
+   "relation": "sources of error include",
+   "answer": "Friction",
+   "category": "term",
+   "importance": "secondary"
+  },
+  {
+   "id": "F18",
+   "source_item": "I12",
+   "page": 1,
+   "subject": "Evaluation",
+   "relation": "improvement",
+   "answer": "motion sensor",
+   "category": "term",
+   "importance": "secondary"
+  }
+ ]
+}
