@@ -1,0 +1,3095 @@
+{
+  "mumbai-personalities-flat": {
+    "slug": "mumbai-personalities-flat",
+    "sheet": "mumbai-personalities-flat.pdf",
+    "metrics": {
+      "core_recall": 100.0,
+      "core_covered": 20,
+      "core_total": 20,
+      "all_recall": 81.1,
+      "all_covered": 30,
+      "all_total": 37,
+      "fact_precision": 100.0,
+      "question_correctness": 100.0,
+      "question_clarity": 100.0,
+      "duplicate_rate": 0.0,
+      "traceability": 100.0,
+      "invented_words_count": 0,
+      "invented_words": [],
+      "facts_count": 41,
+      "cards_count": 30,
+      "rejected_count": 11
+    },
+    "missed_core_facts": [],
+    "missed_secondary_facts": [
+      {
+        "id": "F7",
+        "source_item": "I5",
+        "page": 1,
+        "subject": "Jamsetji Nusserwanji Tata",
+        "relation": "later established",
+        "answer": "Swadeshi Mill",
+        "category": "organisation",
+        "importance": "secondary"
+      },
+      {
+        "id": "F11",
+        "source_item": "I6",
+        "page": 1,
+        "subject": "Jamsetji Nusserwanji Tata",
+        "relation": "laid foundations for",
+        "answer": "Tata Steel",
+        "category": "organisation",
+        "importance": "secondary"
+      },
+      {
+        "id": "F14",
+        "source_item": "I8",
+        "page": 1,
+        "subject": "Mahatma Jyotirao Phule",
+        "relation": "social reformer and writer in",
+        "answer": "Maharashtra",
+        "category": "place",
+        "importance": "secondary"
+      },
+      {
+        "id": "F18",
+        "source_item": "I9",
+        "page": 1,
+        "subject": "Satyashodhak Samaj",
+        "relation": "purpose",
+        "answer": "to promote social justice",
+        "category": "purpose",
+        "importance": "secondary"
+      },
+      {
+        "id": "F29",
+        "source_item": "I13",
+        "page": 1,
+        "subject": "Drafting Committee",
+        "relation": "part of",
+        "answer": "Constituent Assembly of India",
+        "category": "organisation",
+        "importance": "secondary"
+      },
+      {
+        "id": "F34",
+        "source_item": "I15",
+        "page": 1,
+        "subject": "Brahmo Sabha",
+        "relation": "precursor to",
+        "answer": "Brahmo Samaj",
+        "category": "organisation",
+        "importance": "secondary"
+      },
+      {
+        "id": "F35",
+        "source_item": "I15",
+        "page": 1,
+        "subject": "Brahmo Sabha",
+        "relation": "inspired",
+        "answer": "Prarthana Samaj",
+        "category": "organisation",
+        "importance": "secondary"
+      }
+    ],
+    "doubtful_facts": [],
+    "reword_candidates": [],
+    "output": {
+      "sheet": "mumbai-personalities-flat.pdf",
+      "facts": [
+        {
+          "id": "F1",
+          "item_id": "I4",
+          "page": 1,
+          "source_text": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "IS_CALLED",
+          "object": "Father of Indian Industry",
+          "entities": [
+            {
+              "text": "Father of Indian Industry",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F2",
+          "item_id": "I4",
+          "page": 1,
+          "source_text": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "LIFESPAN",
+          "object": "1839–1904",
+          "entities": [
+            {
+              "text": "1839–1904",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F3",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "GRADUATED_FROM",
+          "object": "Elphinstone College",
+          "entities": [
+            {
+              "text": "Elphinstone College",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F4",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "GRADUATED_IN",
+          "object": "1858",
+          "entities": [
+            {
+              "text": "1858",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F5",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "FOUNDED_FIRM_IN",
+          "object": "1868",
+          "entities": [
+            {
+              "text": "1868",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F6",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "CONVERTED_INTO",
+          "object": "Alexandra cotton mill",
+          "entities": [
+            {
+              "text": "Alexandra cotton mill",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F7",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "ESTABLISHED",
+          "object": "Swadeshi Mill",
+          "entities": [
+            {
+              "text": "Swadeshi Mill",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F8",
+          "item_id": "I6",
+          "page": 1,
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "OPENED",
+          "object": "Taj Mahal Hotel",
+          "entities": [
+            {
+              "text": "Taj Mahal Hotel",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F9",
+          "item_id": "I6",
+          "page": 1,
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "subject": "Taj Mahal Hotel",
+          "relation": "OPENED_ON",
+          "object": "3 December 1903",
+          "entities": [
+            {
+              "text": "3 December 1903",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F10",
+          "item_id": "I6",
+          "page": 1,
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "subject": "Taj Mahal Hotel",
+          "relation": "FIRST_WITH",
+          "object": "electricity",
+          "entities": [
+            {
+              "text": "electricity",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F11",
+          "item_id": "I6",
+          "page": 1,
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "subject": "Jamsetji Nusserwanji Tata",
+          "relation": "LAID_FOUNDATIONS_FOR",
+          "object": "Tata Steel",
+          "entities": [
+            {
+              "text": "Tata Steel",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F12",
+          "item_id": "I7",
+          "page": 1,
+          "source_text": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+          "subject": "Mahatma Jyotirao Phule",
+          "relation": "IS_CALLED",
+          "object": "Pioneer of Social Equality",
+          "entities": [
+            {
+              "text": "Pioneer of Social Equality",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F13",
+          "item_id": "I7",
+          "page": 1,
+          "source_text": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+          "subject": "Mahatma Jyotirao Phule",
+          "relation": "LIFESPAN",
+          "object": "1827–1890",
+          "entities": [
+            {
+              "text": "1827–1890",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F14",
+          "item_id": "I8",
+          "page": 1,
+          "source_text": "Social reformer and writer in Maharashtra who championed equal rights for marginalized communities, farmers, mill workers, and women (Britannica).",
+          "subject": "Mahatma Jyotirao Phule",
+          "relation": "REFORMER_IN",
+          "object": "Maharashtra",
+          "entities": [
+            {
+              "text": "Maharashtra",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F15",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "subject": "Mahatma Jyotirao Phule",
+          "relation": "FOUNDED",
+          "object": "Satyashodhak Samaj",
+          "entities": [
+            {
+              "text": "Satyashodhak Samaj",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F16",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "subject": "Satyashodhak Samaj",
+          "relation": "FOUNDED_IN",
+          "object": "1873",
+          "entities": [
+            {
+              "text": "1873",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F17",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "subject": "Satyashodhak Samaj",
+          "relation": "ALSO_CALLED",
+          "object": "Society of Truth Seekers",
+          "entities": [
+            {
+              "text": "Society of Truth Seekers",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F18",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "subject": "Satyashodhak Samaj",
+          "relation": "PURPOSE",
+          "object": "to promote social justice",
+          "entities": [
+            {
+              "text": "to promote social justice",
+              "type": "TERM"
+            }
+          ],
+          "category": "purpose"
+        },
+        {
+          "id": "F19",
+          "item_id": "I10",
+          "page": 1,
+          "source_text": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra",
+          "subject": "Savitribai Phule",
+          "relation": "IS_CALLED",
+          "object": "Pioneer of Women's Education",
+          "entities": [
+            {
+              "text": "Pioneer of Women's Education",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F20",
+          "item_id": "I10",
+          "page": 1,
+          "source_text": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra",
+          "subject": "Savitribai Phule",
+          "relation": "LIFESPAN",
+          "object": "1831–1897",
+          "entities": [
+            {
+              "text": "1831–1897",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F21",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+          "subject": "Savitribai Phule",
+          "relation": "REGARDED_AS_FIRST",
+          "object": "female teacher",
+          "entities": [
+            {
+              "text": "female teacher",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F22",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+          "subject": "Savitribai Phule",
+          "relation": "WORKED_ALONGSIDE",
+          "object": "Jyotirao Phule",
+          "entities": [
+            {
+              "text": "Jyotirao Phule",
+              "type": "PERSON"
+            }
+          ],
+          "category": "person"
+        },
+        {
+          "id": "F23",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+          "subject": "schools for girls",
+          "relation": "STARTED_IN",
+          "object": "1848",
+          "entities": [
+            {
+              "text": "1848",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F24",
+          "item_id": "I12",
+          "page": 1,
+          "source_text": "Dr. Bhimrao Ramji Ambedkar (1891–1956) – Architect of the Indian Constitution",
+          "subject": "Dr. Bhimrao Ramji Ambedkar",
+          "relation": "IS_CALLED",
+          "object": "Architect of the Indian Constitution",
+          "entities": [
+            {
+              "text": "Architect of the Indian Constitution",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F25",
+          "item_id": "I12",
+          "page": 1,
+          "source_text": "Dr. Bhimrao Ramji Ambedkar (1891–1956) – Architect of the Indian Constitution",
+          "subject": "Dr. Bhimrao Ramji Ambedkar",
+          "relation": "LIFESPAN",
+          "object": "1891–1956",
+          "entities": [
+            {
+              "text": "1891–1956",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F26",
+          "item_id": "I13",
+          "page": 1,
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "subject": "Dr. Bhimrao Ramji Ambedkar",
+          "relation": "RESIDENCE",
+          "object": "Rajgriha",
+          "entities": [
+            {
+              "text": "Rajgriha",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F27",
+          "item_id": "I13",
+          "page": 1,
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "subject": "Rajgriha",
+          "relation": "LOCATED_IN",
+          "object": "Dadar",
+          "entities": [
+            {
+              "text": "Dadar",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F28",
+          "item_id": "I13",
+          "page": 1,
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "subject": "Dr. Bhimrao Ramji Ambedkar",
+          "relation": "CHAIRED",
+          "object": "Drafting Committee",
+          "entities": [
+            {
+              "text": "Drafting Committee",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F29",
+          "item_id": "I13",
+          "page": 1,
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "subject": "Drafting Committee",
+          "relation": "PART_OF",
+          "object": "Constituent Assembly of India",
+          "entities": [
+            {
+              "text": "Constituent Assembly of India",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F30",
+          "item_id": "I14",
+          "page": 1,
+          "source_text": "Raja Ram Mohan Roy (1772–1833) – Father of the Indian Renaissance",
+          "subject": "Raja Ram Mohan Roy",
+          "relation": "IS_CALLED",
+          "object": "Father of the Indian Renaissance",
+          "entities": [
+            {
+              "text": "Father of the Indian Renaissance",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F31",
+          "item_id": "I14",
+          "page": 1,
+          "source_text": "Raja Ram Mohan Roy (1772–1833) – Father of the Indian Renaissance",
+          "subject": "Raja Ram Mohan Roy",
+          "relation": "LIFESPAN",
+          "object": "1772–1833",
+          "entities": [
+            {
+              "text": "1772–1833",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F32",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "subject": "Raja Ram Mohan Roy",
+          "relation": "FOUNDED",
+          "object": "Brahmo Sabha",
+          "entities": [
+            {
+              "text": "Brahmo Sabha",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F33",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "subject": "Brahmo Sabha",
+          "relation": "FOUNDED_IN",
+          "object": "1828",
+          "entities": [
+            {
+              "text": "1828",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F34",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "subject": "Brahmo Sabha",
+          "relation": "PRECURSOR_TO",
+          "object": "Brahmo Samaj",
+          "entities": [
+            {
+              "text": "Brahmo Samaj",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F35",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "subject": "Brahmo Sabha",
+          "relation": "INSPIRED",
+          "object": "Prarthana Samaj",
+          "entities": [
+            {
+              "text": "Prarthana Samaj",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F36",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "subject": "Raja Ram Mohan Roy",
+          "relation": "CAMPAIGNED_FOR",
+          "object": "Abolition of Sati",
+          "entities": [
+            {
+              "text": "Abolition of Sati",
+              "type": "EVENT"
+            }
+          ],
+          "category": "event"
+        },
+        {
+          "id": "F37",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "subject": "Abolition of Sati",
+          "relation": "YEAR",
+          "object": "1829",
+          "entities": [
+            {
+              "text": "1829",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F38",
+          "item_id": "I17",
+          "page": 1,
+          "source_text": "Role / Title — Jamsetji Tata: Father of Indian Industry",
+          "subject": "Jamsetji Tata",
+          "relation": "IS_CALLED",
+          "object": "Father of Indian Industry",
+          "entities": [
+            {
+              "text": "Father of Indian Industry",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F39",
+          "item_id": "I17",
+          "page": 1,
+          "source_text": "Role / Title — Savitribai Phule: Pioneer female educator",
+          "subject": "Savitribai Phule",
+          "relation": "IS_CALLED",
+          "object": "Pioneer female educator",
+          "entities": [
+            {
+              "text": "Pioneer female educator",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F40",
+          "item_id": "I17",
+          "page": 1,
+          "source_text": "Role / Title — Dr. B. R. Ambedkar: Architect of Constitution",
+          "subject": "Dr. B. R. Ambedkar",
+          "relation": "IS_CALLED",
+          "object": "Architect of Constitution",
+          "entities": [
+            {
+              "text": "Architect of Constitution",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F41",
+          "item_id": "I17",
+          "page": 1,
+          "source_text": "Role / Title — R. R. M. Roy: Father of Indian Renaissance",
+          "subject": "R. R. M. Roy",
+          "relation": "IS_CALLED",
+          "object": "Father of Indian Renaissance",
+          "entities": [
+            {
+              "text": "Father of Indian Renaissance",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        }
+      ],
+      "cards": [
+        {
+          "id": "C1",
+          "fact_id": "F1",
+          "item_id": "I4",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "What is Jamsetji Nusserwanji Tata called?",
+          "prompt": "",
+          "answer": "Father of Indian Industry",
+          "question_type": "TITLE",
+          "source_text": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+          "status": "accepted"
+        },
+        {
+          "id": "C2",
+          "fact_id": "F2",
+          "item_id": "I4",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "Jamsetji Nusserwanji Tata (______) – Father of Indian Industry.",
+          "prompt": "Which year fits the gap?",
+          "answer": "1839–1904",
+          "question_type": "GAP",
+          "source_text": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+          "status": "accepted"
+        },
+        {
+          "id": "C3",
+          "fact_id": "F3",
+          "item_id": "I5",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "Which college did Jamsetji Nusserwanji Tata graduate from?",
+          "prompt": "",
+          "answer": "Elphinstone College",
+          "question_type": "WHERE",
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "status": "accepted"
+        },
+        {
+          "id": "C4",
+          "fact_id": "F4",
+          "item_id": "I5",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "In which year did Jamsetji Nusserwanji Tata graduate?",
+          "prompt": "",
+          "answer": "1858",
+          "question_type": "WHEN",
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "status": "accepted"
+        },
+        {
+          "id": "C5",
+          "fact_id": "F5",
+          "item_id": "I5",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "In which year did Jamsetji Nusserwanji Tata found a trading firm?",
+          "prompt": "",
+          "answer": "1868",
+          "question_type": "WHEN",
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "status": "accepted"
+        },
+        {
+          "id": "C6",
+          "fact_id": "F6",
+          "item_id": "I5",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "What did Jamsetji Nusserwanji Tata convert an oil mill into?",
+          "prompt": "",
+          "answer": "Alexandra cotton mill",
+          "question_type": "WHAT",
+          "source_text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+          "status": "accepted"
+        },
+        {
+          "id": "C7",
+          "fact_id": "F8",
+          "item_id": "I6",
+          "page": 1,
+          "label": "Jamsetji Nusserwanji Tata",
+          "front": "What did Jamsetji Nusserwanji Tata open?",
+          "prompt": "",
+          "answer": "Taj Mahal Hotel",
+          "question_type": "WHAT",
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "status": "accepted"
+        },
+        {
+          "id": "C8",
+          "fact_id": "F9",
+          "item_id": "I6",
+          "page": 1,
+          "label": "Taj Mahal Hotel",
+          "front": "On what date did the Taj Mahal Hotel open?",
+          "prompt": "",
+          "answer": "3 December 1903",
+          "question_type": "WHEN",
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "status": "accepted"
+        },
+        {
+          "id": "C9",
+          "fact_id": "F10",
+          "item_id": "I6",
+          "page": 1,
+          "label": "Taj Mahal Hotel",
+          "front": "The Taj Mahal Hotel was the first in India with what?",
+          "prompt": "",
+          "answer": "electricity",
+          "question_type": "WHAT",
+          "source_text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+          "status": "accepted"
+        },
+        {
+          "id": "C10",
+          "fact_id": "F12",
+          "item_id": "I7",
+          "page": 1,
+          "label": "Mahatma Jyotirao Phule",
+          "front": "What is Mahatma Jyotirao Phule called?",
+          "prompt": "",
+          "answer": "Pioneer of Social Equality",
+          "question_type": "TITLE",
+          "source_text": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+          "status": "accepted"
+        },
+        {
+          "id": "C11",
+          "fact_id": "F13",
+          "item_id": "I7",
+          "page": 1,
+          "label": "Mahatma Jyotirao Phule",
+          "front": "Mahatma Jyotirao Phule (______) – Pioneer of Social Equality.",
+          "prompt": "Which year fits the gap?",
+          "answer": "1827–1890",
+          "question_type": "GAP",
+          "source_text": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+          "status": "accepted"
+        },
+        {
+          "id": "C12",
+          "fact_id": "F15",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Mahatma Jyotirao Phule",
+          "front": "Which organisation did Mahatma Jyotirao Phule found?",
+          "prompt": "",
+          "answer": "Satyashodhak Samaj",
+          "question_type": "WHAT",
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "status": "accepted"
+        },
+        {
+          "id": "C13",
+          "fact_id": "F16",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Satyashodhak Samaj",
+          "front": "In which year was the Satyashodhak Samaj founded?",
+          "prompt": "",
+          "answer": "1873",
+          "question_type": "WHEN",
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "status": "accepted"
+        },
+        {
+          "id": "C14",
+          "fact_id": "F17",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Satyashodhak Samaj",
+          "front": "What is the Satyashodhak Samaj also called?",
+          "prompt": "",
+          "answer": "Society of Truth Seekers",
+          "question_type": "WHAT",
+          "source_text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+          "status": "accepted"
+        },
+        {
+          "id": "C15",
+          "fact_id": "F19",
+          "item_id": "I10",
+          "page": 1,
+          "label": "Savitribai Phule",
+          "front": "What is Savitribai Phule called?",
+          "prompt": "",
+          "answer": "Pioneer of Women's Education",
+          "question_type": "TITLE",
+          "source_text": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra",
+          "status": "accepted"
+        },
+        {
+          "id": "C16",
+          "fact_id": "F20",
+          "item_id": "I10",
+          "page": 1,
+          "label": "Savitribai Phule",
+          "front": "Savitribai Phule (______) – Pioneer of Women's Education in Maharashtra.",
+          "prompt": "Which year fits the gap?",
+          "answer": "1831–1897",
+          "question_type": "GAP",
+          "source_text": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra",
+          "status": "accepted"
+        },
+        {
+          "id": "C17",
+          "fact_id": "F21",
+          "item_id": "I11",
+          "page": 1,
+          "label": "Savitribai Phule",
+          "front": "What is Savitribai Phule regarded as India's first?",
+          "prompt": "",
+          "answer": "female teacher",
+          "question_type": "TITLE",
+          "source_text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+          "status": "accepted"
+        },
+        {
+          "id": "C18",
+          "fact_id": "F22",
+          "item_id": "I11",
+          "page": 1,
+          "label": "Savitribai Phule",
+          "front": "Who did Savitribai Phule work alongside?",
+          "prompt": "",
+          "answer": "Jyotirao Phule",
+          "question_type": "WHO",
+          "source_text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+          "status": "accepted"
+        },
+        {
+          "id": "C19",
+          "fact_id": "F23",
+          "item_id": "I11",
+          "page": 1,
+          "label": "schools for girls",
+          "front": "In which year were schools for girls started?",
+          "prompt": "",
+          "answer": "1848",
+          "question_type": "WHEN",
+          "source_text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+          "status": "accepted"
+        },
+        {
+          "id": "C20",
+          "fact_id": "F24",
+          "item_id": "I12",
+          "page": 1,
+          "label": "Dr. Bhimrao Ramji Ambedkar",
+          "front": "What is Dr. Bhimrao Ramji Ambedkar called?",
+          "prompt": "",
+          "answer": "Architect of the Indian Constitution",
+          "question_type": "TITLE",
+          "source_text": "Dr. Bhimrao Ramji Ambedkar (1891–1956) – Architect of the Indian Constitution",
+          "status": "accepted"
+        },
+        {
+          "id": "C21",
+          "fact_id": "F25",
+          "item_id": "I12",
+          "page": 1,
+          "label": "Dr. Bhimrao Ramji Ambedkar",
+          "front": "Dr. Bhimrao Ramji Ambedkar (______) – Architect of the Indian Constitution.",
+          "prompt": "Which year fits the gap?",
+          "answer": "1891–1956",
+          "question_type": "GAP",
+          "source_text": "Dr. Bhimrao Ramji Ambedkar (1891–1956) – Architect of the Indian Constitution",
+          "status": "accepted"
+        },
+        {
+          "id": "C22",
+          "fact_id": "F26",
+          "item_id": "I13",
+          "page": 1,
+          "label": "Dr. Bhimrao Ramji Ambedkar",
+          "front": "What was the Mumbai residence of Dr. Bhimrao Ramji Ambedkar?",
+          "prompt": "",
+          "answer": "Rajgriha",
+          "question_type": "WHERE",
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "status": "accepted"
+        },
+        {
+          "id": "C23",
+          "fact_id": "F27",
+          "item_id": "I13",
+          "page": 1,
+          "label": "Rajgriha",
+          "front": "Where is Rajgriha located?",
+          "prompt": "",
+          "answer": "Dadar",
+          "question_type": "WHERE",
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "status": "accepted"
+        },
+        {
+          "id": "C24",
+          "fact_id": "F28",
+          "item_id": "I13",
+          "page": 1,
+          "label": "Dr. Bhimrao Ramji Ambedkar",
+          "front": "Which committee did Dr. Bhimrao Ramji Ambedkar chair?",
+          "prompt": "",
+          "answer": "Drafting Committee",
+          "question_type": "WHAT",
+          "source_text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+          "status": "accepted"
+        },
+        {
+          "id": "C25",
+          "fact_id": "F30",
+          "item_id": "I14",
+          "page": 1,
+          "label": "Raja Ram Mohan Roy",
+          "front": "What is Raja Ram Mohan Roy called?",
+          "prompt": "",
+          "answer": "Father of the Indian Renaissance",
+          "question_type": "TITLE",
+          "source_text": "Raja Ram Mohan Roy (1772–1833) – Father of the Indian Renaissance",
+          "status": "accepted"
+        },
+        {
+          "id": "C26",
+          "fact_id": "F31",
+          "item_id": "I14",
+          "page": 1,
+          "label": "Raja Ram Mohan Roy",
+          "front": "Raja Ram Mohan Roy (______) – Father of the Indian Renaissance.",
+          "prompt": "Which year fits the gap?",
+          "answer": "1772–1833",
+          "question_type": "GAP",
+          "source_text": "Raja Ram Mohan Roy (1772–1833) – Father of the Indian Renaissance",
+          "status": "accepted"
+        },
+        {
+          "id": "C27",
+          "fact_id": "F32",
+          "item_id": "I15",
+          "page": 1,
+          "label": "Raja Ram Mohan Roy",
+          "front": "Which organisation did Raja Ram Mohan Roy found?",
+          "prompt": "",
+          "answer": "Brahmo Sabha",
+          "question_type": "WHAT",
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "status": "accepted"
+        },
+        {
+          "id": "C28",
+          "fact_id": "F33",
+          "item_id": "I15",
+          "page": 1,
+          "label": "Brahmo Sabha",
+          "front": "In which year was the Brahmo Sabha founded?",
+          "prompt": "",
+          "answer": "1828",
+          "question_type": "WHEN",
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "status": "accepted"
+        },
+        {
+          "id": "C29",
+          "fact_id": "F36",
+          "item_id": "I15",
+          "page": 1,
+          "label": "Raja Ram Mohan Roy",
+          "front": "What event did Raja Ram Mohan Roy campaign for?",
+          "prompt": "",
+          "answer": "Abolition of Sati",
+          "question_type": "WHAT",
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "status": "accepted"
+        },
+        {
+          "id": "C30",
+          "fact_id": "F37",
+          "item_id": "I15",
+          "page": 1,
+          "label": "Abolition of Sati",
+          "front": "In which year was the Abolition of Sati?",
+          "prompt": "",
+          "answer": "1829",
+          "question_type": "WHEN",
+          "source_text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+          "status": "accepted"
+        }
+      ],
+      "rejected": [
+        {
+          "front": "What is Jamsetji Tata called?",
+          "answer": "Father of Indian Industry",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "Which mill did Jamsetji Nusserwanji Tata establish?",
+          "answer": "Swadeshi Mill",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What did Jamsetji Nusserwanji Tata lay foundations for?",
+          "answer": "Tata Steel",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "Where was Mahatma Jyotirao Phule a social reformer and writer?",
+          "answer": "Maharashtra",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What was the purpose of the Satyashodhak Samaj?",
+          "answer": "to promote social justice",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What was the Drafting Committee part of?",
+          "answer": "Constituent Assembly of India",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What was the Brahmo Sabha a precursor to?",
+          "answer": "Brahmo Samaj",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "Which organisation did the Brahmo Sabha inspire?",
+          "answer": "Prarthana Samaj",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is Savitribai Phule called?",
+          "answer": "Pioneer female educator",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is Dr. B. R. Ambedkar called?",
+          "answer": "Architect of Constitution",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is R. R. M. Roy called?",
+          "answer": "Father of Indian Renaissance",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        }
+      ]
+    }
+  },
+  "uk-cities-comparative-table": {
+    "slug": "uk-cities-comparative-table",
+    "sheet": "uk-cities-comparative-table.pdf",
+    "metrics": {
+      "core_recall": 100.0,
+      "core_covered": 26,
+      "core_total": 26,
+      "all_recall": 78.9,
+      "all_covered": 30,
+      "all_total": 38,
+      "fact_precision": 100.0,
+      "question_correctness": 100.0,
+      "question_clarity": 100.0,
+      "duplicate_rate": 0.0,
+      "traceability": 100.0,
+      "invented_words_count": 0,
+      "invented_words": [],
+      "facts_count": 44,
+      "cards_count": 30,
+      "rejected_count": 14
+    },
+    "missed_core_facts": [],
+    "missed_secondary_facts": [
+      {
+        "id": "F11",
+        "source_item": "I16",
+        "page": 1,
+        "subject": "Birmingham Hippodrome",
+        "relation": "visitors each year",
+        "answer": "over 520,000",
+        "category": "number",
+        "importance": "secondary"
+      },
+      {
+        "id": "F15",
+        "source_item": "I20",
+        "page": 1,
+        "subject": "Belfast",
+        "relation": "historic industries",
+        "answer": "Irish linen",
+        "category": "term",
+        "importance": "secondary"
+      },
+      {
+        "id": "F21",
+        "source_item": "I27",
+        "page": 1,
+        "subject": "Edinburgh",
+        "relation": "rank in UK by population",
+        "answer": "seventh most populous",
+        "category": "number",
+        "importance": "secondary"
+      },
+      {
+        "id": "F25",
+        "source_item": "I30",
+        "page": 1,
+        "subject": "Edinburgh",
+        "relation": "centre of banking for",
+        "answer": "over 300 years",
+        "category": "number",
+        "importance": "secondary"
+      },
+      {
+        "id": "F28",
+        "source_item": "I32",
+        "page": 1,
+        "subject": "Edinburgh tourism",
+        "relation": "worth",
+        "answer": "£1.6 billion",
+        "category": "number",
+        "importance": "secondary"
+      },
+      {
+        "id": "F29",
+        "source_item": "I33",
+        "page": 1,
+        "subject": "Edinburgh",
+        "relation": "architecture includes",
+        "answer": "Old Town",
+        "category": "place",
+        "importance": "secondary"
+      },
+      {
+        "id": "F33",
+        "source_item": "I37",
+        "page": 1,
+        "subject": "National Assembly for Wales",
+        "relation": "Welsh name",
+        "answer": "Senedd",
+        "category": "title",
+        "importance": "secondary"
+      },
+      {
+        "id": "F34",
+        "source_item": "I38",
+        "page": 1,
+        "subject": "Cardiff",
+        "relation": "small town until",
+        "answer": "early 19th century",
+        "category": "date",
+        "importance": "secondary"
+      }
+    ],
+    "doubtful_facts": [],
+    "reword_candidates": [],
+    "output": {
+      "sheet": "uk-cities-comparative-table.pdf",
+      "facts": [
+        {
+          "id": "F1",
+          "item_id": "I4",
+          "page": 1,
+          "source_text": "LONDON – Capital of the United Kingdom & England",
+          "subject": "London",
+          "relation": "CAPITAL_OF",
+          "object": "United Kingdom & England",
+          "entities": [
+            {
+              "text": "United Kingdom & England",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F2",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Situated on the River Thames in southeastern England.",
+          "subject": "London",
+          "relation": "SITUATED_ON",
+          "object": "River Thames",
+          "entities": [
+            {
+              "text": "River Thames",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F3",
+          "item_id": "I8",
+          "page": 1,
+          "source_text": "Continues to serve as the financial centre of Europe and a centre of innovation.",
+          "subject": "London",
+          "relation": "FINANCIAL_CENTRE_OF",
+          "object": "Europe",
+          "entities": [
+            {
+              "text": "Europe",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F4",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "Major city of the West Midlands, lying on the River Rea.",
+          "subject": "Birmingham",
+          "relation": "REGION",
+          "object": "West Midlands",
+          "entities": [
+            {
+              "text": "West Midlands",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F5",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "Major city of the West Midlands, lying on the River Rea.",
+          "subject": "Birmingham",
+          "relation": "SITUATED_ON",
+          "object": "River Rea",
+          "entities": [
+            {
+              "text": "River Rea",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F6",
+          "item_id": "I12",
+          "page": 1,
+          "source_text": "Largest and most populous British city outside London.",
+          "subject": "Birmingham",
+          "relation": "LARGEST_OUTSIDE",
+          "object": "London",
+          "entities": [
+            {
+              "text": "London",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F7",
+          "item_id": "I13",
+          "page": 1,
+          "source_text": "Was a medium-sized market town in the medieval period; grew to international prominence in the 18th century.",
+          "subject": "Birmingham",
+          "relation": "PROMINENCE_IN",
+          "object": "18th century",
+          "entities": [
+            {
+              "text": "18th century",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F8",
+          "item_id": "I14",
+          "page": 1,
+          "source_text": "At the heart of the Industrial Revolution – advances in science, technology & economic development.",
+          "subject": "Birmingham",
+          "relation": "AT_HEART_OF",
+          "object": "Industrial Revolution",
+          "entities": [
+            {
+              "text": "Industrial Revolution",
+              "type": "EVENT"
+            }
+          ],
+          "category": "event"
+        },
+        {
+          "id": "F9",
+          "item_id": "I15",
+          "page": 1,
+          "source_text": "The industrial steam engine (one of the most important inventions in British history) was invented here.",
+          "subject": "Birmingham",
+          "relation": "INVENTION",
+          "object": "steam engine",
+          "entities": [
+            {
+              "text": "steam engine",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F10",
+          "item_id": "I16",
+          "page": 1,
+          "source_text": "Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+          "subject": "Birmingham Hippodrome",
+          "relation": "IS_UKS",
+          "object": "busiest theatre",
+          "entities": [
+            {
+              "text": "busiest theatre",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F11",
+          "item_id": "I16",
+          "page": 1,
+          "source_text": "Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+          "subject": "Birmingham Hippodrome",
+          "relation": "VISITORS_PER_YEAR",
+          "object": "over 520,000",
+          "entities": [
+            {
+              "text": "over 520,000",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F12",
+          "item_id": "I17",
+          "page": 1,
+          "source_text": "BELFAST – Capital of Northern Ireland",
+          "subject": "Belfast",
+          "relation": "CAPITAL_OF",
+          "object": "Northern Ireland",
+          "entities": [
+            {
+              "text": "Northern Ireland",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F13",
+          "item_id": "I19",
+          "page": 1,
+          "source_text": "Situated on the River Lagan; population about 286,000 (2011 census).",
+          "subject": "Belfast",
+          "relation": "SITUATED_ON",
+          "object": "River Lagan",
+          "entities": [
+            {
+              "text": "River Lagan",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F14",
+          "item_id": "I19",
+          "page": 1,
+          "source_text": "Situated on the River Lagan; population about 286,000 (2011 census).",
+          "subject": "Belfast",
+          "relation": "POPULATION",
+          "object": "286,000",
+          "entities": [
+            {
+              "text": "286,000",
+              "type": "NUMBER"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F15",
+          "item_id": "I20",
+          "page": 1,
+          "source_text": "Historic industries: Irish linen, tobacco processing, rope-making and shipbuilding.",
+          "subject": "Belfast",
+          "relation": "HISTORIC_INDUSTRY",
+          "object": "Irish linen",
+          "entities": [
+            {
+              "text": "Irish linen",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F16",
+          "item_id": "I21",
+          "page": 1,
+          "source_text": "Harland and Wolff shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+          "subject": "Harland and Wolff",
+          "relation": "BUILT",
+          "object": "RMS Titanic",
+          "entities": [
+            {
+              "text": "RMS Titanic",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F17",
+          "item_id": "I21",
+          "page": 1,
+          "source_text": "Harland and Wolff shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+          "subject": "Belfast",
+          "relation": "SHIPYARD",
+          "object": "Harland and Wolff",
+          "entities": [
+            {
+              "text": "Harland and Wolff",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F18",
+          "item_id": "I23",
+          "page": 1,
+          "source_text": "Sustained major aerospace and missiles industry since the mid-1930s.",
+          "subject": "Belfast",
+          "relation": "INDUSTRY_SINCE",
+          "object": "aerospace and missiles",
+          "entities": [
+            {
+              "text": "aerospace and missiles",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F19",
+          "item_id": "I25",
+          "page": 1,
+          "source_text": "Home to the Titanic Belfast interactive museum.",
+          "subject": "Belfast",
+          "relation": "HOME_TO",
+          "object": "Titanic Belfast",
+          "entities": [
+            {
+              "text": "Titanic Belfast",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F20",
+          "item_id": "I26",
+          "page": 1,
+          "source_text": "EDINBURGH – Capital of Scotland",
+          "subject": "Edinburgh",
+          "relation": "CAPITAL_OF",
+          "object": "Scotland",
+          "entities": [
+            {
+              "text": "Scotland",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F21",
+          "item_id": "I27",
+          "page": 1,
+          "source_text": "Capital city of Scotland; Scotland’s second most populous city and the seventh most populous in the UK.",
+          "subject": "Edinburgh",
+          "relation": "RANK_IN_UK",
+          "object": "seventh most populous",
+          "entities": [
+            {
+              "text": "seventh most populous",
+              "type": "NUMBER"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F22",
+          "item_id": "I28",
+          "page": 1,
+          "source_text": "Home to the Scottish Parliament and the seat of the monarchy in Scotland.",
+          "subject": "Edinburgh",
+          "relation": "HOME_TO",
+          "object": "Scottish Parliament",
+          "entities": [
+            {
+              "text": "Scottish Parliament",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F23",
+          "item_id": "I29",
+          "page": 1,
+          "source_text": "Second largest financial centre in the UK after London.",
+          "subject": "Edinburgh",
+          "relation": "FINANCIAL_RANK",
+          "object": "Second largest",
+          "entities": [
+            {
+              "text": "Second largest",
+              "type": "NUMBER"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F24",
+          "item_id": "I30",
+          "page": 1,
+          "source_text": "Centre of banking for over 300 years: Bank of Scotland founded in 1695 (HQ in Edinburgh).",
+          "subject": "Bank of Scotland",
+          "relation": "FOUNDED_IN",
+          "object": "1695",
+          "entities": [
+            {
+              "text": "1695",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F25",
+          "item_id": "I30",
+          "page": 1,
+          "source_text": "Centre of banking for over 300 years: Bank of Scotland founded in 1695 (HQ in Edinburgh).",
+          "subject": "Edinburgh",
+          "relation": "BANKING_FOR",
+          "object": "over 300 years",
+          "entities": [
+            {
+              "text": "over 300 years",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F26",
+          "item_id": "I31",
+          "page": 1,
+          "source_text": "Royal Bank of Scotland (RBS) has its global headquarters in Edinburgh.",
+          "subject": "Royal Bank of Scotland",
+          "relation": "HEADQUARTERS_IN",
+          "object": "Edinburgh",
+          "entities": [
+            {
+              "text": "Edinburgh",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F27",
+          "item_id": "I32",
+          "page": 1,
+          "source_text": "Tourism is a major mainstay: supports 30,000 jobs worth £1.6 billion to the city economy.",
+          "subject": "Edinburgh tourism",
+          "relation": "SUPPORTS",
+          "object": "30,000 jobs",
+          "entities": [
+            {
+              "text": "30,000 jobs",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F28",
+          "item_id": "I32",
+          "page": 1,
+          "source_text": "Tourism is a major mainstay: supports 30,000 jobs worth £1.6 billion to the city economy.",
+          "subject": "Edinburgh tourism",
+          "relation": "WORTH",
+          "object": "£1.6 billion",
+          "entities": [
+            {
+              "text": "£1.6 billion",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F29",
+          "item_id": "I33",
+          "page": 1,
+          "source_text": "Famous for its stunning mix of architecture: medieval tenements, Old Town, cobbled wynds and Georgian-era buildings.",
+          "subject": "Edinburgh",
+          "relation": "ARCHITECTURE_INCLUDES",
+          "object": "Old Town",
+          "entities": [
+            {
+              "text": "Old Town",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F30",
+          "item_id": "I34",
+          "page": 1,
+          "source_text": "CARDIFF – Capital of Wales",
+          "subject": "Cardiff",
+          "relation": "CAPITAL_OF",
+          "object": "Wales",
+          "entities": [
+            {
+              "text": "Wales",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F31",
+          "item_id": "I35",
+          "page": 1,
+          "source_text": "Capital and largest city in Wales; the eleventh-largest city in the United Kingdom.",
+          "subject": "Cardiff",
+          "relation": "RANK_IN_UK",
+          "object": "eleventh-largest",
+          "entities": [
+            {
+              "text": "eleventh-largest",
+              "type": "NUMBER"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F32",
+          "item_id": "I37",
+          "page": 1,
+          "source_text": "Seat of the National Assembly for Wales (Senedd).",
+          "subject": "Cardiff",
+          "relation": "SEAT_OF",
+          "object": "National Assembly for Wales",
+          "entities": [
+            {
+              "text": "National Assembly for Wales",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F33",
+          "item_id": "I37",
+          "page": 1,
+          "source_text": "Seat of the National Assembly for Wales (Senedd).",
+          "subject": "National Assembly for Wales",
+          "relation": "ALSO_CALLED",
+          "object": "Senedd",
+          "entities": [
+            {
+              "text": "Senedd",
+              "type": "TITLE"
+            }
+          ],
+          "category": "title"
+        },
+        {
+          "id": "F34",
+          "item_id": "I38",
+          "page": 1,
+          "source_text": "Was a small town until the early 19th century; rose as a major port for coal transport.",
+          "subject": "Cardiff",
+          "relation": "SMALL_TOWN_UNTIL",
+          "object": "early 19th century",
+          "entities": [
+            {
+              "text": "early 19th century",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F35",
+          "item_id": "I39",
+          "page": 1,
+          "source_text": "Became the world’s most important coal port (handled more than London and Liverpool).",
+          "subject": "Cardiff",
+          "relation": "MOST_IMPORTANT",
+          "object": "coal port",
+          "entities": [
+            {
+              "text": "coal port",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F36",
+          "item_id": "I40",
+          "page": 1,
+          "source_text": "Made a city in 1905; proclaimed capital of Wales in 1955.",
+          "subject": "Cardiff",
+          "relation": "MADE_CITY_IN",
+          "object": "1905",
+          "entities": [
+            {
+              "text": "1905",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F37",
+          "item_id": "I40",
+          "page": 1,
+          "source_text": "Made a city in 1905; proclaimed capital of Wales in 1955.",
+          "subject": "Cardiff",
+          "relation": "PROCLAIMED_CAPITAL_IN",
+          "object": "1955",
+          "entities": [
+            {
+              "text": "1955",
+              "type": "DATE"
+            }
+          ],
+          "category": "date"
+        },
+        {
+          "id": "F38",
+          "item_id": "I43",
+          "page": 2,
+          "source_text": "Home to the Wales Millennium Centre – a thriving creative capital with rich cultural heritage.",
+          "subject": "Cardiff",
+          "relation": "HOME_TO",
+          "object": "Wales Millennium Centre",
+          "entities": [
+            {
+              "text": "Wales Millennium Centre",
+              "type": "ORGANISATION"
+            }
+          ],
+          "category": "organisation"
+        },
+        {
+          "id": "F39",
+          "item_id": "I46",
+          "page": 3,
+          "source_text": "Country / Region — Belfast: Northern Ireland",
+          "subject": "Belfast",
+          "relation": "CAPITAL_OF",
+          "object": "Northern Ireland",
+          "entities": [
+            {
+              "text": "Northern Ireland",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F40",
+          "item_id": "I46",
+          "page": 3,
+          "source_text": "Country / Region — Edinburgh: Scotland",
+          "subject": "Edinburgh",
+          "relation": "CAPITAL_OF",
+          "object": "Scotland",
+          "entities": [
+            {
+              "text": "Scotland",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F41",
+          "item_id": "I46",
+          "page": 3,
+          "source_text": "Country / Region — Cardiff: Wales",
+          "subject": "Cardiff",
+          "relation": "CAPITAL_OF",
+          "object": "Wales",
+          "entities": [
+            {
+              "text": "Wales",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F42",
+          "item_id": "I46",
+          "page": 3,
+          "source_text": "River — London: River Thames",
+          "subject": "London",
+          "relation": "SITUATED_ON",
+          "object": "River Thames",
+          "entities": [
+            {
+              "text": "River Thames",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F43",
+          "item_id": "I46",
+          "page": 3,
+          "source_text": "River — Birmingham: River Rea",
+          "subject": "Birmingham",
+          "relation": "SITUATED_ON",
+          "object": "River Rea",
+          "entities": [
+            {
+              "text": "River Rea",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        },
+        {
+          "id": "F44",
+          "item_id": "I46",
+          "page": 3,
+          "source_text": "River — Belfast: River Lagan",
+          "subject": "Belfast",
+          "relation": "SITUATED_ON",
+          "object": "River Lagan",
+          "entities": [
+            {
+              "text": "River Lagan",
+              "type": "PLACE"
+            }
+          ],
+          "category": "place"
+        }
+      ],
+      "cards": [
+        {
+          "id": "C1",
+          "fact_id": "F1",
+          "item_id": "I4",
+          "page": 1,
+          "label": "London",
+          "front": "What is London the capital of?",
+          "prompt": "",
+          "answer": "United Kingdom & England",
+          "question_type": "WHERE",
+          "source_text": "LONDON – Capital of the United Kingdom & England",
+          "status": "accepted"
+        },
+        {
+          "id": "C2",
+          "fact_id": "F2",
+          "item_id": "I5",
+          "page": 1,
+          "label": "London",
+          "front": "Which river is London situated on?",
+          "prompt": "",
+          "answer": "River Thames",
+          "question_type": "WHERE",
+          "source_text": "Situated on the River Thames in southeastern England.",
+          "status": "accepted"
+        },
+        {
+          "id": "C3",
+          "fact_id": "F3",
+          "item_id": "I8",
+          "page": 1,
+          "label": "London",
+          "front": "What is London the financial centre of?",
+          "prompt": "",
+          "answer": "Europe",
+          "question_type": "WHERE",
+          "source_text": "Continues to serve as the financial centre of Europe and a centre of innovation.",
+          "status": "accepted"
+        },
+        {
+          "id": "C4",
+          "fact_id": "F4",
+          "item_id": "I11",
+          "page": 1,
+          "label": "Birmingham",
+          "front": "Which region is Birmingham a major city of?",
+          "prompt": "",
+          "answer": "West Midlands",
+          "question_type": "WHERE",
+          "source_text": "Major city of the West Midlands, lying on the River Rea.",
+          "status": "accepted"
+        },
+        {
+          "id": "C5",
+          "fact_id": "F5",
+          "item_id": "I11",
+          "page": 1,
+          "label": "Birmingham",
+          "front": "Which river is Birmingham situated on?",
+          "prompt": "",
+          "answer": "River Rea",
+          "question_type": "WHERE",
+          "source_text": "Major city of the West Midlands, lying on the River Rea.",
+          "status": "accepted"
+        },
+        {
+          "id": "C6",
+          "fact_id": "F6",
+          "item_id": "I12",
+          "page": 1,
+          "label": "Birmingham",
+          "front": "Outside which city is Birmingham the largest British city?",
+          "prompt": "",
+          "answer": "London",
+          "question_type": "WHERE",
+          "source_text": "Largest and most populous British city outside London.",
+          "status": "accepted"
+        },
+        {
+          "id": "C7",
+          "fact_id": "F7",
+          "item_id": "I13",
+          "page": 1,
+          "label": "Birmingham",
+          "front": "In which century did Birmingham grow to international prominence?",
+          "prompt": "",
+          "answer": "18th century",
+          "question_type": "WHEN",
+          "source_text": "Was a medium-sized market town in the medieval period; grew to international prominence in the 18th century.",
+          "status": "accepted"
+        },
+        {
+          "id": "C8",
+          "fact_id": "F8",
+          "item_id": "I14",
+          "page": 1,
+          "label": "Birmingham",
+          "front": "What was Birmingham at the heart of?",
+          "prompt": "",
+          "answer": "Industrial Revolution",
+          "question_type": "WHAT",
+          "source_text": "At the heart of the Industrial Revolution – advances in science, technology & economic development.",
+          "status": "accepted"
+        },
+        {
+          "id": "C9",
+          "fact_id": "F9",
+          "item_id": "I15",
+          "page": 1,
+          "label": "Birmingham",
+          "front": "What was invented in Birmingham?",
+          "prompt": "",
+          "answer": "steam engine",
+          "question_type": "WHAT",
+          "source_text": "The industrial steam engine (one of the most important inventions in British history) was invented here.",
+          "status": "accepted"
+        },
+        {
+          "id": "C10",
+          "fact_id": "F10",
+          "item_id": "I16",
+          "page": 1,
+          "label": "Birmingham Hippodrome",
+          "front": "What is Birmingham Hippodrome in the UK?",
+          "prompt": "",
+          "answer": "busiest theatre",
+          "question_type": "TITLE",
+          "source_text": "Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+          "status": "accepted"
+        },
+        {
+          "id": "C11",
+          "fact_id": "F12",
+          "item_id": "I17",
+          "page": 1,
+          "label": "Belfast",
+          "front": "What is Belfast the capital of?",
+          "prompt": "",
+          "answer": "Northern Ireland",
+          "question_type": "WHERE",
+          "source_text": "BELFAST – Capital of Northern Ireland",
+          "status": "accepted"
+        },
+        {
+          "id": "C12",
+          "fact_id": "F13",
+          "item_id": "I19",
+          "page": 1,
+          "label": "Belfast",
+          "front": "Which river is Belfast situated on?",
+          "prompt": "",
+          "answer": "River Lagan",
+          "question_type": "WHERE",
+          "source_text": "Situated on the River Lagan; population about 286,000 (2011 census).",
+          "status": "accepted"
+        },
+        {
+          "id": "C13",
+          "fact_id": "F14",
+          "item_id": "I19",
+          "page": 1,
+          "label": "Belfast",
+          "front": "What was the population of Belfast in the 2011 census?",
+          "prompt": "",
+          "answer": "286,000",
+          "question_type": "HOW_MANY",
+          "source_text": "Situated on the River Lagan; population about 286,000 (2011 census).",
+          "status": "accepted"
+        },
+        {
+          "id": "C14",
+          "fact_id": "F16",
+          "item_id": "I21",
+          "page": 1,
+          "label": "Harland and Wolff",
+          "front": "What did Harland and Wolff build?",
+          "prompt": "",
+          "answer": "RMS Titanic",
+          "question_type": "WHAT",
+          "source_text": "Harland and Wolff shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+          "status": "accepted"
+        },
+        {
+          "id": "C15",
+          "fact_id": "F17",
+          "item_id": "I21",
+          "page": 1,
+          "label": "Belfast",
+          "front": "Which shipyard is in Belfast?",
+          "prompt": "",
+          "answer": "Harland and Wolff",
+          "question_type": "WHAT",
+          "source_text": "Harland and Wolff shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+          "status": "accepted"
+        },
+        {
+          "id": "C16",
+          "fact_id": "F18",
+          "item_id": "I23",
+          "page": 1,
+          "label": "Belfast",
+          "front": "Which industry has Belfast sustained since the mid-1930s?",
+          "prompt": "",
+          "answer": "aerospace and missiles",
+          "question_type": "WHAT",
+          "source_text": "Sustained major aerospace and missiles industry since the mid-1930s.",
+          "status": "accepted"
+        },
+        {
+          "id": "C17",
+          "fact_id": "F19",
+          "item_id": "I25",
+          "page": 1,
+          "label": "Belfast",
+          "front": "What is Belfast home to?",
+          "prompt": "",
+          "answer": "Titanic Belfast",
+          "question_type": "WHAT",
+          "source_text": "Home to the Titanic Belfast interactive museum.",
+          "status": "accepted"
+        },
+        {
+          "id": "C18",
+          "fact_id": "F20",
+          "item_id": "I26",
+          "page": 1,
+          "label": "Edinburgh",
+          "front": "What is Edinburgh the capital of?",
+          "prompt": "",
+          "answer": "Scotland",
+          "question_type": "WHERE",
+          "source_text": "EDINBURGH – Capital of Scotland",
+          "status": "accepted"
+        },
+        {
+          "id": "C19",
+          "fact_id": "F22",
+          "item_id": "I28",
+          "page": 1,
+          "label": "Edinburgh",
+          "front": "What is Edinburgh home to?",
+          "prompt": "",
+          "answer": "Scottish Parliament",
+          "question_type": "WHAT",
+          "source_text": "Home to the Scottish Parliament and the seat of the monarchy in Scotland.",
+          "status": "accepted"
+        },
+        {
+          "id": "C20",
+          "fact_id": "F23",
+          "item_id": "I29",
+          "page": 1,
+          "label": "Edinburgh",
+          "front": "What rank is Edinburgh as a financial centre in the UK?",
+          "prompt": "",
+          "answer": "Second largest",
+          "question_type": "HOW_MANY",
+          "source_text": "Second largest financial centre in the UK after London.",
+          "status": "accepted"
+        },
+        {
+          "id": "C21",
+          "fact_id": "F24",
+          "item_id": "I30",
+          "page": 1,
+          "label": "Bank of Scotland",
+          "front": "In which year was the Bank of Scotland founded?",
+          "prompt": "",
+          "answer": "1695",
+          "question_type": "WHEN",
+          "source_text": "Centre of banking for over 300 years: Bank of Scotland founded in 1695 (HQ in Edinburgh).",
+          "status": "accepted"
+        },
+        {
+          "id": "C22",
+          "fact_id": "F26",
+          "item_id": "I31",
+          "page": 1,
+          "label": "Royal Bank of Scotland",
+          "front": "Where does the Royal Bank of Scotland have its global headquarters?",
+          "prompt": "",
+          "answer": "Edinburgh",
+          "question_type": "WHERE",
+          "source_text": "Royal Bank of Scotland (RBS) has its global headquarters in Edinburgh.",
+          "status": "accepted"
+        },
+        {
+          "id": "C23",
+          "fact_id": "F27",
+          "item_id": "I32",
+          "page": 1,
+          "label": "Edinburgh tourism",
+          "front": "How many jobs does Edinburgh tourism support?",
+          "prompt": "",
+          "answer": "30,000 jobs",
+          "question_type": "HOW_MANY",
+          "source_text": "Tourism is a major mainstay: supports 30,000 jobs worth £1.6 billion to the city economy.",
+          "status": "accepted"
+        },
+        {
+          "id": "C24",
+          "fact_id": "F30",
+          "item_id": "I34",
+          "page": 1,
+          "label": "Cardiff",
+          "front": "What is Cardiff the capital of?",
+          "prompt": "",
+          "answer": "Wales",
+          "question_type": "WHERE",
+          "source_text": "CARDIFF – Capital of Wales",
+          "status": "accepted"
+        },
+        {
+          "id": "C25",
+          "fact_id": "F31",
+          "item_id": "I35",
+          "page": 1,
+          "label": "Cardiff",
+          "front": "What is the population rank of Cardiff in the UK?",
+          "prompt": "",
+          "answer": "eleventh-largest",
+          "question_type": "HOW_MANY",
+          "source_text": "Capital and largest city in Wales; the eleventh-largest city in the United Kingdom.",
+          "status": "accepted"
+        },
+        {
+          "id": "C26",
+          "fact_id": "F32",
+          "item_id": "I37",
+          "page": 1,
+          "label": "Cardiff",
+          "front": "What is Cardiff the seat of?",
+          "prompt": "",
+          "answer": "National Assembly for Wales",
+          "question_type": "WHAT",
+          "source_text": "Seat of the National Assembly for Wales (Senedd).",
+          "status": "accepted"
+        },
+        {
+          "id": "C27",
+          "fact_id": "F35",
+          "item_id": "I39",
+          "page": 1,
+          "label": "Cardiff",
+          "front": "What did Cardiff become the world's most important?",
+          "prompt": "",
+          "answer": "coal port",
+          "question_type": "WHAT",
+          "source_text": "Became the world’s most important coal port (handled more than London and Liverpool).",
+          "status": "accepted"
+        },
+        {
+          "id": "C28",
+          "fact_id": "F36",
+          "item_id": "I40",
+          "page": 1,
+          "label": "Cardiff",
+          "front": "In which year was Cardiff made a city?",
+          "prompt": "",
+          "answer": "1905",
+          "question_type": "WHEN",
+          "source_text": "Made a city in 1905; proclaimed capital of Wales in 1955.",
+          "status": "accepted"
+        },
+        {
+          "id": "C29",
+          "fact_id": "F37",
+          "item_id": "I40",
+          "page": 1,
+          "label": "Cardiff",
+          "front": "In which year was Cardiff proclaimed capital of Wales?",
+          "prompt": "",
+          "answer": "1955",
+          "question_type": "WHEN",
+          "source_text": "Made a city in 1905; proclaimed capital of Wales in 1955.",
+          "status": "accepted"
+        },
+        {
+          "id": "C30",
+          "fact_id": "F38",
+          "item_id": "I43",
+          "page": 2,
+          "label": "Cardiff",
+          "front": "What is Cardiff home to?",
+          "prompt": "",
+          "answer": "Wales Millennium Centre",
+          "question_type": "WHAT",
+          "source_text": "Home to the Wales Millennium Centre – a thriving creative capital with rich cultural heritage.",
+          "status": "accepted"
+        }
+      ],
+      "rejected": [
+        {
+          "front": "What is Belfast the capital of?",
+          "answer": "Northern Ireland",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "What is Edinburgh the capital of?",
+          "answer": "Scotland",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "What is Cardiff the capital of?",
+          "answer": "Wales",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "Which river is London situated on?",
+          "answer": "River Thames",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "Which river is Birmingham situated on?",
+          "answer": "River Rea",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "Which river is Belfast situated on?",
+          "answer": "River Lagan",
+          "reasons": [
+            "duplicate_fact"
+          ]
+        },
+        {
+          "front": "How many visitors does Birmingham Hippodrome get each year?",
+          "answer": "over 520,000",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is a historic industry of Belfast?",
+          "answer": "Irish linen",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is the population rank of Edinburgh in the UK?",
+          "answer": "seventh most populous",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "For how many years has Edinburgh been a centre of banking?",
+          "answer": "over 300 years",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is Edinburgh tourism worth to the city economy?",
+          "answer": "£1.6 billion",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What famous area is part of the architecture of Edinburgh?",
+          "answer": "Old Town",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "What is the National Assembly for Wales also called?",
+          "answer": "Senedd",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        },
+        {
+          "front": "Until which century was Cardiff a small town?",
+          "answer": "early 19th century",
+          "reasons": [
+            "below_selection_priority_cutoff"
+          ]
+        }
+      ]
+    }
+  },
+  "full-physics-forces": {
+    "slug": "full-physics-forces",
+    "sheet": "full-physics-forces.pdf",
+    "metrics": {
+      "core_recall": 100.0,
+      "core_covered": 11,
+      "core_total": 11,
+      "all_recall": 100.0,
+      "all_covered": 18,
+      "all_total": 18,
+      "fact_precision": 100.0,
+      "question_correctness": 100.0,
+      "question_clarity": 100.0,
+      "duplicate_rate": 0.0,
+      "traceability": 100.0,
+      "invented_words_count": 0,
+      "invented_words": [],
+      "facts_count": 18,
+      "cards_count": 18,
+      "rejected_count": 0
+    },
+    "missed_core_facts": [],
+    "missed_secondary_facts": [],
+    "doubtful_facts": [],
+    "reword_candidates": [],
+    "output": {
+      "sheet": "full-physics-forces.pdf",
+      "facts": [
+        {
+          "id": "F1",
+          "item_id": "I3",
+          "page": 1,
+          "source_text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+          "subject": "Resultant force",
+          "relation": "DETERMINES",
+          "object": "acceleration",
+          "entities": [
+            {
+              "text": "acceleration",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F2",
+          "item_id": "I3",
+          "page": 1,
+          "source_text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+          "subject": "Newton's second law",
+          "relation": "FORMULA",
+          "object": "F = ma",
+          "entities": [
+            {
+              "text": "F = ma",
+              "type": "FORMULA"
+            }
+          ],
+          "category": "formula"
+        },
+        {
+          "id": "F3",
+          "item_id": "I3",
+          "page": 1,
+          "source_text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+          "subject": "Resultant force zero",
+          "relation": "VELOCITY_REMAINS",
+          "object": "constant",
+          "entities": [
+            {
+              "text": "constant",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F4",
+          "item_id": "I5",
+          "page": 1,
+          "source_text": "Trial B: Mass (kg) = 0.50, Resultant force (N) = 1.00, Acceleration (m/s²) = 2.0",
+          "subject": "Trial B",
+          "relation": "ACCELERATION_TABLE",
+          "object": "2.0",
+          "entities": [
+            {
+              "text": "2.0",
+              "type": "NUMBER"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F5",
+          "item_id": "I7",
+          "page": 1,
+          "source_text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+          "subject": "Trial D",
+          "relation": "ACCELERATION_CALC",
+          "object": "0.67 m/s²",
+          "entities": [
+            {
+              "text": "0.67 m/s²",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F6",
+          "item_id": "I7",
+          "page": 1,
+          "source_text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+          "subject": "fixed mass",
+          "relation": "DOUBLING_FORCE_DOUBLES",
+          "object": "acceleration",
+          "entities": [
+            {
+              "text": "acceleration",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F7",
+          "item_id": "I7",
+          "page": 1,
+          "source_text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+          "subject": "fixed force",
+          "relation": "INCREASING_MASS_REDUCES",
+          "object": "acceleration",
+          "entities": [
+            {
+              "text": "acceleration",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F8",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Book resting on table — Weight downward; normal contact force upward — Forces balance vertically",
+          "subject": "Book resting on table",
+          "relation": "TABLE_FORCES",
+          "object": "Weight downward; normal contact force upward",
+          "entities": [
+            {
+              "text": "Weight downward; normal contact force upward",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F9",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Falling object with air resistance — Weight downward; drag upward — Resultant depends on relative sizes",
+          "subject": "Falling object with air resistance",
+          "relation": "UPWARD_FORCE",
+          "object": "drag",
+          "entities": [
+            {
+              "text": "drag",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F10",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Car braking — Braking force opposite motion; other resistive forces — Speed decreases if resultant opposes velocity",
+          "subject": "Car braking",
+          "relation": "RESULTANT_CONDITION",
+          "object": "opposes velocity",
+          "entities": [
+            {
+              "text": "opposes velocity",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F11",
+          "item_id": "I9",
+          "page": 1,
+          "source_text": "Satellite in orbit — Gravity directed toward central body — Gravity changes direction of velocity",
+          "subject": "Satellite in orbit",
+          "relation": "CENTRAL_FORCE",
+          "object": "Gravity",
+          "entities": [
+            {
+              "text": "Gravity",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F12",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "subject": "newton",
+          "relation": "DEFINITION",
+          "object": "1 N = 1 kg·m/s²",
+          "entities": [
+            {
+              "text": "1 N = 1 kg·m/s²",
+              "type": "FORMULA"
+            }
+          ],
+          "category": "formula"
+        },
+        {
+          "id": "F13",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "subject": "Speed",
+          "relation": "UNIT_OF",
+          "object": "m/s",
+          "entities": [
+            {
+              "text": "m/s",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "quantity"
+        },
+        {
+          "id": "F14",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "subject": "Acceleration",
+          "relation": "UNIT_OF",
+          "object": "m/s²",
+          "entities": [
+            {
+              "text": "m/s²",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "quantity"
+        },
+        {
+          "id": "F15",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "subject": "before using F = ma",
+          "relation": "CONVERT_TO",
+          "object": "kilograms",
+          "entities": [
+            {
+              "text": "kilograms",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "quantity"
+        },
+        {
+          "id": "F16",
+          "item_id": "I11",
+          "page": 1,
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "subject": "500 g",
+          "relation": "EQUALS",
+          "object": "0.500 kg",
+          "entities": [
+            {
+              "text": "0.500 kg",
+              "type": "QUANTITY"
+            }
+          ],
+          "category": "number"
+        },
+        {
+          "id": "F17",
+          "item_id": "I12",
+          "page": 1,
+          "source_text": "Evaluation: Friction, timing delay, uneven surfaces, and inaccurate mass measurements can affect results. Repeat trials, use a motion sensor if available, and keep other variables controlled.",
+          "subject": "Evaluation",
+          "relation": "ERROR_SOURCE",
+          "object": "Friction",
+          "entities": [
+            {
+              "text": "Friction",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        },
+        {
+          "id": "F18",
+          "item_id": "I12",
+          "page": 1,
+          "source_text": "Evaluation: Friction, timing delay, uneven surfaces, and inaccurate mass measurements can affect results. Repeat trials, use a motion sensor if available, and keep other variables controlled.",
+          "subject": "Evaluation",
+          "relation": "IMPROVEMENT",
+          "object": "motion sensor",
+          "entities": [
+            {
+              "text": "motion sensor",
+              "type": "TERM"
+            }
+          ],
+          "category": "term"
+        }
+      ],
+      "cards": [
+        {
+          "id": "C1",
+          "fact_id": "F1",
+          "item_id": "I3",
+          "page": 1,
+          "label": "Resultant force",
+          "front": "What does Resultant force determine?",
+          "prompt": "",
+          "answer": "acceleration",
+          "question_type": "WHAT",
+          "source_text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+          "status": "accepted"
+        },
+        {
+          "id": "C2",
+          "fact_id": "F2",
+          "item_id": "I3",
+          "page": 1,
+          "label": "Newton's second law",
+          "front": "What is the formula for Newton's second law?",
+          "prompt": "",
+          "answer": "F = ma",
+          "question_type": "FORMULA",
+          "source_text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+          "status": "accepted"
+        },
+        {
+          "id": "C3",
+          "fact_id": "F3",
+          "item_id": "I3",
+          "page": 1,
+          "label": "Resultant force zero",
+          "front": "If the resultant force is zero, what does velocity remain?",
+          "prompt": "",
+          "answer": "constant",
+          "question_type": "WHAT",
+          "source_text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+          "status": "accepted"
+        },
+        {
+          "id": "C4",
+          "fact_id": "F4",
+          "item_id": "I5",
+          "page": 1,
+          "label": "Trial B",
+          "front": "What is the acceleration in m/s² for Trial B?",
+          "prompt": "",
+          "answer": "2.0",
+          "question_type": "TABLE",
+          "source_text": "Trial B: Mass (kg) = 0.50, Resultant force (N) = 1.00, Acceleration (m/s²) = 2.0",
+          "status": "accepted"
+        },
+        {
+          "id": "C5",
+          "fact_id": "F5",
+          "item_id": "I7",
+          "page": 1,
+          "label": "Trial D",
+          "front": "What is the acceleration for Trial D?",
+          "prompt": "",
+          "answer": "0.67 m/s²",
+          "question_type": "HOW_MANY",
+          "source_text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+          "status": "accepted"
+        },
+        {
+          "id": "C6",
+          "fact_id": "F6",
+          "item_id": "I7",
+          "page": 1,
+          "label": "fixed mass",
+          "front": "For a fixed mass, what does doubling resultant force double?",
+          "prompt": "",
+          "answer": "acceleration",
+          "question_type": "WHAT",
+          "source_text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+          "status": "accepted"
+        },
+        {
+          "id": "C7",
+          "fact_id": "F7",
+          "item_id": "I7",
+          "page": 1,
+          "label": "fixed force",
+          "front": "For fixed force, what does increasing mass reduce?",
+          "prompt": "",
+          "answer": "acceleration",
+          "question_type": "WHAT",
+          "source_text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+          "status": "accepted"
+        },
+        {
+          "id": "C8",
+          "fact_id": "F8",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Book resting on table",
+          "front": "What are the forces to consider for a Book resting on table?",
+          "prompt": "",
+          "answer": "Weight downward; normal contact force upward",
+          "question_type": "TABLE",
+          "source_text": "Book resting on table — Weight downward; normal contact force upward — Forces balance vertically",
+          "status": "accepted"
+        },
+        {
+          "id": "C9",
+          "fact_id": "F9",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Falling object with air resistance",
+          "front": "For a Falling object with air resistance, what is the upward force?",
+          "prompt": "",
+          "answer": "drag",
+          "question_type": "TABLE",
+          "source_text": "Falling object with air resistance — Weight downward; drag upward — Resultant depends on relative sizes",
+          "status": "accepted"
+        },
+        {
+          "id": "C10",
+          "fact_id": "F10",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Car braking",
+          "front": "For Car braking, speed decreases if the resultant does what?",
+          "prompt": "",
+          "answer": "opposes velocity",
+          "question_type": "TABLE",
+          "source_text": "Car braking — Braking force opposite motion; other resistive forces — Speed decreases if resultant opposes velocity",
+          "status": "accepted"
+        },
+        {
+          "id": "C11",
+          "fact_id": "F11",
+          "item_id": "I9",
+          "page": 1,
+          "label": "Satellite in orbit",
+          "front": "For a Satellite in orbit, which force is directed toward the central body?",
+          "prompt": "",
+          "answer": "Gravity",
+          "question_type": "TABLE",
+          "source_text": "Satellite in orbit — Gravity directed toward central body — Gravity changes direction of velocity",
+          "status": "accepted"
+        },
+        {
+          "id": "C12",
+          "fact_id": "F12",
+          "item_id": "I11",
+          "page": 1,
+          "label": "newton",
+          "front": "What is the definition of 1 newton?",
+          "prompt": "",
+          "answer": "1 N = 1 kg·m/s²",
+          "question_type": "FORMULA",
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "status": "accepted"
+        },
+        {
+          "id": "C13",
+          "fact_id": "F13",
+          "item_id": "I11",
+          "page": 1,
+          "label": "Speed",
+          "front": "What is the unit of Speed?",
+          "prompt": "",
+          "answer": "m/s",
+          "question_type": "WHAT",
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "status": "accepted"
+        },
+        {
+          "id": "C14",
+          "fact_id": "F14",
+          "item_id": "I11",
+          "page": 1,
+          "label": "Acceleration",
+          "front": "What is the unit of Acceleration?",
+          "prompt": "",
+          "answer": "m/s²",
+          "question_type": "WHAT",
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "status": "accepted"
+        },
+        {
+          "id": "C15",
+          "fact_id": "F15",
+          "item_id": "I11",
+          "page": 1,
+          "label": "before using F = ma",
+          "front": "What are grams converted to before using F = ma?",
+          "prompt": "",
+          "answer": "kilograms",
+          "question_type": "WHAT",
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "status": "accepted"
+        },
+        {
+          "id": "C16",
+          "fact_id": "F16",
+          "item_id": "I11",
+          "page": 1,
+          "label": "500 g",
+          "front": "How many kilograms does 500 g equal?",
+          "prompt": "",
+          "answer": "0.500 kg",
+          "question_type": "HOW_MANY",
+          "source_text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+          "status": "accepted"
+        },
+        {
+          "id": "C17",
+          "fact_id": "F17",
+          "item_id": "I12",
+          "page": 1,
+          "label": "Evaluation",
+          "front": "In Evaluation, what is a source of error?",
+          "prompt": "",
+          "answer": "Friction",
+          "question_type": "WHAT",
+          "source_text": "Evaluation: Friction, timing delay, uneven surfaces, and inaccurate mass measurements can affect results. Repeat trials, use a motion sensor if available, and keep other variables controlled.",
+          "status": "accepted"
+        },
+        {
+          "id": "C18",
+          "fact_id": "F18",
+          "item_id": "I12",
+          "page": 1,
+          "label": "Evaluation",
+          "front": "In Evaluation, what can be used as an improvement?",
+          "prompt": "",
+          "answer": "motion sensor",
+          "question_type": "WHAT",
+          "source_text": "Evaluation: Friction, timing delay, uneven surfaces, and inaccurate mass measurements can affect results. Repeat trials, use a motion sensor if available, and keep other variables controlled.",
+          "status": "accepted"
+        }
+      ],
+      "rejected": []
+    }
+  }
+}

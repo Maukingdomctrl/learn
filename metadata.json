@@ -1,0 +1,6 @@
+{
+  "name": "Learn — Key Facts Engine",
+  "description": "Deterministic rule-based fact discovery and study card engine for ICSE study sheets (Classes 1–10).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

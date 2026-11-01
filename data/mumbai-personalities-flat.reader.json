@@ -1,0 +1,331 @@
+{
+ "sheet": "mumbai-personalities-flat.pdf",
+ "reader": "Learn sheet reader (sheet.py)",
+ "items": [
+  {
+   "id": "I1",
+   "kind": "title",
+   "text": "IMPORTANT PERSONALITIES OF MUMBAI AND MODERN INDIA",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I2",
+   "kind": "title",
+   "text": "Grade 8 ICSE Social Studies (Mumbai) | Notes + Comparative Table + Practice Questions",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I3",
+   "kind": "section",
+   "text": "QUICK REVISION NOTES",
+   "page": 1,
+   "section": "notes",
+   "topic": "",
+   "context": "",
+   "marker": "1.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I4",
+   "kind": "topic",
+   "text": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+   "page": 1,
+   "section": "notes",
+   "topic": "",
+   "context": "",
+   "marker": "1.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I5",
+   "kind": "point",
+   "text": "Graduated from Elphinstone College, Mumbai (1858); founded a trading firm in 1868 and converted an oil mill at Chinchpokli, Mumbai (1869) into the Alexandra cotton mill, later establishing Bombay's Swadeshi Mill.",
+   "page": 1,
+   "section": "notes",
+   "topic": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I6",
+   "kind": "point",
+   "text": "Opened the Taj Mahal Hotel at Colaba waterfront, Mumbai (3 December 1903, first in India with electricity) and laid foundations for Tata Steel, IISc Bengaluru, and Tata Power.",
+   "page": 1,
+   "section": "notes",
+   "topic": "Jamsetji Nusserwanji Tata (1839–1904) – Father of Indian Industry",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I7",
+   "kind": "topic",
+   "text": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+   "page": 1,
+   "section": "notes",
+   "topic": "",
+   "context": "",
+   "marker": "2.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I8",
+   "kind": "point",
+   "text": "Social reformer and writer in Maharashtra who championed equal rights for marginalized communities, farmers, mill workers, and women (Britannica).",
+   "page": 1,
+   "section": "notes",
+   "topic": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I9",
+   "kind": "point",
+   "text": "Founded the Satyashodhak Samaj (Society of Truth Seekers) in 1873 to promote social justice without priestly intermediaries.",
+   "page": 1,
+   "section": "notes",
+   "topic": "Mahatma Jyotirao Phule (1827–1890) – Pioneer of Social Equality",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I10",
+   "kind": "topic",
+   "text": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra",
+   "page": 1,
+   "section": "notes",
+   "topic": "",
+   "context": "",
+   "marker": "3.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I11",
+   "kind": "point",
+   "text": "Regarded as India's first female teacher; worked alongside Jyotirao Phule to open indigenous schools for girls (starting in 1848) and shelter destitute widows (Britannica).",
+   "page": 1,
+   "section": "notes",
+   "topic": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I12",
+   "kind": "topic",
+   "text": "Dr. Bhimrao Ramji Ambedkar (1891–1956) – Architect of the Indian Constitution",
+   "page": 1,
+   "section": "notes",
+   "topic": "",
+   "context": "",
+   "marker": "4.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I13",
+   "kind": "point",
+   "text": "Jurist, economist, and reformer (Britannica) whose Mumbai residence, Rajgriha (Dadar), anchored his civic and educational movements; chaired the Drafting Committee of the Constituent Assembly of India.",
+   "page": 1,
+   "section": "notes",
+   "topic": "Dr. Bhimrao Ramji Ambedkar (1891–1956) – Architect of the Indian Constitution",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I14",
+   "kind": "topic",
+   "text": "Raja Ram Mohan Roy (1772–1833) – Father of the Indian Renaissance",
+   "page": 1,
+   "section": "notes",
+   "topic": "",
+   "context": "",
+   "marker": "5.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I15",
+   "kind": "point",
+   "text": "Founded the Brahmo Sabha in 1828 (precursor to Brahmo Samaj), inspiring Bombay's Prarthana Samaj; campaigned for the Abolition of Sati (1829) and modern scientific education (Britannica).",
+   "page": 1,
+   "section": "notes",
+   "topic": "Raja Ram Mohan Roy (1772–1833) – Father of the Indian Renaissance",
+   "context": "",
+   "marker": "",
+   "bullet": true,
+   "bold": []
+  },
+  {
+   "id": "I16",
+   "kind": "section",
+   "text": "COMPARATIVE TABLE – EASY TO REMEMBER",
+   "page": 1,
+   "section": "table",
+   "topic": "",
+   "context": "",
+   "marker": "2.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I17",
+   "kind": "table",
+   "text": "",
+   "page": 1,
+   "section": "table",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [],
+   "table": {
+    "kind": "grid",
+    "header": [
+     "Feature",
+     "Jamsetji Tata",
+     "Jyotirao Phule",
+     "Savitribai Phule",
+     "Dr. B. R. Ambedkar",
+     "R. R. M. Roy"
+    ],
+    "rows": [
+     [
+      "Role / Title",
+      "Father of Indian Industry",
+      "Mahatma; Anti-caste reformer",
+      "Pioneer female educator",
+      "Architect of Constitution",
+      "Father of Indian Renaissance"
+     ],
+     [
+      "Key Institution",
+      "Tata Group (1868); Taj Hotel",
+      "Satyashodhak Samaj (1873)",
+      "Girls' schools (1848)",
+      "Drafting Committee (1947)",
+      "Brahmo Sabha (1828)"
+     ],
+     [
+      "Mumbai / West Link",
+      "Elphinstone College; Colaba",
+      "Maharashtra social reform",
+      "Maharashtra girls' schools",
+      "Rajgriha (Dadar, Mumbai)",
+      "Inspired Prarthana Samaj"
+     ],
+     [
+      "Core Impact",
+      "Steel, power & hospitality",
+      "Upliftment of oppressed",
+      "Women's literacy & rights",
+      "Abolition of untouchability",
+      "Abolition of Sati (1829)"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "I18",
+   "kind": "section",
+   "text": "PRACTICE QUESTIONS & ANSWER KEY",
+   "page": 1,
+   "section": "qa",
+   "topic": "",
+   "context": "",
+   "marker": "3.",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I19",
+   "kind": "question",
+   "text": "Which Mumbai hotel opened on 3 December 1903 as India's first with electricity?",
+   "page": 1,
+   "section": "qa",
+   "topic": "",
+   "context": "",
+   "marker": "Q1.",
+   "bullet": false,
+   "bold": [],
+   "answer": "The Taj Mahal Hotel at Colaba waterfront, founded by Jamsetji Tata."
+  },
+  {
+   "id": "I20",
+   "kind": "question",
+   "text": "Which society was founded in 1873 by Jyotirao Phule and supported by Savitribai Phule?",
+   "page": 1,
+   "section": "qa",
+   "topic": "",
+   "context": "",
+   "marker": "Q2.",
+   "bullet": false,
+   "bold": [],
+   "answer": "The Satyashodhak Samaj (Society of Truth Seekers)."
+  },
+  {
+   "id": "I21",
+   "kind": "question",
+   "text": "Name the Mumbai residence of Dr. B. R. Ambedkar and the organization founded by Raja Ram Mohan Roy in 1828.",
+   "page": 1,
+   "section": "qa",
+   "topic": "",
+   "context": "",
+   "marker": "Q3.",
+   "bullet": false,
+   "bold": [],
+   "answer": "Rajgriha in Dadar (Mumbai) and the Brahmo Sabha (1828)."
+  },
+  {
+   "id": "I22",
+   "kind": "question",
+   "text": "Why did Jawaharlal Nehru call Jamsetji Tata a One-Man Planning Commission?",
+   "page": 1,
+   "section": "qa",
+   "topic": "",
+   "context": "",
+   "marker": "Q4.",
+   "bullet": false,
+   "bold": [],
+   "answer": "Because he pioneered India's core steel, hydroelectric power, and technical education institutions."
+  },
+  {
+   "id": "I23",
+   "kind": "tip",
+   "text": "Remember the 5 Pioneers in order — Jamsetji Tata (Industry) → Jyotirao Phule (Truth) → Savitribai Phule (Schools) → Ambedkar (Constitution) → Roy (Renaissance).",
+   "page": 1,
+   "section": "qa",
+   "topic": "",
+   "context": "",
+   "marker": "Memory Tip",
+   "bullet": false,
+   "bold": []
+  }
+ ]
+}

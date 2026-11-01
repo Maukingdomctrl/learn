@@ -1,0 +1,377 @@
+{
+ "sheet": "mumbai-personalities-flat.pdf",
+ "verified_by": "draft by Claude from the sheet text; to be spot-checked by a person",
+ "note": "answer = the key words a card should test; each is printed on the sheet word-for-word. core = must be covered; secondary = nice to have.",
+ "facts": [
+  {
+   "id": "F1",
+   "source_item": "I4",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "lifespan",
+   "answer": "1839–1904",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F2",
+   "source_item": "I4",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "is called",
+   "answer": "Father of Indian Industry",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F3",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "graduated from",
+   "answer": "Elphinstone College",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F4",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "graduated in",
+   "answer": "1858",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F5",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "founded a trading firm in",
+   "answer": "1868",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F6",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "converted an oil mill into",
+   "answer": "Alexandra cotton mill",
+   "category": "organisation",
+   "importance": "secondary"
+  },
+  {
+   "id": "F7",
+   "source_item": "I5",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "later established",
+   "answer": "Swadeshi Mill",
+   "category": "organisation",
+   "importance": "secondary"
+  },
+  {
+   "id": "F8",
+   "source_item": "I6",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "opened",
+   "answer": "Taj Mahal Hotel",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F9",
+   "source_item": "I6",
+   "page": 1,
+   "subject": "Taj Mahal Hotel",
+   "relation": "opened on",
+   "answer": "3 December 1903",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F10",
+   "source_item": "I6",
+   "page": 1,
+   "subject": "Taj Mahal Hotel",
+   "relation": "first in India with",
+   "answer": "electricity",
+   "category": "term",
+   "importance": "core"
+  },
+  {
+   "id": "F11",
+   "source_item": "I6",
+   "page": 1,
+   "subject": "Jamsetji Nusserwanji Tata",
+   "relation": "laid foundations for",
+   "answer": "Tata Steel",
+   "category": "organisation",
+   "importance": "secondary"
+  },
+  {
+   "id": "F12",
+   "source_item": "I7",
+   "page": 1,
+   "subject": "Mahatma Jyotirao Phule",
+   "relation": "lifespan",
+   "answer": "1827–1890",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F13",
+   "source_item": "I7",
+   "page": 1,
+   "subject": "Mahatma Jyotirao Phule",
+   "relation": "is called",
+   "answer": "Pioneer of Social Equality",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F14",
+   "source_item": "I8",
+   "page": 1,
+   "subject": "Mahatma Jyotirao Phule",
+   "relation": "social reformer and writer in",
+   "answer": "Maharashtra",
+   "category": "place",
+   "importance": "secondary"
+  },
+  {
+   "id": "F15",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Mahatma Jyotirao Phule",
+   "relation": "founded",
+   "answer": "Satyashodhak Samaj",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F16",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Satyashodhak Samaj",
+   "relation": "founded in",
+   "answer": "1873",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F17",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Satyashodhak Samaj",
+   "relation": "also called",
+   "answer": "Society of Truth Seekers",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F18",
+   "source_item": "I9",
+   "page": 1,
+   "subject": "Satyashodhak Samaj",
+   "relation": "purpose",
+   "answer": "to promote social justice",
+   "category": "purpose",
+   "importance": "secondary"
+  },
+  {
+   "id": "F19",
+   "source_item": "I10",
+   "page": 1,
+   "subject": "Savitribai Phule",
+   "relation": "lifespan",
+   "answer": "1831–1897",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F20",
+   "source_item": "I10",
+   "page": 1,
+   "subject": "Savitribai Phule",
+   "relation": "is called",
+   "answer": "Pioneer of Women's Education",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F21",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "Savitribai Phule",
+   "relation": "regarded as India's first",
+   "answer": "female teacher",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F22",
+   "source_item": "I11",
+   "subject": "Savitribai Phule",
+   "page": 1,
+   "relation": "worked alongside",
+   "answer": "Jyotirao Phule",
+   "category": "person",
+   "importance": "secondary"
+  },
+  {
+   "id": "F23",
+   "source_item": "I11",
+   "page": 1,
+   "subject": "schools for girls",
+   "relation": "started in",
+   "answer": "1848",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F24",
+   "source_item": "I12",
+   "page": 1,
+   "subject": "Dr. Bhimrao Ramji Ambedkar",
+   "relation": "lifespan",
+   "answer": "1891–1956",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F25",
+   "source_item": "I12",
+   "page": 1,
+   "subject": "Dr. Bhimrao Ramji Ambedkar",
+   "relation": "is called",
+   "answer": "Architect of the Indian Constitution",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F26",
+   "source_item": "I13",
+   "page": 1,
+   "subject": "Dr. Bhimrao Ramji Ambedkar",
+   "relation": "Mumbai residence",
+   "answer": "Rajgriha",
+   "category": "place",
+   "importance": "core"
+  },
+  {
+   "id": "F27",
+   "source_item": "I13",
+   "page": 1,
+   "subject": "Rajgriha",
+   "relation": "located in",
+   "answer": "Dadar",
+   "category": "place",
+   "importance": "secondary"
+  },
+  {
+   "id": "F28",
+   "source_item": "I13",
+   "page": 1,
+   "subject": "Dr. Bhimrao Ramji Ambedkar",
+   "relation": "chaired",
+   "answer": "Drafting Committee",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F29",
+   "source_item": "I13",
+   "page": 1,
+   "subject": "Drafting Committee",
+   "relation": "part of",
+   "answer": "Constituent Assembly of India",
+   "category": "organisation",
+   "importance": "secondary"
+  },
+  {
+   "id": "F30",
+   "source_item": "I14",
+   "page": 1,
+   "subject": "Raja Ram Mohan Roy",
+   "relation": "lifespan",
+   "answer": "1772–1833",
+   "category": "date",
+   "importance": "secondary"
+  },
+  {
+   "id": "F31",
+   "source_item": "I14",
+   "page": 1,
+   "subject": "Raja Ram Mohan Roy",
+   "relation": "is called",
+   "answer": "Father of the Indian Renaissance",
+   "category": "title",
+   "importance": "core"
+  },
+  {
+   "id": "F32",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Raja Ram Mohan Roy",
+   "relation": "founded",
+   "answer": "Brahmo Sabha",
+   "category": "organisation",
+   "importance": "core"
+  },
+  {
+   "id": "F33",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Brahmo Sabha",
+   "relation": "founded in",
+   "answer": "1828",
+   "category": "date",
+   "importance": "core"
+  },
+  {
+   "id": "F34",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Brahmo Sabha",
+   "relation": "precursor to",
+   "answer": "Brahmo Samaj",
+   "category": "organisation",
+   "importance": "secondary"
+  },
+  {
+   "id": "F35",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Brahmo Sabha",
+   "relation": "inspired",
+   "answer": "Prarthana Samaj",
+   "category": "organisation",
+   "importance": "secondary"
+  },
+  {
+   "id": "F36",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Raja Ram Mohan Roy",
+   "relation": "campaigned for",
+   "answer": "Abolition of Sati",
+   "category": "event",
+   "importance": "core"
+  },
+  {
+   "id": "F37",
+   "source_item": "I15",
+   "page": 1,
+   "subject": "Abolition of Sati",
+   "relation": "year",
+   "answer": "1829",
+   "category": "date",
+   "importance": "core"
+  }
+ ]
+}
