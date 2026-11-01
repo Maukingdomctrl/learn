@@ -1,0 +1,6 @@
+{
+  "name": "Learn Question Quality Engine — ICSE Classes 8–12",
+  "description": "Standalone curriculum-grounded AI question-generation engine, advanced scientific PDF extractor, and 7-criterion quality rubric auditor for ICSE Classes 8–12.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

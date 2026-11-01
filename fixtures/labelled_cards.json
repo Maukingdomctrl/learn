@@ -1,0 +1,672 @@
+[
+  {
+    "id": "good_01",
+    "front": "Dr. B. R. Ambedkar chaired the ______ of the Constituent Assembly of India.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Drafting Committee",
+    "source_line": "Dr. B. R. Ambedkar chaired the Drafting Committee of the Constituent Assembly of India.",
+    "sheet": "Dr. B. R. Ambedkar (1891–1956)\nDr. B. R. Ambedkar chaired the Drafting Committee of the Constituent Assembly of India.",
+    "label": "good",
+    "reason": "Clean fill-in-the-blank on the sheet's own sentence; names Dr. B. R. Ambedkar and tests the 2-word key institution 'Drafting Committee'."
+  },
+  {
+    "id": "good_02",
+    "front": "______ (1831–1897) – Pioneer of Women's Education in Maharashtra.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Savitribai Phule",
+    "source_line": "Savitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra.",
+    "sheet": "Social Reformers of Maharashtra\nSavitribai Phule (1831–1897) – Pioneer of Women's Education in Maharashtra.",
+    "label": "good",
+    "reason": "Blanks the 2-word proper name 'Savitribai Phule' with an unambiguous identifying clue."
+  },
+  {
+    "id": "good_03",
+    "front": "Launched at the Bombay session of the All-India Congress Committee at Gowalia Tank Maidan on ______.",
+    "prompt": "Name the date or year",
+    "answer": "8 August 1942",
+    "source_line": "Launched at the Bombay session of the All-India Congress Committee at Gowalia Tank Maidan on 8 August 1942.",
+    "sheet": "Quit India Movement\nLaunched at the Bombay session of the All-India Congress Committee at Gowalia Tank Maidan on 8 August 1942.",
+    "label": "good",
+    "reason": "Blanks the complete full date '8 August 1942' while naming the Bombay session at Gowalia Tank Maidan."
+  },
+  {
+    "id": "good_04",
+    "front": "Speed = ______",
+    "prompt": "Complete the formula",
+    "answer": "Distance ÷ Time",
+    "source_line": "Speed = Distance ÷ Time",
+    "sheet": "Page 2 — Formula reference\nSpeed = Distance ÷ Time\nA = l × b\nv = u + at",
+    "label": "good",
+    "reason": "Sheet 1 formula card: blanks the RHS expression 'Distance ÷ Time' cleanly."
+  },
+  {
+    "id": "good_05",
+    "front": "A = ______",
+    "prompt": "Complete the formula",
+    "answer": "l × b",
+    "source_line": "A = l × b",
+    "sheet": "Page 2 — Formula reference\nSpeed = Distance ÷ Time\nA = l × b\nv = u + at",
+    "label": "good",
+    "reason": "Sheet 1 formula card: blanks the RHS formula 'l × b'."
+  },
+  {
+    "id": "good_06",
+    "front": "v = ______",
+    "prompt": "Complete the formula",
+    "answer": "u + at",
+    "source_line": "v = u + at",
+    "sheet": "Page 2 — Formula reference\nSpeed = Distance ÷ Time\nA = l × b\nv = u + at",
+    "label": "good",
+    "reason": "Sheet 1 formula card: blanks the RHS formula 'u + at'."
+  },
+  {
+    "id": "good_07",
+    "front": "Symbols: v = ______; u = initial velocity; a = acceleration; t = time. For the area formula, l is length and b is breadth.",
+    "prompt": "Fill in the key term",
+    "answer": "final velocity",
+    "source_line": "Symbols: v = final velocity; u = initial velocity; a = acceleration; t = time. For the area formula, l is length and b is breadth.",
+    "sheet": "Symbols: v = final velocity; u = initial velocity; a = acceleration; t = time. For the area formula, l is length and b is breadth.",
+    "label": "good",
+    "reason": "Sheet 1 card: blanks the 2-word defined physics term 'final velocity'."
+  },
+  {
+    "id": "good_08",
+    "front": "Fraction symbols: ¾ = three quarters. ______: 2½ = two and one half.",
+    "prompt": "Fill in the key term",
+    "answer": "Mixed number",
+    "source_line": "Fraction symbols: ¾ = three quarters. Mixed number: 2½ = two and one half.",
+    "sheet": "Fraction symbols: ¾ = three quarters. Mixed number: 2½ = two and one half.",
+    "label": "good",
+    "reason": "Sheet 1/3 card: blanks the 2-word taught maths term 'Mixed number'."
+  },
+  {
+    "id": "good_09",
+    "front": "Speed unit: ______ means five kilometres per hour.",
+    "prompt": "Give the value and unit",
+    "answer": "5 km/h",
+    "source_line": "Speed unit: 5 km/h means five kilometres per hour.",
+    "sheet": "Speed unit: 5 km/h means five kilometres per hour.\nTemperature: 25 °C means twenty-five degrees Celsius.",
+    "label": "good",
+    "reason": "Sheet 1/3 card: blanks the number with unit '5 km/h'."
+  },
+  {
+    "id": "good_10",
+    "front": "Temperature: 25 °C means twenty-five degrees ______.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Celsius",
+    "source_line": "Temperature: 25 °C means twenty-five degrees Celsius.",
+    "sheet": "Speed unit: 5 km/h means five kilometres per hour.\nTemperature: 25 °C means twenty-five degrees Celsius.",
+    "label": "good",
+    "reason": "Sheet 1/3 card: blanks the 1-word temperature scale 'Celsius'."
+  },
+  {
+    "id": "good_11",
+    "front": "______: a push or pull on an object.",
+    "prompt": "Fill in the key term",
+    "answer": "Force",
+    "source_line": "• Force: a push or pull on an object.",
+    "sheet": "• Force: a push or pull on an object.\n• Speed: distance travelled per unit time.\n• Acceleration: change in velocity per unit time.",
+    "label": "good",
+    "reason": "Sheet 1/3 card: blanks the 1-word defined physics term 'Force'."
+  },
+  {
+    "id": "good_12",
+    "front": "______: distance travelled per unit time.",
+    "prompt": "Fill in the key term",
+    "answer": "Speed",
+    "source_line": "• Speed: distance travelled per unit time.",
+    "sheet": "• Force: a push or pull on an object.\n• Speed: distance travelled per unit time.\n• Acceleration: change in velocity per unit time.",
+    "label": "good",
+    "reason": "Sheet 1/3 card: blanks the 1-word defined physics term 'Speed'."
+  },
+  {
+    "id": "good_13",
+    "front": "______: change in velocity per unit time.",
+    "prompt": "Fill in the key term",
+    "answer": "Acceleration",
+    "source_line": "• Acceleration: change in velocity per unit time.",
+    "sheet": "• Force: a push or pull on an object.\n• Speed: distance travelled per unit time.\n• Acceleration: change in velocity per unit time.",
+    "label": "good",
+    "reason": "Sheet 1/3 card: blanks the 1-word defined physics term 'Acceleration'."
+  },
+  {
+    "id": "good_14",
+    "front": "London situated on the ______ in southeastern England.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "River Thames",
+    "source_line": "• Situated on the River Thames in southeastern England.",
+    "sheet": "1. LONDON – Capital of the United Kingdom & England\n• Situated on the River Thames in southeastern England.",
+    "label": "good",
+    "reason": "Sheet 2 card: names London and blanks the 2-word geographical feature 'River Thames'."
+  },
+  {
+    "id": "good_15",
+    "front": "Birmingham: Major city of the ______, lying on the River Rea.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "West Midlands",
+    "source_line": "• Major city of the West Midlands, lying on the River Rea.",
+    "sheet": "2. BIRMINGHAM – England\n• Major city of the West Midlands, lying on the River Rea.",
+    "label": "good",
+    "reason": "Sheet 2 card: names Birmingham and blanks the 2-word region 'West Midlands'."
+  },
+  {
+    "id": "good_16",
+    "front": "Birmingham: At the heart of the ______ – advances in science, technology & economic development.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Industrial Revolution",
+    "source_line": "• At the heart of the Industrial Revolution – advances in science, technology & economic development.",
+    "sheet": "2. BIRMINGHAM – England\n• At the heart of the Industrial Revolution – advances in science, technology & economic development.",
+    "label": "good",
+    "reason": "Sheet 2 card: names Birmingham and blanks 'Industrial Revolution'."
+  },
+  {
+    "id": "good_17",
+    "front": "Birmingham: The industrial ______ (one of the most important inventions in British history) was invented here.",
+    "prompt": "Fill in the key term",
+    "answer": "steam engine",
+    "source_line": "• The industrial steam engine (one of the most important inventions in British history) was invented here.",
+    "sheet": "2. BIRMINGHAM – England\n• The industrial steam engine (one of the most important inventions in British history) was invented here.",
+    "label": "good",
+    "reason": "Sheet 2 card: names Birmingham and blanks the 2-word technical term 'steam engine'."
+  },
+  {
+    "id": "good_18",
+    "front": "Birmingham: ______ is the UK’s busiest theatre (over 520,000 visitors each year).",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Birmingham Hippodrome",
+    "source_line": "• Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+    "sheet": "2. BIRMINGHAM – England\n• Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+    "label": "good",
+    "reason": "Sheet 2 card: blanks the 2-word proper name 'Birmingham Hippodrome'."
+  },
+  {
+    "id": "good_19",
+    "front": "Belfast situated on the ______; population about 286,000 (2011 census).",
+    "prompt": "Name the person, place, or institution",
+    "answer": "River Lagan",
+    "source_line": "• Situated on the River Lagan; population about 286,000 (2011 census).",
+    "sheet": "3. BELFAST – Capital of Northern Ireland\n• Situated on the River Lagan; population about 286,000 (2011 census).",
+    "label": "good",
+    "reason": "Sheet 2 card: names Belfast and blanks the 2-word river 'River Lagan'."
+  },
+  {
+    "id": "good_20",
+    "front": "Belfast: ______ shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Harland and Wolff",
+    "source_line": "• Harland and Wolff shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+    "sheet": "3. BELFAST – Capital of Northern Ireland\n• Harland and Wolff shipyard built the RMS Titanic – once the world’s biggest and most productive shipyard.",
+    "label": "good",
+    "reason": "Sheet 2 card: names Belfast and blanks the 3-word company name 'Harland and Wolff'."
+  },
+  {
+    "id": "good_21",
+    "front": "Edinburgh: Home to the ______ and the seat of the monarchy in Scotland.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Scottish Parliament",
+    "source_line": "• Home to the Scottish Parliament and the seat of the monarchy in Scotland.",
+    "sheet": "4. EDINBURGH – Capital of Scotland\n• Home to the Scottish Parliament and the seat of the monarchy in Scotland.",
+    "label": "good",
+    "reason": "Sheet 2 card: names Edinburgh and blanks 'Scottish Parliament'."
+  },
+  {
+    "id": "good_22",
+    "front": "Centre of banking for over 300 years: ______ founded in 1695 (HQ in Edinburgh).",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Bank of Scotland",
+    "source_line": "• Centre of banking for over 300 years: Bank of Scotland founded in 1695 (HQ in Edinburgh).",
+    "sheet": "4. EDINBURGH – Capital of Scotland\n• Centre of banking for over 300 years: Bank of Scotland founded in 1695 (HQ in Edinburgh).",
+    "label": "good",
+    "reason": "Sheet 2 card: names Edinburgh and 1695 and blanks 'Bank of Scotland'."
+  },
+  {
+    "id": "good_23",
+    "front": "Cardiff: Seat of the ______ for Wales (Senedd).",
+    "prompt": "Name the person, place, or institution",
+    "answer": "National Assembly",
+    "source_line": "• Seat of the National Assembly for Wales (Senedd).",
+    "sheet": "5. CARDIFF – Capital of Wales\n• Seat of the National Assembly for Wales (Senedd).",
+    "label": "good",
+    "reason": "Sheet 2 card: names Cardiff and Senedd and blanks 'National Assembly'."
+  },
+  {
+    "id": "good_24",
+    "front": "Cardiff: Home to the ______ – a thriving creative capital with rich cultural heritage.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Wales Millennium Centre",
+    "source_line": "• Home to the Wales Millennium Centre – a thriving creative capital with rich cultural heritage.",
+    "sheet": "5. CARDIFF – Capital of Wales\n• Home to the Wales Millennium Centre – a thriving creative capital with rich cultural heritage.",
+    "label": "good",
+    "reason": "Sheet 2 card: names Cardiff and blanks 'Wales Millennium Centre'."
+  },
+  {
+    "id": "good_25",
+    "front": "India's Constitution was adopted by the ______ on 26 November 1949. It came into effect on 26 January 1950. Republic Day marks the date it came into effect.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Constituent Assembly",
+    "source_line": "India's Constitution was adopted by the Constituent Assembly on 26 November 1949. It came into effect on 26 January 1950. Republic Day marks the date it came into effect.",
+    "sheet": "India's Constitution was adopted by the Constituent Assembly on 26 November 1949. It came into effect on 26 January 1950. Republic Day marks the date it came into effect.",
+    "label": "good",
+    "reason": "Sheet 4 card: blanks the 2-word body 'Constituent Assembly'."
+  },
+  {
+    "id": "good_26",
+    "front": "The ______ introduces the Constitution's aims and guiding values. It begins with the words 'We, the people of India', expressing that the Constitution derives its authority from the people.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Preamble",
+    "source_line": "The Preamble introduces the Constitution's aims and guiding values. It begins with the words 'We, the people of India', expressing that the Constitution derives its authority from the people.",
+    "sheet": "The Preamble introduces the Constitution's aims and guiding values. It begins with the words 'We, the people of India', expressing that the Constitution derives its authority from the people.",
+    "label": "good",
+    "reason": "Sheet 4 card: blanks the 1-word civics term 'Preamble'."
+  },
+  {
+    "id": "good_27",
+    "front": "______ protect important freedoms and equal treatment. They also provide ways to seek remedies when certain rights are violated.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Fundamental Rights",
+    "source_line": "Fundamental Rights protect important freedoms and equal treatment. They also provide ways to seek remedies when certain rights are violated.",
+    "sheet": "Fundamental Rights protect important freedoms and equal treatment. They also provide ways to seek remedies when certain rights are violated.",
+    "label": "good",
+    "reason": "Sheet 4 card: blanks the 2-word constitutional concept 'Fundamental Rights'."
+  },
+  {
+    "id": "good_28",
+    "front": "______ describe responsibilities expected of citizens. Rights and duties are different ideas: a right is a protected freedom or entitlement, while a duty is a responsibility.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Fundamental Duties",
+    "source_line": "Fundamental Duties describe responsibilities expected of citizens. Rights and duties are different ideas: a right is a protected freedom or entitlement, while a duty is a responsibility.",
+    "sheet": "Fundamental Duties describe responsibilities expected of citizens. Rights and duties are different ideas: a right is a protected freedom or entitlement, while a duty is a responsibility.",
+    "label": "good",
+    "reason": "Sheet 4 card: blanks the 2-word constitutional concept 'Fundamental Duties'."
+  },
+  {
+    "id": "good_29",
+    "front": "Matter Around Us: ______ describes how well a substance dissolves in a given solvent.",
+    "prompt": "Fill in the key term",
+    "answer": "Solubility",
+    "source_line": "• Solubility describes how well a substance dissolves in a given solvent.",
+    "sheet": "1. Matter Around Us\n• Solubility describes how well a substance dissolves in a given solvent.",
+    "label": "good",
+    "reason": "Sheet 5 card: blanks the 1-word defined chemistry term 'Solubility'."
+  },
+  {
+    "id": "good_30",
+    "front": "Separating Mixtures: ______ can separate an insoluble solid from a liquid.",
+    "prompt": "Fill in the key term",
+    "answer": "Filtration",
+    "source_line": "• Filtration can separate an insoluble solid from a liquid.",
+    "sheet": "4. Separating Mixtures\n• Filtration can separate an insoluble solid from a liquid.",
+    "label": "good",
+    "reason": "Sheet 5 card: blanks the 1-word separation method 'Filtration'."
+  },
+  {
+    "id": "good_31",
+    "front": "Atoms, Molecules, and Symbols: A ______ represents an element.",
+    "prompt": "Fill in the key term",
+    "answer": "chemical symbol",
+    "source_line": "• A chemical symbol represents an element.",
+    "sheet": "5. Atoms, Molecules, and Symbols\n• A chemical symbol represents an element.",
+    "label": "good",
+    "reason": "Sheet 5 card: blanks the 2-word chemistry term 'chemical symbol'."
+  },
+  {
+    "id": "good_32",
+    "front": "Chemical Reactions and Equations: Balancing changes ______, not chemical formula subscripts.",
+    "prompt": "Fill in the key term",
+    "answer": "coefficients",
+    "source_line": "• Balancing changes coefficients, not chemical formula subscripts.",
+    "sheet": "6. Chemical Reactions and Equations\n• Balancing changes coefficients, not chemical formula subscripts.",
+    "label": "good",
+    "reason": "Sheet 5 card: blanks the 1-word key term 'coefficients'."
+  },
+  {
+    "id": "bad_01",
+    "front": "Explain Indian Industry and its main features.",
+    "prompt": "Explain Indian Industry and its main features.",
+    "answer": "Jamsetji Tata",
+    "source_line": "Jamsetji Tata founded the Empress Mills in Nagpur in 1877.",
+    "sheet": "Indian Industry\nJamsetji Tata founded the Empress Mills in Nagpur in 1877.",
+    "label": "bad",
+    "reason": "Generic boilerplate 'Explain ___ and its main features.' template."
+  },
+  {
+    "id": "bad_02",
+    "front": "Explain Graduated from Elphinstone College and its main features.",
+    "prompt": "Explain Graduated from Elphinstone College and its main features.",
+    "answer": "Elphinstone College",
+    "source_line": "Graduated from Elphinstone College in Mumbai.",
+    "sheet": "Dadabhai Naoroji (1825–1917)\nGraduated from Elphinstone College in Mumbai.",
+    "label": "bad",
+    "reason": "Boilerplate template stuffed with verb fragment 'Graduated from Elphinstone College' and leaks the answer."
+  },
+  {
+    "id": "bad_03",
+    "front": "Explain FULL CARD and its main features.",
+    "prompt": "Explain FULL CARD and its main features.",
+    "answer": "FULL CARD",
+    "source_line": "FULL CARD",
+    "sheet": "FULL CARD\nProminent Personalities of Mumbai\nDadabhai Naoroji (1825–1917)\nGraduated from Elphinstone College in Mumbai.",
+    "label": "bad",
+    "reason": "Built from layout furniture 'FULL CARD' with boilerplate template."
+  },
+  {
+    "id": "bad_04",
+    "front": "What reason or cause is explained regarding Man Planning Commission, and what is its result?",
+    "prompt": "What reason or cause is explained regarding Man Planning Commission, and what is its result?",
+    "answer": "Planning Commission",
+    "source_line": "Served as member of the Planning Commission in 1950.",
+    "sheet": "C. D. Deshmukh\nServed as member of the Planning Commission in 1950.",
+    "label": "bad",
+    "reason": "Broken template with cut-off proper noun 'Man Planning Commission' and answer leaked in question."
+  },
+  {
+    "id": "bad_05",
+    "front": "Which body or institution Constituent Assembly of India was chaired by Jurist and social reformer?",
+    "prompt": "Which body or institution Constituent Assembly of India was chaired by Jurist and social reformer?",
+    "answer": "Drafting Committee",
+    "source_line": "Jurist and social reformer; chaired the Drafting Committee of the Constituent Assembly of India.",
+    "sheet": "Dr. B. R. Ambedkar\nJurist and social reformer; chaired the Drafting Committee of the Constituent Assembly of India.",
+    "label": "bad",
+    "reason": "Broken word order ('Which body or institution Constituent Assembly of India was chaired by Jurist...')."
+  },
+  {
+    "id": "bad_06",
+    "front": "1. QUICK REVISION NOTES: Matter has mass and occupies ______.",
+    "prompt": "Fill in the key term",
+    "answer": "space",
+    "source_line": "Matter has mass and occupies space.",
+    "sheet": "1. QUICK REVISION NOTES\nMatter has mass and occupies space.",
+    "label": "bad",
+    "reason": "Contains section heading '1. QUICK REVISION NOTES' inside the question."
+  },
+  {
+    "id": "bad_07",
+    "front": "CHEMISTRY • BALANCED EQUATIONS • DATA • EXPERIMENT DESIGN: ______ are the starting substances.",
+    "prompt": "Fill in the key term",
+    "answer": "Reactants",
+    "source_line": "Reactants are the starting substances; products are formed.",
+    "sheet": "CHEMISTRY • BALANCED EQUATIONS • DATA • EXPERIMENT DESIGN\nReactants are the starting substances; products are formed.",
+    "label": "bad",
+    "reason": "Contains bullet-separated banner heading 'CHEMISTRY • BALANCED EQUATIONS • DATA • EXPERIMENT DESIGN' inside the question."
+  },
+  {
+    "id": "bad_08",
+    "front": "In RBS HQ, which bank has its global headquarters in ______?",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Edinburgh",
+    "source_line": "Royal Bank of Scotland (RBS) has its global headquarters in Edinburgh.",
+    "sheet": "4. EDINBURGH – Capital of Scotland\nRoyal Bank of Scotland (RBS) has its global headquarters in Edinburgh.",
+    "label": "bad",
+    "reason": "Contains heading/callout label 'RBS HQ' inside the question."
+  },
+  {
+    "id": "bad_09",
+    "front": "Dr. B. R. Ambedkar chaired the ______ Constituent Assembly of India.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Drafting Committee of the",
+    "source_line": "Dr. B. R. Ambedkar chaired the Drafting Committee of the Constituent Assembly of India.",
+    "sheet": "Dr. B. R. Ambedkar chaired the Drafting Committee of the Constituent Assembly of India.",
+    "label": "bad",
+    "reason": "Cut-off answer ending on 'of the' ('Drafting Committee of the')."
+  },
+  {
+    "id": "bad_10",
+    "front": "Raja Ram Mohan Roy founded the ______ 1828.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Brahmo Sabha in",
+    "source_line": "Raja Ram Mohan Roy founded the Brahmo Sabha in 1828.",
+    "sheet": "Raja Ram Mohan Roy founded the Brahmo Sabha in 1828.",
+    "label": "bad",
+    "reason": "Cut-off answer ending on preposition 'in' ('Brahmo Sabha in')."
+  },
+  {
+    "id": "bad_11",
+    "front": "The first session of the Indian National Congress was held ______ College in Bombay.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "at Gokuldas Tejpal Sanskrit",
+    "source_line": "The first session of the Indian National Congress was held at Gokuldas Tejpal Sanskrit College in Bombay.",
+    "sheet": "The first session of the Indian National Congress was held at Gokuldas Tejpal Sanskrit College in Bombay.",
+    "label": "bad",
+    "reason": "Cut-off answer starting with 'at' and missing 'College' ('at Gokuldas Tejpal Sanskrit')."
+  },
+  {
+    "id": "bad_12",
+    "front": "Quit India Movement was launched on 8 ______ 1942.",
+    "prompt": "Name the date or year",
+    "answer": "August",
+    "source_line": "Quit India Movement was launched on 8 August 1942.",
+    "sheet": "Quit India Movement was launched on 8 August 1942.",
+    "label": "bad",
+    "reason": "Cut-off date: blanks only 'August' when the full date '8 August 1942' is on the line."
+  },
+  {
+    "id": "bad_13",
+    "front": "Birmingham: Birmingham Hippodrome is the ______ busiest theatre.",
+    "prompt": "Fill in the key term",
+    "answer": "UK’s",
+    "source_line": "• Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+    "sheet": "2. BIRMINGHAM – England\n• Birmingham Hippodrome is the UK’s busiest theatre (over 520,000 visitors each year).",
+    "label": "bad",
+    "reason": "Cut-off possessive modifier 'UK’s' from Sheet 2."
+  },
+  {
+    "id": "bad_14",
+    "front": "Algebra: x² means x multiplied by itself. ______ x = 5, then x² = 25.",
+    "prompt": "Fill in the key term",
+    "answer": "If",
+    "source_line": "Algebra: x² means x multiplied by itself. If x = 5, then x² = 25.",
+    "sheet": "Algebra: x² means x multiplied by itself. If x = 5, then x² = 25.",
+    "label": "bad",
+    "reason": "Blanks common conjunction word 'If' on Sheet 1."
+  },
+  {
+    "id": "bad_15",
+    "front": "______ the titration three times to obtain concordant readings.",
+    "prompt": "Fill in the key term",
+    "answer": "Repeat",
+    "source_line": "Repeat the titration three times to obtain concordant readings.",
+    "sheet": "Experiment Procedure\nRepeat the titration three times to obtain concordant readings.",
+    "label": "bad",
+    "reason": "Blanks ordinary instruction verb 'Repeat'."
+  },
+  {
+    "id": "bad_16",
+    "front": "______ sure the apparatus is airtight before heating.",
+    "prompt": "Fill in the key term",
+    "answer": "Make",
+    "source_line": "Make sure the apparatus is airtight before heating.",
+    "sheet": "Experiment Procedure\nMake sure the apparatus is airtight before heating.",
+    "label": "bad",
+    "reason": "Blanks ordinary instruction verb 'Make'."
+  },
+  {
+    "id": "bad_17",
+    "front": "______ safety goggles when handling concentrated acids.",
+    "prompt": "Fill in the key term",
+    "answer": "Wear",
+    "source_line": "Wear safety goggles when handling concentrated acids.",
+    "sheet": "Lab Safety\nWear safety goggles when handling concentrated acids.",
+    "label": "bad",
+    "reason": "Blanks ordinary instruction verb 'Wear'."
+  },
+  {
+    "id": "bad_18",
+    "front": "State which gas is evolved ______.",
+    "prompt": "Fill in the key term",
+    "answer": "and why",
+    "source_line": "State which gas is evolved and why.",
+    "sheet": "State which gas is evolved and why.",
+    "label": "bad",
+    "reason": "Blanks linking words 'and why'."
+  },
+  {
+    "id": "bad_19",
+    "front": "London: ______ of the world’s preeminent cities – hub of political, economic and cultural network.",
+    "prompt": "Fill in the key term",
+    "answer": "One",
+    "source_line": "• One of the world’s preeminent cities – hub of political, economic and cultural network.",
+    "sheet": "1. LONDON – Capital of the United Kingdom & England\n• One of the world’s preeminent cities – hub of political, economic and cultural network.",
+    "label": "bad",
+    "reason": "Blanks common word 'One' from Sheet 2."
+  },
+  {
+    "id": "bad_20",
+    "front": "Edinburgh was famous for its stunning mix of architecture: medieval tenements, Old Town, cobbled wynds and ______ buildings.",
+    "prompt": "Fill in the key term",
+    "answer": "Georgian-era",
+    "source_line": "• Famous for its stunning mix of architecture: medieval tenements, Old Town, cobbled wynds and Georgian-era buildings.",
+    "sheet": "4. EDINBURGH – Capital of Scotland\n• Famous for its stunning mix of architecture: medieval tenements, Old Town, cobbled wynds and Georgian-era buildings.",
+    "label": "bad",
+    "reason": "Blanks adjective modifier 'Georgian-era' instead of a key fact on Sheet 2."
+  },
+  {
+    "id": "bad_21",
+    "front": "The Constitution is the supreme law of India. ______ and government actions must follow its provisions.",
+    "prompt": "Fill in the key term",
+    "answer": "Laws",
+    "source_line": "The Constitution is the supreme law of India. Laws and government actions must follow its provisions.",
+    "sheet": "The Constitution is the supreme law of India. Laws and government actions must follow its provisions.",
+    "label": "bad",
+    "reason": "Blanks generic common word 'Laws' on Sheet 4."
+  },
+  {
+    "id": "bad_22",
+    "front": "Particle Model: ______ generally increases particle motion.",
+    "prompt": "Fill in the key term",
+    "answer": "Heating",
+    "source_line": "• Heating generally increases particle motion.",
+    "sheet": "2. Particle Model\n• Heating generally increases particle motion.",
+    "label": "bad",
+    "reason": "Blanks common sentence-initial word 'Heating' on Sheet 5."
+  },
+  {
+    "id": "bad_23",
+    "front": "______: v = final velocity; u = initial velocity; a = acceleration; t = time.",
+    "prompt": "Fill in the key term",
+    "answer": "Symbols",
+    "source_line": "Symbols: v = final velocity; u = initial velocity; a = acceleration; t = time.",
+    "sheet": "Page 2 — Formula reference\nSymbols: v = final velocity; u = initial velocity; a = acceleration; t = time.",
+    "label": "bad",
+    "reason": "Blanks section/category label 'Symbols' on Sheet 1/3."
+  },
+  {
+    "id": "bad_24",
+    "front": "Belfast: ______: Irish linen, tobacco processing, rope-making and shipbuilding.",
+    "prompt": "Fill in the key term",
+    "answer": "Historic industries",
+    "source_line": "• Historic industries: Irish linen, tobacco processing, rope-making and shipbuilding.",
+    "sheet": "3. BELFAST – Capital of Northern Ireland\n• Historic industries: Irish linen, tobacco processing, rope-making and shipbuilding.",
+    "label": "bad",
+    "reason": "Blanks category label 'Historic industries' on Sheet 2."
+  },
+  {
+    "id": "bad_25",
+    "front": "Summary Table of ______ in Maharashtra.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Mumbai Key Leaders",
+    "source_line": "City | Key Leaders\nMumbai | Dadabhai Naoroji",
+    "sheet": "City | Key Leaders\nMumbai | Dadabhai Naoroji",
+    "label": "bad",
+    "reason": "Answer 'Mumbai Key Leaders' joins words from two table cells."
+  },
+  {
+    "id": "bad_26",
+    "front": "Belfast and Edinburgh: Harland and ______.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Wolff Scottish Parliament",
+    "source_line": "Harland and Wolff | Scottish Parliament",
+    "sheet": "Harland and Wolff | Scottish Parliament",
+    "label": "bad",
+    "reason": "Answer 'Wolff Scottish Parliament' joins words across two different places/cells."
+  },
+  {
+    "id": "bad_27",
+    "front": "Dadabhai Naoroji | 1892 | ______ | Member of Parliament",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Elphinstone College",
+    "source_line": "Dadabhai Naoroji | 1892 | Elphinstone College | Member of Parliament",
+    "sheet": "Summary Table\nPersonality | Year | Institution | Role\nDadabhai Naoroji | 1892 | Elphinstone College | Member of Parliament",
+    "label": "bad",
+    "reason": "Front is built directly from multi-column table row text ('|')."
+  },
+  {
+    "id": "bad_28",
+    "front": "Q1. Who was called the Grand Old Man of India? — Ans: ______",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Dadabhai Naoroji",
+    "source_line": "Q1. Who was called the Grand Old Man of India? — Ans: Dadabhai Naoroji",
+    "sheet": "Practice Questions\nQ1. Who was called the Grand Old Man of India? — Ans: Dadabhai Naoroji",
+    "label": "bad",
+    "reason": "Taken from the sheet's own practice Q&A ('Q1.' and '— Ans:')."
+  },
+  {
+    "id": "bad_29",
+    "front": "F = ______",
+    "prompt": "Complete the formula",
+    "answer": "mass multiplied by acceleration in newtons",
+    "source_line": "F = ma, where F is mass multiplied by acceleration in newtons.",
+    "sheet": "F = ma, where F is mass multiplied by acceleration in newtons.",
+    "label": "bad",
+    "reason": "Formula line blanks a 6-word prose phrase instead of one symbol or formula result."
+  },
+  {
+    "id": "bad_30",
+    "front": "He graduated from ______ in Mumbai.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Elphinstone College",
+    "source_line": "Graduated from Elphinstone College in Mumbai.",
+    "sheet": "Dadabhai Naoroji (1825–1917)\nGraduated from Elphinstone College in Mumbai.",
+    "label": "bad",
+    "reason": "Missing subject: uses dangling pronoun 'He' without naming Dadabhai Naoroji."
+  },
+  {
+    "id": "bad_31",
+    "front": "Dr. B. R. Ambedkar chaired the Drafting Committee of the ______.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "Drafting Committee",
+    "source_line": "Dr. B. R. Ambedkar chaired the Drafting Committee of the Constituent Assembly of India.",
+    "sheet": "Dr. B. R. Ambedkar chaired the Drafting Committee of the Constituent Assembly of India.",
+    "label": "bad",
+    "reason": "Answer 'Drafting Committee' is given away in the front of the card."
+  },
+  {
+    "id": "bad_32",
+    "front": "London situated on the ______ in southeastern England.",
+    "prompt": "Name the person, place, or institution",
+    "answer": "River Severn",
+    "source_line": "• Situated on the River Thames in southeastern England.",
+    "sheet": "1. LONDON – Capital of the United Kingdom & England\n• Situated on the River Thames in southeastern England.",
+    "label": "bad",
+    "reason": "Ungrounded answer: 'River Severn' does not appear on the sheet."
+  },
+  {
+    "id": "bad_33",
+    "front": "Worksheet test copy ______ — Labelled circuit diagram",
+    "prompt": "Fill in the key fact",
+    "answer": "Page 14 of 20",
+    "source_line": "Worksheet test copy Page 14 of 20",
+    "sheet": "Worksheet test copy Page 14 of 20\nPage 14 — Labelled circuit diagram",
+    "label": "bad",
+    "reason": "Type 2 (furniture): Built from running page header/footer 'Worksheet test copy Page 14 of 20'."
+  },
+  {
+    "id": "bad_34",
+    "front": "Source URL: https://www.britannica.com/place/______",
+    "prompt": "Name the person, place, or institution",
+    "answer": "London",
+    "source_line": "https://www.britannica.com/place/London",
+    "sheet": "Sources:\nhttps://www.britannica.com/place/London",
+    "label": "bad",
+    "reason": "Type 3 (link): Built from a URL/reference link line."
+  },
+  {
+    "id": "bad_35",
+    "front": "Schematic (not to scale): ______ →",
+    "prompt": "Fill in the key term",
+    "answer": "Current direction",
+    "source_line": "Schematic (not to scale)",
+    "sheet": "Page 14 — Labelled circuit diagram\nCell / battery\nBulb\nCurrent direction →\nSchematic (not to scale)",
+    "label": "bad",
+    "reason": "Type 7 (figure): Built from a diagram callout label / figure caption ('Schematic (not to scale)')."
+  }
+]
