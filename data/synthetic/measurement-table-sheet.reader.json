@@ -1,0 +1,120 @@
+{
+  "sheet": "measurement-table-sheet.pdf",
+  "pages": 1,
+  "items": [
+    {
+      "id": "I1",
+      "page": 1,
+      "kind": "title",
+      "text": "Climate Data and Industrial Centres",
+      "topic": "",
+      "context": "",
+      "section": "",
+      "bold": []
+    },
+    {
+      "id": "I2",
+      "page": 1,
+      "kind": "topic",
+      "text": "Industrial Centres",
+      "topic": "Industrial Centres",
+      "context": "",
+      "section": "notes",
+      "bold": ["Industrial Centres"]
+    },
+    {
+      "id": "I3",
+      "page": 1,
+      "kind": "point",
+      "text": "The Tata Iron and Steel Company was set up at Jamshedpur in 1907.",
+      "topic": "Industrial Centres",
+      "context": "",
+      "section": "notes",
+      "bold": ["Tata Iron and Steel Company", "Jamshedpur", "1907"]
+    },
+    {
+      "id": "I4",
+      "page": 1,
+      "kind": "point",
+      "text": "Jamshedpur is situated on the River Subarnarekha.",
+      "topic": "Industrial Centres",
+      "context": "",
+      "section": "notes",
+      "bold": ["River Subarnarekha"]
+    },
+    {
+      "id": "I5",
+      "page": 1,
+      "kind": "summary",
+      "text": "Sugar Industry = cane to sugar (seasonal agro-based industry).",
+      "topic": "Industrial Centres",
+      "context": "",
+      "section": "summary",
+      "bold": ["Sugar Industry", "cane to sugar"]
+    },
+    {
+      "id": "I6",
+      "page": 1,
+      "kind": "topic",
+      "text": "Monsoon Rainfall",
+      "topic": "Monsoon Rainfall",
+      "context": "",
+      "section": "notes",
+      "bold": ["Monsoon Rainfall"]
+    },
+    {
+      "id": "I7",
+      "page": 1,
+      "kind": "point",
+      "text": "In the station table, July receives the highest rainfall and January receives the lowest rainfall.",
+      "topic": "Monsoon Rainfall",
+      "context": "",
+      "section": "notes",
+      "bold": ["July", "January"]
+    },
+    {
+      "id": "I8",
+      "page": 1,
+      "kind": "table",
+      "text": "",
+      "topic": "Monsoon Rainfall",
+      "context": "",
+      "section": "notes",
+      "bold": [],
+      "table": {
+        "header": ["Month", "Temp (°C)", "Rainfall (mm)"],
+        "rows": [
+          ["January", "19", "12"],
+          ["February", "22", "18"],
+          ["March", "27", "24"],
+          ["April", "31", "35"],
+          ["May", "33", "62"],
+          ["June", "30", "185"],
+          ["July", "28", "340"],
+          ["August", "28", "310"],
+          ["September", "29", "210"],
+          ["October", "27", "95"],
+          ["November", "23", "28"],
+          ["December", "20", "15"]
+        ]
+      }
+    },
+    {
+      "id": "I9",
+      "page": 1,
+      "kind": "table",
+      "text": "",
+      "topic": "Industrial Centres",
+      "context": "",
+      "section": "notes",
+      "bold": [],
+      "table": {
+        "header": ["Centre", "State"],
+        "rows": [
+          ["Bhilai", "Chhattisgarh"],
+          ["Rourkela", "Odisha"]
+        ]
+      }
+    }
+  ]
+}
