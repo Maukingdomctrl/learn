@@ -1,0 +1,14 @@
+node_modules/
+.next/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+.env
+.aistudio/
+public/assets/aistudio/

@@ -1,0 +1,106 @@
+{
+  "sheet": "people-sheet.pdf",
+  "pages": 1,
+  "items": [
+    {
+      "id": "I1",
+      "page": 1,
+      "kind": "title",
+      "text": "Social Reformers and National Leaders",
+      "topic": "",
+      "context": "",
+      "section": "",
+      "bold": []
+    },
+    {
+      "id": "I2",
+      "page": 1,
+      "kind": "heading",
+      "text": "1. Ishwar Chandra Vidyasagar (1820–1891) — Pioneer of Modern Bengali Prose",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Ishwar Chandra Vidyasagar"]
+    },
+    {
+      "id": "I3",
+      "page": 1,
+      "kind": "point",
+      "text": "His efforts led to the Widow Remarriage Act of 1856.",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Widow Remarriage Act"]
+    },
+    {
+      "id": "I4",
+      "page": 1,
+      "kind": "point",
+      "text": "Wrote the book Barnaparichay in 1855.",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Barnaparichay"]
+    },
+    {
+      "id": "I5",
+      "page": 1,
+      "kind": "heading",
+      "text": "2. Savitribai Phule (1831–1897) — Mother of Indian Feminism",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Savitribai Phule"]
+    },
+    {
+      "id": "I6",
+      "page": 1,
+      "kind": "point",
+      "text": "Opened the Bhide Wada Girls School at Pune in 1848.",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Bhide Wada Girls School", "Pune"]
+    },
+    {
+      "id": "I7",
+      "page": 1,
+      "kind": "point",
+      "text": "Worked to abolish caste discrimination.",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["caste discrimination"]
+    },
+    {
+      "id": "I8",
+      "page": 1,
+      "kind": "heading",
+      "text": "3. Gopal Krishna Gokhale (1866–1915) — Founder of the Servants of India",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Gopal Krishna Gokhale"]
+    },
+    {
+      "id": "I9",
+      "page": 1,
+      "kind": "point",
+      "text": "Founded the Servants of India Society in 1905.",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Servants of India Society"]
+    },
+    {
+      "id": "I10",
+      "page": 1,
+      "kind": "point",
+      "text": "Chaired the Banaras Session of the Indian National Congress.",
+      "topic": "",
+      "context": "",
+      "section": "notes",
+      "bold": ["Banaras Session", "Indian National Congress"]
+    }
+  ]
+}
