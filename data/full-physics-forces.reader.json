@@ -1,0 +1,242 @@
+{
+ "sheet": "full-physics-forces.pdf",
+ "reader": "Learn sheet reader (sheet.py)",
+ "items": [
+  {
+   "id": "I1",
+   "kind": "title",
+   "text": "FULL CARD 25 — Forces, Mass and Acceleration",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [
+    "FULL CARD 25 — Forces, Mass and Acceleration"
+   ]
+  },
+  {
+   "id": "I2",
+   "kind": "title",
+   "text": "PHYSICS • NEWTON’S SECOND LAW • FREE-BODY REASONING",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I3",
+   "kind": "point",
+   "text": "Resultant force determines acceleration: F = ma. If the resultant force is zero, velocity remains constant (including the possibility of remaining at rest).",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "MODEL",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I4",
+   "kind": "heading",
+   "text": "Force investigation: trolley motion",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [
+    "Force investigation: trolley motion"
+   ]
+  },
+  {
+   "id": "I5",
+   "kind": "table",
+   "text": "",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [],
+   "table": {
+    "kind": "grid",
+    "header": [
+     "Trial",
+     "Mass (kg)",
+     "Resultant force (N)",
+     "Acceleration (m/s²)",
+     "F ÷ m"
+    ],
+    "rows": [
+     [
+      "A",
+      "0.50",
+      "0.50",
+      "1.0",
+      "1.0"
+     ],
+     [
+      "B",
+      "0.50",
+      "1.00",
+      "2.0",
+      "2.0"
+     ],
+     [
+      "C",
+      "1.00",
+      "1.00",
+      "1.0",
+      "1.0"
+     ],
+     [
+      "D",
+      "1.50",
+      "1.00",
+      "0.67",
+      "0.67"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "I6",
+   "kind": "heading",
+   "text": "Worked calculations",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [
+    "Worked calculations"
+   ]
+  },
+  {
+   "id": "I7",
+   "kind": "point",
+   "text": "Trial B: a = F ÷ m = 1.00 N ÷ 0.50 kg = 2.0 m/s². Trial D: a = 1.00 ÷ 1.50 ≈ 0.67 m/s². For a fixed mass, doubling resultant force doubles acceleration; for fixed force, increasing mass reduces acceleration.",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "Worked calculations",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I8",
+   "kind": "heading",
+   "text": "Free-body reasoning",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [
+    "Free-body reasoning"
+   ]
+  },
+  {
+   "id": "I9",
+   "kind": "table",
+   "text": "",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [],
+   "table": {
+    "kind": "grid",
+    "header": [
+     "Situation",
+     "Forces to consider",
+     "Reasoning"
+    ],
+    "rows": [
+     [
+      "Book resting on table",
+      "Weight downward; normal contact force upward",
+      "Forces balance vertically"
+     ],
+     [
+      "Falling object with air resistance",
+      "Weight downward; drag upward",
+      "Resultant depends on relative sizes"
+     ],
+     [
+      "Car braking",
+      "Braking force opposite motion; other resistive forces",
+      "Speed decreases if resultant opposes velocity"
+     ],
+     [
+      "Satellite in orbit",
+      "Gravity directed toward central body",
+      "Gravity changes direction of velocity"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "I10",
+   "kind": "heading",
+   "text": "Units and conversions",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "",
+   "marker": "",
+   "bullet": false,
+   "bold": [
+    "Units and conversions"
+   ]
+  },
+  {
+   "id": "I11",
+   "kind": "point",
+   "text": "1 N = 1 kg·m/s². Speed: m/s. Acceleration: m/s². Convert grams to kilograms before using F = ma: 500 g = 0.500 kg.",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "Units and conversions",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I12",
+   "kind": "point",
+   "text": "Evaluation: Friction, timing delay, uneven surfaces, and inaccurate mass measurements can affect results. Repeat trials, use a motion sensor if available, and keep other variables controlled.",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "Units and conversions",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  },
+  {
+   "id": "I13",
+   "kind": "question",
+   "text": "A 2 kg cart experiences a 6 N forward force and 2 N friction. Find resultant force and acceleration. State the direction of acceleration.",
+   "page": 1,
+   "section": "",
+   "topic": "",
+   "context": "Units and conversions",
+   "marker": "",
+   "bullet": false,
+   "bold": []
+  }
+ ]
+}
